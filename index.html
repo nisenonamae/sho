@@ -57,6 +57,17 @@ textarea{min-height:7rem;line-height:1.6}
 .slogan p{margin:.3rem 0 0;font-size:.88rem;opacity:.9;white-space:pre-wrap}
 .slogan .btn{border-color:var(--paper);color:var(--paper);background:transparent}
 .slogan textarea,.slogan input{color:var(--ink)}
+.emg{border:2px solid var(--shu);background:#FBEDE9;border-radius:4px;padding:.6rem .8rem;margin:.5rem 0}
+.emg h4{margin:0 0 .2rem;color:var(--shu)}
+.goal{border:1px solid var(--rule);background:var(--sheet);border-radius:4px;padding:.6rem .8rem;margin:.5rem 0}
+.goal .gl{position:relative;height:12px;background:#E8E2D4;border-radius:6px;margin:.4rem 0;overflow:hidden}
+.goal .gl i{position:absolute;left:0;top:0;bottom:0;background:var(--ok);border-radius:6px}
+.goal .gl b{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink)}
+.goal.behind .gl i{background:var(--shu)}
+.chips{display:flex;flex-wrap:wrap;gap:.3rem}
+.chip{font-size:.78rem;border-radius:10px;padding:0 .55rem;border:1px solid var(--rule)}
+.chip.focus{border-color:var(--ok);color:var(--ok)}.chip.restrain{border-color:var(--shu);color:var(--shu)}
+.gform{border:1px dashed var(--rule);padding:.6rem;border-radius:4px;margin:.5rem 0;background:#fff}
 .syncbar{display:flex;gap:.6rem;align-items:center;margin:0 0 .8rem;flex-wrap:wrap}
 /* 一覧 */
 .mlist{list-style:none;margin:0;padding:0}
@@ -202,14 +213,14 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-05 r6";
+const APP_VERSION = "2026-10-05 r7";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
 const PERIODS = [["日", "1日"], ["週", "1週間"], ["月", "1ヶ月"], ["季", "3ヶ月"]];
 const NOTES = "roadmap/gov/notes.json";          // アプリで書くもの(目的・スローガン)
 // 体制全体。省と同じ首脳を持ち、スローガンを掲げる。旧「総合的分析と戦略」の役割
-const ALL = { tag: "全体", name: "体制全体" };
+const ALL = { tag: "全体", name: "参謀本部" };
 const DEFAULT_SLOGANS = [{ title: "第一次スローガン", text: "狂気の時代!全方向へ全力に拡大しろ!",
   note: "ほとんどの活動の基礎となる学力(受験に使う科目)、身体能力、経済能力などの能力を向上する。よってこのような省に重要度を重めに設定し、その他の文化的な省庁の重要度を低めに設定する。", from: "2026-08-01" }];
 const slogans = () => (state.notes.slogans && state.notes.slogans.length) ? state.notes.slogans : DEFAULT_SLOGANS;
@@ -341,6 +352,7 @@ async function loadAll(){
     await loadReviewMonth(periodPrev("季", periodStart("季", now)).slice(0, 7)); // 3ヶ月の前回ぶんまで
     await loadReviewMonth(addDays(now.slice(0, 8) + "01", -1).slice(0, 7));
     await loadGov().catch(() => {});
+    await loadStaff().catch(() => {});
     computeTasks();
     lsSet(KEY_CACHE, { gov: state.gov, stats: state.stats, reviews: state.reviews, reviewShas: state.reviewShas, notes: state.notes });
     status("読み込みました");
@@ -398,9 +410,10 @@ function renderList(){
   const box = document.getElementById("list");
   const ms = (state.gov && state.gov.ministries) || [];
   box.hidden = !!state.open;
-  const sl = slogans()[slogans().length - 1], openAll = openOrders(ALL.tag).length;
-  box.innerHTML = '<button type="button" class="allcard" data-open="' + ALL.tag + '"><div class="an">体制全体' +
-      (openAll ? ' <span class="badge">' + openAll + "</span>" : "") + '</div><div class="as">' + esc(sl.text) + '</div><div class="an">' + esc(sl.title) + "</div></button>" +
+  const term = currentTerm(), sl = term ? term.slogan : slogans()[slogans().length - 1], openAll = openOrders(ALL.tag).length + openEmergencies().length;
+  box.innerHTML = '<button type="button" class="allcard" data-open="' + ALL.tag + '"><div class="an">参謀本部' +
+      (openAll ? ' <span class="badge">' + openAll + "</span>" : "") + (openEmergencies().length ? '　<b style="color:#F0A090">緊急会議 ' + openEmergencies().length + "</b>" : "") +
+      '</div><div class="as">' + esc(sl.text) + '</div><div class="an">' + (term ? esc(term.name) + "　残り" + Math.max(0, daysBetween(taskDay(), term.end)) + "日" : "作戦期はまだありません") + "</div></button>" +
     '<ul class="mlist">' + ms.map(m => {
     const p = powerOf(m.tag), open = openOrders(m.tag).length;
     return '<li style="--mc:' + colorOf(m.tag) + '"><button type="button" data-open="' + esc(m.tag) + '"><span class="mn">' + esc(m.name) +
@@ -493,7 +506,7 @@ function renderDetail(){
   const m = currentMinistry();
   box.hidden = !m;
   if (!m) { box.innerHTML = ""; return; }
-  if (m === ALL) { renderAll(box); return; }
+  if (m === ALL) { renderStaff(box); return; }
   const p = powerOf(m.tag);
   const deps = Object.entries(m.deps || {});
   const rev = state.gov.ministries.filter(x => (x.deps || {})[m.tag] != null).map(x => [x.name, x.deps[m.tag]]);
@@ -1052,6 +1065,232 @@ function bindGov(){
   });
 }
 
+
+/* ───────── 参謀本部(作戦期・目標・緊急会議) ───────── */
+const STAFF = "roadmap/gov/staff.json";
+const MAX_GOALS = 3, BEHIND = 0.2;
+const staff = { doc: { terms: [], emergencies: [] }, sha: null, draft: null };
+async function loadStaff(){ const r = await readJson(STAFF); staff.doc = Object.assign({ terms: [], emergencies: [] }, r.data || {}); staff.sha = r.sha; }
+async function saveStaff(mutate, msgId){
+  for (let i = 0; i < 3; i++) {
+    try { if (mutate(staff.doc) === false) return false; staff.sha = await writeJson(STAFF, staff.doc, staff.sha); return true; }
+    catch (e) {
+      if ((e.status === 409 || e.status === 422) && i < 2) { await loadStaff(); continue; }
+      const el = document.getElementById(msgId || "sf-msg"); if (el) { el.textContent = e.message; el.classList.add("err"); } return false;
+    }
+  }
+  return false;
+}
+const sfMsg = (t, err) => { const el = document.getElementById("sf-msg"); if (el) { el.textContent = t; el.classList.toggle("err", !!err); } };
+const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
+function currentTerm(){ const d = taskDay(); return staff.doc.terms.find(t => t.issuedAt && !t.closedAt && t.start <= d && d <= t.end) || staff.doc.terms.find(t => t.issuedAt && !t.closedAt) || null; }
+// 線:期の始めから期日まで、まっすぐ目標の値へ
+function goalLine(term, g){
+  const d = taskDay(), total = Math.max(1, daysBetween(term.start, g.due)), el = Math.max(0, Math.min(total, daysBetween(term.start, d)));
+  const expect = (+g.target || 0) * el / total;
+  const vals = g.values || [], actual = vals.length ? +vals[vals.length - 1].value : 0;
+  const behind = el >= 3 && expect > 0 && actual < expect * (1 - BEHIND);
+  return { expect, actual, behind, frac: Math.min(1, actual / Math.max(1e-9, +g.target || 1)), efrac: Math.min(1, expect / Math.max(1e-9, +g.target || 1)) };
+}
+const openEmergencies = () => staff.doc.emergencies.filter(e => !e.resolvedAt);
+function taskStatusByName(name){ const t = state.tasks.find(x => x.def.name === name); return t ? t.status : null; }
+
+function renderStaff(box){
+  const term = currentTerm(), ms = (state.gov && state.gov.ministries) || [];
+  const nameOf = tag => (ms.find(m => m.tag === tag) || { name: tag }).name;
+  box.style.setProperty("--mc", colorOf(ALL.tag));
+  let h = '<button type="button" class="back" data-back>‹ 省の一覧</button><div class="mh"><h2>参謀本部</h2>' +
+    (term ? "<span>" + esc(term.name) + "</span>" : "") + "</div>";
+  // 緊急会議(決めるまで消えない)
+  const emg = openEmergencies();
+  h += emg.map(e => { const t = staff.doc.terms.find(x => x.id === e.termId), g = t && (t.goals || []).find(x => x.id === e.goalId);
+    if (!g) return '<div class="emg"><h4>緊急会議:' + esc(t ? t.name : "") + "の総括</h4><p style=\"margin:.2rem 0;font-size:.86rem\">" + esc(e.reason) +
+      "。下の「総括(期を閉じる)」で目標ごとの結果を書けば片付きます。</p></div>";
+    return '<div class="emg"><h4>緊急会議:' + esc(g ? g.text : "") + '</h4><p style="margin:.2rem 0;font-size:.86rem">' + esc(e.reason) + "(" + esc(e.createdAt) + ")</p>" +
+      '<div class="f"><label>理由・新しい手段</label><textarea id="em-note-' + esc(e.id) + '" style="min-height:3rem"></textarea></div>' +
+      '<div class="f" style="margin-top:.3rem"><label>目標を下げるときの新しい値(下げる場合だけ)</label><input id="em-val-' + esc(e.id) + '" type="number" step="any"></div>' +
+      '<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem">' +
+      ["立て直す", "目標を下げる", "このまま続ける"].map(k => '<button type="button" class="btn sm" data-em="' + esc(e.id) + '" data-em-k="' + k + '">' + k + "</button>").join("") + "</div></div>"; }).join("");
+  if (term) {
+    const left = daysBetween(taskDay(), term.end), half = daysBetween(term.start, term.end) / 2, past = daysBetween(term.start, taskDay());
+    h += '<div class="slogan"><div class="gen">' + esc(term.name) + "　" + esc(term.start) + "〜" + esc(term.end) + "　残り" + Math.max(0, left) + '日</div><div class="txt">' + esc(term.slogan.text) + "</div>" +
+      (term.slogan.note ? "<p>" + esc(term.slogan.note) + "</p>" : "") + "</div>" +
+      '<div class="chips">' + (term.focus || []).map(t => '<span class="chip focus">重点 ' + esc(nameOf(t)) + "</span>").join("") +
+      (term.restrain || []).map(t => '<span class="chip restrain">抑制 ' + esc(nameOf(t)) + "</span>").join("") + "</div>" +
+      '<div class="sec"><h3>目標</h3>' + (term.goals || []).map(g => { const L = goalLine(term, g), st = taskStatusByName(g.firstStep.name);
+        return '<div class="goal' + (L.behind ? " behind" : "") + '"><b>' + esc(g.text) + '</b><div style="font-size:.8rem;color:var(--sub)">' + esc(nameOf(g.tag)) + "　基準:" + esc(g.criterion) + "　期日 " + esc(g.due) + "</div>" +
+          '<div class="gl"><i style="width:' + (L.frac * 100).toFixed(1) + '%"></i><b style="left:' + (L.efrac * 100).toFixed(1) + '%"></b></div>' +
+          '<div style="font-size:.8rem">今 ' + L.actual + " / " + g.target + esc(g.unit || "") + "　(今日の線 " + L.expect.toFixed(1) + ")" + (L.behind ? ' <b style="color:var(--shu)">遅れ</b>' : "") +
+          "　最初の一歩「" + esc(g.firstStep.name) + "」" + (st ? "(" + esc(st) + ")" : "") + "</div>" +
+          (g.result ? '<div class="decree">' + esc(g.result) + (g.resultNote ? "　" + esc(g.resultNote) : "") + "</div>"
+            : '<div class="addrow"><input id="gv-' + esc(g.id) + '" type="number" step="any" placeholder="今の値"><button type="button" class="btn sm" data-gval="' + esc(g.id) + '">記録</button></div>') + "</div>"; }).join("") + "</div>" +
+      // 中間点検・重点の変更・総括
+      '<div class="sec"><h3>点検</h3>' +
+        (term.midpoint ? '<div class="decree"><div class="dd">中間点検 ' + esc(term.midpoint.date) + "</div>" + esc(term.midpoint.note) + "</div>"
+          : (past >= half ? '<div class="f"><label>中間点検(期の半ばを過ぎました)</label><textarea id="mp-note" style="min-height:3rem" placeholder="目標の進み具合と、後半の方針"></textarea></div><button type="button" class="btn sm" data-midpoint>中間点検を記録</button>'
+            : '<p style="font-size:.84rem;color:var(--sub)">中間点検は ' + esc(addDays(term.start, Math.ceil(half))) + " から。</p>")) +
+        ((term.focusChanges || []).length ? '<p style="font-size:.84rem;color:var(--sub)">重点の変更はこの期ではもう使いました(' + esc(term.focusChanges[0].date) + ")。</p>"
+          : '<details class="fold"><summary>重点を変える(期に1回まで)</summary>' + focusPicker(ms, term.focus, term.restrain) +
+            '<div class="f"><label>変える理由</label><textarea id="fc-why" style="min-height:3rem"></textarea></div><button type="button" class="btn sm" data-focus-change>重点を変える</button></details>') +
+        '<details class="fold"' + (left <= 7 ? " open" : "") + '><summary>総括(期を閉じる)</summary>' + (term.goals || []).map(g =>
+          '<div class="f" style="margin-top:.4rem"><label>' + esc(g.text) + '</label><select id="rv-' + esc(g.id) + '"><option value="">選ぶ</option><option>達成</option><option>未達</option></select>' +
+          '<input id="rn-' + esc(g.id) + '" placeholder="理由" style="margin-top:.2rem"></div>').join("") +
+          '<button type="button" class="btn sm" data-close-term style="margin-top:.5rem">総括して期を閉じる</button></details></div>';
+  } else {
+    h += staff.draft ? termForm(staff.draft, ms) :
+      '<p style="font-size:.88rem;color:var(--sub)">今は作戦期がありません。作戦期を立てて発令すると、目標が行軍表のタスクになり、重点と抑制が国力と毎日の順番に効きます。</p><button type="button" class="btn" data-term-new>作戦期を立てる</button>';
+  }
+  const past = staff.doc.terms.filter(t => t.closedAt).reverse();
+  h += foldHtml("これまでの作戦期", past.map(t => '<div class="decree"><div class="dd">' + esc(t.name) + "　" + esc(t.start) + "〜" + esc(t.end) + "</div>" + esc(t.slogan.text) +
+    (t.goals || []).map(g => "<br>・" + esc(g.text) + ":" + esc(g.result || "—")).join("") + "</div>").join(""), past.length);
+  h += '<span class="status" id="sf-msg"></span><div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(ALL) + "</div>";
+  box.innerHTML = h;
+}
+function focusPicker(ms, focus, restrain){
+  return '<div style="margin:.4rem 0"><div style="font-size:.78rem;color:var(--sub)">重点にする省</div><div class="chips">' + ms.map(m => '<label class="chip"><input type="checkbox" data-pick-focus value="' + esc(m.tag) + '"' + ((focus || []).includes(m.tag) ? " checked" : "") + "> " + esc(m.name) + "</label>").join("") + "</div>" +
+    '<div style="font-size:.78rem;color:var(--sub);margin-top:.3rem">抑える省</div><div class="chips">' + ms.map(m => '<label class="chip"><input type="checkbox" data-pick-restrain value="' + esc(m.tag) + '"' + ((restrain || []).includes(m.tag) ? " checked" : "") + "> " + esc(m.name) + "</label>").join("") + "</div></div>";
+}
+function termForm(d, ms){
+  const g = (d.goals || []).map((x, i) => '<div class="gform"><b>目標' + (i + 1) + "</b>" +
+    '<div class="f"><label>目標</label><input data-g="text" data-i="' + i + '" value="' + esc(x.text) + '" placeholder="英検準1級に合格できる力をつける"></div>' +
+    '<div class="f"><label>測れる基準</label><input data-g="criterion" data-i="' + i + '" value="' + esc(x.criterion) + '" placeholder="過去問で7割"></div>' +
+    '<div class="grid2"><div class="f"><label>目標の値</label><input data-g="target" data-i="' + i + '" type="number" step="any" value="' + esc(x.target) + '"></div>' +
+    '<div class="f"><label>単位</label><input data-g="unit" data-i="' + i + '" value="' + esc(x.unit) + '" placeholder="%・回・ページ"></div>' +
+    '<div class="f"><label>期日</label><input data-g="due" data-i="' + i + '" type="date" value="' + esc(x.due) + '"></div>' +
+    '<div class="f"><label>担当の省</label><select data-g="tag" data-i="' + i + '"><option value="">選ぶ</option>' + ms.map(m => '<option value="' + esc(m.tag) + '"' + (m.tag === x.tag ? " selected" : "") + ">" + esc(m.name) + "</option>").join("") + "</select></div></div>" +
+    '<div class="grid2"><div class="f"><label>最初の一歩(5分でできること)</label><input data-g="step" data-i="' + i + '" value="' + esc(x.step) + '" placeholder="過去問を1題だけ解く"></div>' +
+    '<div class="f"><label>いつやるか</label><select data-g="slot" data-i="' + i + '">' + ["朝", "昼", "夜"].map(s => "<option" + (s === x.slot ? " selected" : "") + ">" + s + "</option>").join("") + "</select></div></div>" +
+    '<button type="button" class="btn ghost sm" data-g-del="' + i + '">この目標を外す</button></div>').join("");
+  return '<div class="sec"><h3>作戦期を立てる</h3>' +
+    '<div class="grid2"><div class="f"><label>名前</label><input id="tf-name" value="' + esc(d.name) + '"></div><div class="f"><label>始め</label><input id="tf-start" type="date" value="' + esc(d.start) + '"></div>' +
+    '<div class="f"><label>終わり</label><input id="tf-end" type="date" value="' + esc(d.end) + '"></div></div>' +
+    '<div class="f" style="margin-top:.4rem"><label>スローガン</label><input id="tf-slogan" value="' + esc(d.slogan.text) + '"></div>' +
+    '<div class="f" style="margin-top:.4rem"><label>スローガンの概要</label><textarea id="tf-note" style="min-height:3rem">' + esc(d.slogan.note) + "</textarea></div>" +
+    focusPicker(ms, d.focus, d.restrain) + g +
+    ((d.goals || []).length < MAX_GOALS ? '<button type="button" class="btn ghost sm" data-g-add>目標を足す(3つまで)</button>' : "") +
+    '<div style="margin-top:.8rem;display:flex;gap:.5rem"><button type="button" class="btn" data-term-issue>発令する</button><button type="button" class="btn ghost" data-term-cancel>やめる</button></div></div>';
+}
+function readTermForm(d){
+  const v = id => (document.getElementById(id) || {}).value;
+  d.name = (v("tf-name") || "").trim(); d.start = v("tf-start"); d.end = v("tf-end");
+  d.slogan = { title: d.name, text: (v("tf-slogan") || "").trim(), note: (v("tf-note") || "").trim() };
+  d.focus = Array.from(document.querySelectorAll("[data-pick-focus]:checked")).map(x => x.value);
+  d.restrain = Array.from(document.querySelectorAll("[data-pick-restrain]:checked")).map(x => x.value);
+  document.querySelectorAll("[data-g]").forEach(el => { const g = d.goals[+el.dataset.i]; if (g) g[el.dataset.g] = el.value.trim ? el.value.trim() : el.value; });
+}
+// 発令の条件:行動に落ちない目標は発令できない
+function issueProblems(d){
+  const p = [];
+  if (!d.name) p.push("名前"); if (!d.start || !d.end || d.end <= d.start) p.push("期間");
+  if (!d.slogan.text) p.push("スローガン");
+  if (!(d.goals || []).length) p.push("目標(1つ以上)");
+  if ((d.goals || []).length > MAX_GOALS) p.push("目標は3つまで");
+  (d.goals || []).forEach((g, i) => {
+    const miss = [];
+    if (!g.text) miss.push("目標"); if (!g.criterion) miss.push("測れる基準"); if (!(+g.target > 0)) miss.push("目標の値");
+    if (!g.due || g.due < d.start || g.due > d.end) miss.push("期日(期間の中)"); if (!g.tag) miss.push("担当の省"); if (!g.step) miss.push("最初の一歩"); if (!g.slot) miss.push("いつやるか");
+    if (miss.length) p.push("目標" + (i + 1) + "の" + miss.join("・"));
+  });
+  const both = (d.focus || []).filter(t => (d.restrain || []).includes(t));
+  if (both.length) p.push("重点と抑制の両方に入っている省");
+  return p;
+}
+async function sha1Id(name, date){
+  const buf = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(name.trim() + "|" + date));
+  return "t" + Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 10);
+}
+const CHECK_TASK = "参謀本部の点検";
+// 発令:目標の最初の一歩と、毎週の点検をタスクとして行軍表に入れ、期間を計画タブに入れる
+async function issueTerm(d){
+  const day = taskDay();
+  const tasks = [];
+  for (const g of d.goals) tasks.push({ name: g.step, tag: g.tag, slot: g.slot, requirement: "参謀本部の目標:" + g.text, interval: "", kind: "習慣型" });
+  tasks.push({ name: CHECK_TASK, tag: null, slot: "夜", requirement: "参謀本部で目標の進み具合を見る", interval: "日", kind: "習慣型" });
+  for (let i = 0; i < 3; i++) {
+    const r = await readJson("roadmap/tasks/overlay.json");
+    const ov = r.data || { version: 1, tasks: {}, newTasks: [] }; ov.newTasks = ov.newTasks || [];
+    const have = new Set(ov.newTasks.map(t => t.name).concat(state.tasks.filter(t => !["アーカイブ", "達成済み"].includes(t.status)).map(t => t.def.name)));
+    for (const t of tasks) {
+      if (have.has(t.name)) continue;
+      ov.newTasks.push({ id: await sha1Id(t.name, day), name: t.name, aliases: [], ministries: t.tag ? [t.tag] : [], waves: [], slot: t.slot, stance: "攻", kind: t.kind,
+        interval: t.interval, weight: null, quota: null, requirement: t.requirement, created: day, initial: { status: "新規" },
+        generations: [{ gen: 1, from: day, target: 10 }], events: [], staff: true });
+    }
+    try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); break; } catch (e) { if (e.status !== 409 && e.status !== 422) throw e; }
+  }
+  for (let i = 0; i < 3; i++) {
+    const r = await readJson("roadmap/plan.json");
+    const pl = r.data || { version: 1, items: [] }; pl.items = pl.items || [];
+    if (!pl.items.some(x => x.staffTerm === d.id))
+      pl.items.push({ id: uid(), type: "period", lane: "全体", name: d.name, grain: "季", start: d.start, end: d.end, goal: d.slogan.text + " / " + d.goals.map(g => g.text + "(" + g.due + ")").join("・"), staffTerm: d.id });
+    try { await writeJson("roadmap/plan.json", pl, r.sha); break; } catch (e) { if (e.status !== 409 && e.status !== 422) throw e; }
+  }
+  const term = { id: d.id, name: d.name, start: d.start, end: d.end, slogan: d.slogan, focus: d.focus, restrain: d.restrain, issuedAt: nowIso(),
+    goals: d.goals.map(g => ({ id: g.id, text: g.text, criterion: g.criterion, target: +g.target, unit: g.unit, due: g.due, tag: g.tag, firstStep: { name: g.step, slot: g.slot }, values: [] })) };
+  return saveStaff(doc => { doc.terms.push(term); });
+}
+
+function bindStaff(){
+  document.getElementById("detail").addEventListener("click", async e => {
+    if (state.open !== ALL.tag) return;
+    const q = s => e.target.closest(s); let b;
+    const term = currentTerm();
+    if (q("[data-term-new]")) {
+      const d0 = taskDay(), end = new Date(Date.parse(d0 + "T00:00:00Z")); end.setUTCMonth(end.getUTCMonth() + 3);
+      const n = staff.doc.terms.length + 1;
+      staff.draft = { id: uid(), name: "第" + n + "次作戦期", start: d0, end: addDays(end.toISOString().slice(0, 10), -1), slogan: { text: "", note: "" }, focus: [], restrain: [],
+        goals: [{ id: uid(), text: "", criterion: "", target: "", unit: "", due: "", tag: "", step: "", slot: "朝" }] };
+      return renderDetail();
+    }
+    if (q("[data-term-cancel]")) { staff.draft = null; return renderDetail(); }
+    if (staff.draft && q("[data-g-add]")) { readTermForm(staff.draft); if (staff.draft.goals.length < MAX_GOALS) staff.draft.goals.push({ id: uid(), text: "", criterion: "", target: "", unit: "", due: "", tag: "", step: "", slot: "朝" }); return renderDetail(); }
+    if (staff.draft && (b = q("[data-g-del]"))) { readTermForm(staff.draft); staff.draft.goals.splice(+b.dataset.gDel, 1); return renderDetail(); }
+    if (staff.draft && q("[data-term-issue]")) {
+      readTermForm(staff.draft);
+      const p = issueProblems(staff.draft);
+      if (p.length) return sfMsg("発令できません。足りないもの:" + p.join("、"), true);
+      try { if (await issueTerm(staff.draft)) { staff.draft = null; renderDetail(); sfMsg("発令しました。最初の一歩と毎週の点検が行軍表のタスクになりました。"); } }
+      catch (err) { sfMsg(err.message, true); }
+      return;
+    }
+    if (term && (b = q("[data-gval]"))) {
+      const id = b.dataset.gval, v = document.getElementById("gv-" + id).value; if (v === "") return;
+      await saveStaff(doc => { const t = doc.terms.find(x => x.id === term.id), g = t.goals.find(x => x.id === id); g.values = (g.values || []).concat([{ date: taskDay(), value: +v }]); });
+      return renderDetail();
+    }
+    if ((b = q("[data-em]"))) {
+      const id = b.dataset.em, kind = b.dataset.emK, note = (document.getElementById("em-note-" + id).value || "").trim(), nv = document.getElementById("em-val-" + id).value;
+      if (!note) return sfMsg("理由を書いてから決めてください。", true);
+      if (kind === "目標を下げる" && !(+nv > 0)) return sfMsg("下げた新しい目標の値を入れてください。", true);
+      await saveStaff(doc => {
+        const em = doc.emergencies.find(x => x.id === id); if (!em || em.resolvedAt) return false;
+        em.resolvedAt = taskDay(); em.decision = kind; em.note = note;
+        if (kind === "目標を下げる") { const t = doc.terms.find(x => x.id === em.termId), g = t && t.goals.find(x => x.id === em.goalId); if (g) { g.lowered = (g.lowered || []).concat([{ date: taskDay(), from: g.target, to: +nv, why: note }]); g.target = +nv; } }
+      });
+      return renderDetail();
+    }
+    if (term && q("[data-midpoint]")) {
+      const note = (document.getElementById("mp-note").value || "").trim(); if (!note) return sfMsg("中間点検の内容を書いてください。", true);
+      await saveStaff(doc => { doc.terms.find(x => x.id === term.id).midpoint = { date: taskDay(), note }; }); return renderDetail();
+    }
+    if (term && q("[data-focus-change]")) {
+      const why = (document.getElementById("fc-why").value || "").trim(); if (!why) return sfMsg("変える理由を書いてください。", true);
+      const focus = Array.from(document.querySelectorAll("[data-pick-focus]:checked")).map(x => x.value), restrain = Array.from(document.querySelectorAll("[data-pick-restrain]:checked")).map(x => x.value);
+      await saveStaff(doc => { const t = doc.terms.find(x => x.id === term.id); if ((t.focusChanges || []).length) return false;
+        t.focusChanges = [{ date: taskDay(), why, from: { focus: t.focus, restrain: t.restrain } }]; t.focus = focus; t.restrain = restrain; });
+      return renderDetail();
+    }
+    if (term && q("[data-close-term]")) {
+      const res = term.goals.map(g => ({ id: g.id, r: document.getElementById("rv-" + g.id).value, n: (document.getElementById("rn-" + g.id).value || "").trim() }));
+      if (res.some(x => !x.r || !x.n)) return sfMsg("目標ごとに達成か未達かと、その理由を書いてください。", true);
+      await saveStaff(doc => { const t = doc.terms.find(x => x.id === term.id); t.goals.forEach(g => { const x = res.find(y => y.id === g.id); g.result = x.r; g.resultNote = x.n; }); t.closedAt = taskDay();
+        // 総括したら、この期の緊急会議は片付く
+        doc.emergencies.forEach(e => { if (e.termId === t.id && !e.resolvedAt) { e.resolvedAt = taskDay(); e.decision = "総括した"; } }); });
+      sfMsg("総括しました。次の作戦期を立ててください。"); return renderDetail();
+    }
+  });
+}
+
 /* ───── 保存 ───── */
 async function commitReview(month, mutate){
   const path = P.reviews + "/" + month + ".json";
@@ -1177,6 +1416,7 @@ function bind(){
     renderOrders();
   });
   bindGov();
+  bindStaff();
   document.getElementById("sync").addEventListener("click", syncNow);
   document.getElementById("detail").addEventListener("click", async e => {
     if (e.target.closest("[data-back]")) { state.open = null; state.editPurpose = false; render(); return; }
@@ -1252,7 +1492,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
