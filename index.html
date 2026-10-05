@@ -36,10 +36,32 @@ button,input,select,textarea{font:inherit;color:inherit}
 .f input,.f select,textarea{width:100%;padding:.4rem .5rem;border:1px solid var(--rule);border-radius:3px;background:#fff}
 textarea{min-height:7rem;line-height:1.6}
 .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(9rem,1fr));gap:.5rem .7rem}
+/* 省の色 */
+.mlist li{border-left:6px solid var(--mc,var(--rule));margin:.25rem 0;background:var(--sheet);border-radius:0 3px 3px 0}
+.mlist button{padding:.7rem .7rem}
+.mlist .mn{color:var(--mc)}
+.mh{border-bottom-color:var(--mc,var(--ink))!important}
+.mh h2{color:var(--mc)}
+.purpose-box{border-left:4px solid var(--mc,var(--shu));background:var(--sheet);padding:.6rem .8rem;margin:.7rem 0;border-radius:0 3px 3px 0}
+.purpose-box h3{margin:0 0 .3rem;font-size:.9rem;letter-spacing:.12em;color:var(--mc)}
+.purpose-box p{margin:0;white-space:pre-wrap;font-size:.92rem}
+.purpose-box .seed{font-size:.76rem;color:var(--sub);margin-top:.3rem}
+.allcard{display:block;width:100%;text-align:left;border:none;cursor:pointer;background:var(--ink);color:var(--paper);
+  border-radius:4px;padding:.9rem 1rem;margin:0 0 1rem}
+.allcard .an{font-size:.8rem;letter-spacing:.2em;opacity:.75}
+.allcard .as{font-size:1.15rem;font-weight:700;margin:.15rem 0;line-height:1.4}
+.allcard .badge{background:var(--shu)}
+.slogan{background:var(--ink);color:var(--paper);border-radius:4px;padding:.8rem 1rem;margin:.7rem 0}
+.slogan .gen{font-size:.78rem;opacity:.75;letter-spacing:.15em}
+.slogan .txt{font-size:1.2rem;font-weight:700;margin:.2rem 0;line-height:1.4}
+.slogan p{margin:.3rem 0 0;font-size:.88rem;opacity:.9;white-space:pre-wrap}
+.slogan .btn{border-color:var(--paper);color:var(--paper);background:transparent}
+.slogan textarea,.slogan input{color:var(--ink)}
+.syncbar{display:flex;gap:.6rem;align-items:center;margin:0 0 .8rem;flex-wrap:wrap}
 /* 一覧 */
 .mlist{list-style:none;margin:0;padding:0}
 .mlist button{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.2rem 1rem;width:100%;text-align:left;border:none;background:none;
-  padding:.75rem .2rem;border-bottom:1px solid var(--rule);cursor:pointer;align-items:baseline}
+  cursor:pointer;align-items:baseline}
 .mlist .mn{font-weight:700;font-size:1.05rem;letter-spacing:.06em}
 .mlist .mp{font-variant-numeric:tabular-nums;font-weight:700;text-align:right}
 .mlist .mm{grid-column:1/3;font-size:.78rem;color:var(--sub);display:flex;gap:.8rem;flex-wrap:wrap}
@@ -98,6 +120,25 @@ textarea{min-height:7rem;line-height:1.6}
 .hentry{border-top:1px solid var(--rule);padding:.5rem 0;font-size:.86rem}
 .hentry .hd{font-weight:700;color:var(--sub);font-size:.8rem}
 .hentry p{margin:.2rem 0;white-space:pre-wrap}
+/* 政府 */
+.organs{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr));gap:.6rem}
+.organ{border:1px solid var(--rule);background:var(--sheet);border-radius:4px;padding:.8rem;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.organ b{display:block;font-size:1.05rem;letter-spacing:.08em;margin-bottom:.2rem}
+.organ span{font-size:.78rem;color:var(--sub)}
+.decree{border-left:4px solid var(--shu);background:var(--sheet);padding:.5rem .8rem;margin:.4rem 0;font-size:.88rem}
+.decree .dd{font-size:.76rem;color:var(--sub)}
+.art{padding:.5rem 0;border-bottom:1px solid var(--rule)}
+.art h4{margin:0 0 .2rem;font-size:.95rem}
+.art p{margin:0;white-space:pre-wrap;font-size:.9rem;line-height:1.75}
+.art .amd{display:inline-block;font-size:.7rem;border:1px solid var(--shu);color:var(--shu);border-radius:3px;padding:0 .35rem;margin-left:.4rem}
+.item{border:1px solid var(--rule);background:var(--sheet);border-radius:3px;padding:.55rem .7rem;margin:.4rem 0;cursor:pointer;display:flex;justify-content:space-between;gap:.6rem;align-items:baseline;width:100%;text-align:left;font:inherit;color:inherit}
+.st{font-size:.74rem;border-radius:3px;padding:0 .4rem;border:1px solid var(--rule);white-space:nowrap}
+.st.ok{border-color:var(--ok);color:var(--ok)}.st.ng{border-color:var(--shu);color:var(--shu)}.st.live{background:var(--shu);color:#fff;border-color:var(--shu)}
+.diff{display:grid;gap:.3rem;margin:.4rem 0}
+.diff .old{background:#F4E4E0;padding:.4rem .6rem;white-space:pre-wrap;font-size:.86rem;text-decoration:line-through;text-decoration-color:rgba(181,67,47,.5)}
+.diff .new{background:#E3EEE6;padding:.4rem .6rem;white-space:pre-wrap;font-size:.86rem}
+.timer{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;margin:.4rem 0;color:var(--shu)}
+.lock{font-size:.82rem;color:var(--sub);border:1px dashed var(--rule);padding:.4rem .6rem;margin:.5rem 0}
 /* タブ */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-top:1px solid var(--rule);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs button{flex:1;border:none;background:none;padding:.8rem 0;cursor:pointer;color:var(--sub);font-weight:700}
@@ -109,8 +150,14 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
   <section class="view" id="view-list">
     <header class="head"><h1>省</h1><div class="date" id="stamp">—</div></header>
     <div id="notices"></div>
+    <div class="syncbar"><button type="button" class="btn ghost sm" id="sync">Notionと同期</button><span class="status" id="sync-status"></span></div>
     <div id="list"></div>
     <div id="detail" hidden></div>
+  </section>
+
+  <section class="view" id="view-gov" hidden>
+    <header class="head"><h1>政府</h1><div class="date">憲法と評議会</div></header>
+    <div id="gov"></div>
   </section>
 
   <section class="view" id="view-orders" hidden>
@@ -136,26 +183,41 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 </div>
 <nav class="tabs" role="tablist">
   <button role="tab" aria-selected="true" data-view="list">省</button>
+  <button role="tab" aria-selected="false" data-view="gov">政府</button>
   <button role="tab" aria-selected="false" data-view="orders">指令</button>
   <button role="tab" aria-selected="false" data-view="settings">設定</button>
 </nav>
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-05 r1";
+const APP_VERSION = "2026-10-05 r4";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
 const PERIODS = [["日", "1日"], ["週", "1週間"], ["月", "1ヶ月"], ["季", "3ヶ月"]];
+const NOTES = "roadmap/gov/notes.json";          // アプリで書くもの(目的・スローガン)
+// 体制全体。省と同じ首脳を持ち、スローガンを掲げる。旧「総合的分析と戦略」の役割
+const ALL = { tag: "全体", name: "体制全体" };
+const DEFAULT_SLOGANS = [{ title: "第一次スローガン", text: "狂気の時代!全方向へ全力に拡大しろ!",
+  note: "ほとんどの活動の基礎となる学力(受験に使う科目)、身体能力、経済能力などの能力を向上する。よってこのような省に重要度を重めに設定し、その他の文化的な省庁の重要度を低めに設定する。", from: "2026-08-01" }];
+const slogans = () => (state.notes.slogans && state.notes.slogans.length) ? state.notes.slogans : DEFAULT_SLOGANS;
+// 省の色。紙の地で見分けやすい落ち着いた色を、省の名前の順に割り当てる
+const COLORS = ["#B5432F","#2F4F8A","#3D7A55","#8A5A9E","#B07D2A","#2C7F8C","#A8476F","#5B6E2E","#7A4E2D","#3E5FA8","#B06A3B","#4D7F6E","#8C3A3A","#6A5A9E","#4F6D8A","#8A7A2E"];
+function colorOf(tag){
+  if (tag === ALL.tag) return "#26221E";
+  const ms = ((state.gov && state.gov.ministries) || []).map(m => m.tag).sort((a, b) => a.localeCompare(b, "ja"));
+  const i = Math.max(0, ms.indexOf(tag));
+  return COLORS[i % COLORS.length];
+}
 
 const state = { conn: null, gov: null, stats: null, defs: null, overlay: { tasks: {}, newTasks: [] }, logs: {}, applogs: {},
-  reviews: {}, reviewShas: {}, loadedMonths: new Set(), open: null, period: "日", tasks: [] };
+  reviews: {}, reviewShas: {}, loadedMonths: new Set(), open: null, period: "日", tasks: [], notes: { purposes: {} }, notesSha: null, editPurpose: false, editSlogan: false };
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const lsGet = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 // 1日は朝5時区切り(行軍表と同じ)
-const taskDay = () => new Date(Date.now() + 4 * 3600e3).toISOString().slice(0, 10);
+const taskDay = () => window.__shoToday || new Date(Date.now() + 4 * 3600e3).toISOString().slice(0, 10);
 const addDays = (d, n) => new Date(Date.parse(d + "T00:00:00Z") + n * 864e5).toISOString().slice(0, 10);
 
 /* ───── 期間 ───── */
@@ -254,8 +316,9 @@ async function loadAll(){
   if (!state.conn || !state.conn.token) { showView("settings"); return false; }
   status("読み込んでいます…");
   try {
-    const [g, st, d, o, lf, af] = await Promise.all([readJson(P.gov), readJson(P.stats).catch(() => ({})), readJson(P.defs), readJson(P.overlay),
-                                                     listDir(P.log), listDir(P.applog)]);
+    const [g, st, d, o, lf, af, nt] = await Promise.all([readJson(P.gov), readJson(P.stats).catch(() => ({})), readJson(P.defs), readJson(P.overlay),
+                                                     listDir(P.log), listDir(P.applog), readJson(NOTES)]);
+    state.notes = (nt.data && nt.data.purposes) ? nt.data : { purposes: {} }; state.notesSha = nt.sha;
     state.gov = g.data; state.stats = st.data || null; state.defs = d.data;
     state.overlay = o.data || { tasks: {}, newTasks: [] };
     state.logs = await readMonths(P.log, lf);
@@ -265,8 +328,9 @@ async function loadAll(){
     await loadReviewMonth(now.slice(0, 7));
     await loadReviewMonth(periodPrev("季", periodStart("季", now)).slice(0, 7)); // 3ヶ月の前回ぶんまで
     await loadReviewMonth(addDays(now.slice(0, 8) + "01", -1).slice(0, 7));
+    await loadGov().catch(() => {});
     computeTasks();
-    lsSet(KEY_CACHE, { gov: state.gov, stats: state.stats, reviews: state.reviews, reviewShas: state.reviewShas });
+    lsSet(KEY_CACHE, { gov: state.gov, stats: state.stats, reviews: state.reviews, reviewShas: state.reviewShas, notes: state.notes });
     status("読み込みました");
     render();
     return true;
@@ -316,15 +380,18 @@ function openOrders(tag){
 function render(){
   document.getElementById("stamp").textContent = state.gov ? ("Notionから " + state.gov.generated_at) : "—";
   renderNotice(state.gov ? "" : "まだ書き出しがありません。毎朝の計算(App daily)が一度動くと出ます。");
-  renderList(); renderDetail(); renderOrders();
+  renderList(); renderDetail(); renderOrders(); renderGov();
 }
 function renderList(){
   const box = document.getElementById("list");
   const ms = (state.gov && state.gov.ministries) || [];
   box.hidden = !!state.open;
-  box.innerHTML = '<ul class="mlist">' + ms.map(m => {
+  const sl = slogans()[slogans().length - 1], openAll = openOrders(ALL.tag).length;
+  box.innerHTML = '<button type="button" class="allcard" data-open="' + ALL.tag + '"><div class="an">体制全体' +
+      (openAll ? ' <span class="badge">' + openAll + "</span>" : "") + '</div><div class="as">' + esc(sl.text) + '</div><div class="an">' + esc(sl.title) + "</div></button>" +
+    '<ul class="mlist">' + ms.map(m => {
     const p = powerOf(m.tag), open = openOrders(m.tag).length;
-    return '<li><button type="button" data-open="' + esc(m.tag) + '"><span class="mn">' + esc(m.name) +
+    return '<li style="--mc:' + colorOf(m.tag) + '"><button type="button" data-open="' + esc(m.tag) + '"><span class="mn">' + esc(m.name) +
       (open ? ' <span class="badge">' + open + "</span>" : "") + '</span><span class="mp">' + (p ? Number(p.power).toFixed(1) : "—") + "</span>" +
       '<span class="mm"><span>STAGE ' + m.stages.length + "</span><span>WAVE " + m.waves.length + "</span>" +
       (p ? "<span>支配 " + Math.round(p.dominance) + "</span><span>領土 " + p.territory + "</span>" : "") + "</span></button></li>";
@@ -386,19 +453,52 @@ function reviewHtml(m){
         ((e.orders || []).length ? '<ul class="orders">' + e.orders.map(o => '<li class="' + (o.done ? "done" : "") + '"><span>' + (o.done ? "✓" : "・") + '</span><span class="ot">' + esc(o.text) + "</span></li>").join("") + "</ul>" : "") + "</div>").join("") +
       "</details>" : "") + '<button type="button" class="btn ghost sm" data-older style="margin-top:.5rem">もっと前を読む</button></div>';
 }
+function currentMinistry(){
+  if (state.open === ALL.tag) return ALL;
+  return state.open && state.gov && state.gov.ministries.find(x => x.tag === state.open);
+}
+function renderAll(box){
+  const list = slogans(), cur = list[list.length - 1], past = list.slice(0, -1).reverse();
+  box.style.setProperty("--mc", colorOf(ALL.tag));
+  const edit = state.editSlogan;
+  box.innerHTML = '<button type="button" class="back" data-back>‹ 省の一覧</button>' +
+    '<div class="mh"><h2>体制全体</h2></div>' +
+    '<div class="slogan">' + (edit
+      ? '<div class="f"><label style="color:var(--paper)">名前</label><input id="sl-title" value="' + esc(edit === "new" ? "" : cur.title) + '" placeholder="第二次スローガン"></div>' +
+        '<div class="f" style="margin-top:.4rem"><label style="color:var(--paper)">スローガン</label><input id="sl-text" value="' + esc(edit === "new" ? "" : cur.text) + '"></div>' +
+        '<div class="f" style="margin-top:.4rem"><label style="color:var(--paper)">概要</label><textarea id="sl-note">' + esc(edit === "new" ? "" : cur.note) + '</textarea></div>' +
+        '<div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center"><button type="button" class="btn sm" data-sl-save>保存する</button><button type="button" class="btn sm" data-sl-cancel>やめる</button><span class="status" id="pp-status"></span></div>'
+      : '<div class="gen">' + esc(cur.title) + (cur.from ? "　" + esc(cur.from) + "から" : "") + '</div><div class="txt">' + esc(cur.text) + "</div>" +
+        (cur.note ? "<p>" + esc(cur.note) + "</p>" : "") +
+        '<div style="margin-top:.6rem;display:flex;gap:.5rem"><button type="button" class="btn sm" data-sl-edit>直す</button><button type="button" class="btn sm" data-sl-new>新しいスローガンにする</button></div>') +
+    "</div>" +
+    (past.length ? '<details class="more"><summary style="cursor:pointer;color:var(--sub);font-size:.86rem">これまでのスローガン ' + past.length + "件</summary>" +
+      past.map(x => '<div class="hentry"><div class="hd">' + esc(x.title) + (x.from ? "　" + esc(x.from) + "から" : "") + "</div><p><b>" + esc(x.text) + "</b></p>" + (x.note ? "<p>" + esc(x.note) + "</p>" : "") + "</div>").join("") + "</details>" : "") +
+    '<div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(ALL) + "</div>";
+}
 function renderDetail(){
   const box = document.getElementById("detail");
-  const m = state.open && state.gov && state.gov.ministries.find(x => x.tag === state.open);
+  const m = currentMinistry();
   box.hidden = !m;
   if (!m) { box.innerHTML = ""; return; }
+  if (m === ALL) { renderAll(box); return; }
   const p = powerOf(m.tag);
   const deps = Object.entries(m.deps || {});
   const rev = state.gov.ministries.filter(x => (x.deps || {})[m.tag] != null).map(x => [x.name, x.deps[m.tag]]);
+  const purpose = state.notes.purposes[m.tag];
+  const seed = purpose == null && m.purpose && m.purpose.text ? m.purpose.text : null;
+  const ptext = purpose != null ? purpose : (seed || "");
+  box.style.setProperty("--mc", colorOf(m.tag));
   box.innerHTML = '<button type="button" class="back" data-back>‹ 省の一覧</button>' +
     '<div class="mh"><h2>' + esc(m.name) + "</h2>" + (p ? '<span>国力 <b>' + Number(p.power).toFixed(1) + "</b>　支配 " + Math.round(p.dominance) + "　領土 " + p.territory + "</span>" : "") + "</div>" +
-    '<div class="links">' + (m.purpose ? '<a class="purpose" href="' + esc(m.purpose.url) + '" target="_blank" rel="noopener">目的</a>' : "") +
-      (m.plan ? '<a href="' + esc(m.plan.url) + '" target="_blank" rel="noopener">計画</a>' : "") +
-      '<a href="' + esc(m.url) + '" target="_blank" rel="noopener">省のページ</a></div>' +
+    '<div class="purpose-box"><h3>目的</h3>' +
+      (state.editPurpose
+        ? '<textarea id="pp-text" placeholder="この省は何のためにあるか">' + esc(ptext) + '</textarea><div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center">' +
+          '<button type="button" class="btn sm" data-pp-save>保存する</button><button type="button" class="btn ghost sm" data-pp-cancel>やめる</button><span class="status" id="pp-status"></span></div>'
+        : (ptext ? "<p>" + esc(ptext) + "</p>" : '<p style="color:var(--sub)">まだ書いていません。</p>') +
+          (seed ? '<div class="seed">Notionの目的のページから読み込んだ文章です。保存すると、以後はこのアプリのものになります。</div>' : "") +
+          '<div style="margin-top:.4rem"><button type="button" class="btn ghost sm" data-pp-edit>' + (ptext ? "直す" : "書く") + "</button></div>") +
+    "</div>" +
     ((m.goal || m.deadline) ? '<dl class="kv">' + (m.goal ? "<dt>到達点</dt><dd>" + esc(m.goal) + "</dd>" : "") +
       (m.deadline ? "<dt>期限</dt><dd>" + esc(m.deadline) + (m.progress != null ? "(進捗 " + Math.round(m.progress * 100) + "%)" : "") + "</dd>" : "") + "</dl>" : "") +
     '<div class="sec"><h3>依存度</h3>' + (deps.length ? '<div class="deps">' + deps.map(([k, v]) => '<span class="dep' + (v < 0 ? " neg" : "") + '">' + esc(k) + " " + v + "</span>").join("") + "</div>" : '<div class="empty">依存先はありません。Notionの省一覧で設定します。</div>') +
@@ -407,20 +507,410 @@ function renderDetail(){
       (m.tide.recent.length ? "<ul>" + m.tide.recent.map(t => "<li>" + esc(t.date) + " " + esc(t.title) + "(" + (t.delta > 0 ? "+" : "") + esc(t.delta) + ")</li>").join("") + "</ul>" : "") + "</div>" +
     '<div class="sec"><h3><i style="background:var(--stage)"></i>STAGE</h3>' + treeHtml(m, "STAGE") + "</div>" +
     '<div class="sec"><h3><i style="background:var(--wave)"></i>WAVE</h3>' + treeHtml(m, "WAVE") + "</div>" +
-    '<div class="sec" id="review"><h3>内省</h3>' + reviewHtml(m) + "</div>";
+    '<div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(m) + "</div>";
 }
 function renderOrders(){
   const box = document.getElementById("orders");
   const list = openOrders(null);
-  if (!list.length) { box.innerHTML = '<div class="empty">済んでいない作戦指令はありません。</div>'; return; }
+  const council = [];
+  for (const it of (gov.council.standing || [])) for (const o of it.orders || []) if (!o.done) council.push({ it, o });
+  const councilHtml = council.length ? '<div class="sec"><h3>常任評議会</h3><ul class="orders">' + council.map(x => '<li><input type="checkbox" data-cc-check="' + esc(x.o.id) +
+    '" data-cc-it="' + esc(x.it.id) + '"><span class="ot">' + esc(x.o.text) + ' <span style="color:var(--sub);font-size:.78rem">' + esc(x.it.title) + "</span></span></li>").join("") + "</ul></div>" : "";
+  if (!list.length) { box.innerHTML = councilHtml || '<div class="empty">済んでいない作戦指令はありません。</div>'; return; }
   const byTag = {};
   for (const x of list) (byTag[x.entry.tag] = byTag[x.entry.tag] || []).push(x);
-  const nameOf = tag => ((state.gov && state.gov.ministries.find(m => m.tag === tag)) || { name: tag }).name;
+  const nameOf = tag => tag === ALL.tag ? ALL.name : ((state.gov && state.gov.ministries.find(m => m.tag === tag)) || { name: tag }).name;
   box.innerHTML = Object.entries(byTag).map(([tag, xs]) => '<div class="sec"><h3>' + esc(nameOf(tag)) + '</h3><ul class="orders">' +
     xs.sort((a, b) => a.entry.start < b.entry.start ? 1 : -1).map(x => '<li><input type="checkbox" data-check="' + esc(x.order.id) + '" data-month="' + esc(x.month) +
       '" data-key="' + esc(x.key) + '" aria-label="実行できた"><span class="ot">' + esc(x.order.text) +
       ' <span style="color:var(--sub);font-size:.78rem">' + esc((PERIODS.find(p => p[0] === x.entry.period) || [0, ""])[1]) + " " + esc(periodLabel(x.entry.period, x.entry.start)) + "</span></span></li>").join("") +
-    "</ul></div>").join("");
+    "</ul></div>").join("") + councilHtml;
+}
+
+
+/* ───────── 政府(憲法・憲政院・最高評議会・常任評議会) ───────── */
+const GOVP = { cons: "roadmap/gov/constitution.json", amend: "roadmap/gov/amendments.json", council: "roadmap/gov/councils.json" };
+const OLD_STANDING = "https://app.notion.com/p/3cc48dd8079581d6ae52ddd90c07a50b";
+const OLD_SUPREME = "https://app.notion.com/p/3bc48dd807958043a0fbf282537a74b1";
+const COOLING_DAYS = 3;          // 改憲は起草した日から2日飛ばし、3日目以降に審議できる(最高評議会の条文)
+const LIMITS = [15, 30, 60, 90];  // 審議の制限時間(分)
+const gov = { cons: null, consSha: null, amend: { items: [] }, amendSha: null, council: { supreme: [], standing: [] }, councilSha: null,
+              view: null, open: null, draft: null };
+const nowIso = () => new Date(window.__shoNow || Date.now()).toISOString();
+
+async function loadGov(){
+  const [c, a, k] = await Promise.all([readJson(GOVP.cons), readJson(GOVP.amend), readJson(GOVP.council)]);
+  gov.cons = c.data; gov.consSha = c.sha;
+  gov.amend = (a.data && a.data.items) ? a.data : { items: [] }; gov.amendSha = a.sha;
+  gov.council = Object.assign({ supreme: [], standing: [] }, k.data || {}); gov.councilSha = k.sha;
+}
+
+// 保存。別の端末で先に変わっていたら読み直して同じ操作をかけ直す
+async function saveGov(which, mutate){
+  const path = GOVP[which], key = which === "cons" ? "cons" : which;
+  const shaKey = key + "Sha";
+  for (let i = 0; i < 3; i++) {
+    try {
+      const ok = mutate();
+      if (ok === false) return false;
+      gov[shaKey] = await writeJson(path, gov[key], gov[shaKey]);
+      return true;
+    } catch (e) {
+      if ((e.status === 409 || e.status === 422) && i < 2) {
+        const fresh = await readJson(path);
+        gov[key] = fresh.data || (which === "amend" ? { items: [] } : which === "council" ? { supreme: [], standing: [] } : null);
+        gov[shaKey] = fresh.sha; continue;
+      }
+      govMsg(e.message || "保存できませんでした", true);
+      return false;
+    }
+  }
+  return false;
+}
+function govMsg(t, err){ const el = document.getElementById("gov-msg"); if (el) { el.textContent = t; el.classList.toggle("err", !!err); } }
+
+// 改憲案の状態。期間と審議の記録から決まる
+function amendStatus(a){
+  if (a.session && a.session.closedAt) return a.session.decision === "可決" ? "可決" : "否決";
+  if (!a.submitted) return "起草中";
+  const d = taskDay();
+  if (a.session && a.session.startedAt) return "審議中";
+  if (d < a.periodStart) return "審議待ち";
+  if (d > a.periodEnd) return "廃案";
+  return "審議できる";
+}
+function sessionLive(sess){ return sess && sess.startedAt && !sess.closedAt; }
+function timeLeft(sess){ return sess ? Math.max(0, Date.parse(sess.endsAt) - Date.parse(nowIso())) : 0; }
+const stClass = st => ({ "可決": "ok", "実施済み": "ok", "議決": "ok", "否決": "ng", "廃案": "ng", "審議中": "live", "審議できる": "live" }[st] || "");
+
+function renderGov(){
+  const box = document.getElementById("gov");
+  if (!box) return;
+  clearInterval(gov.timer);
+  if (!gov.view) return renderGovHome(box);
+  if (gov.view === "憲法") return renderCons(box);
+  if (gov.view === "憲政院") return renderKenseiin(box);
+  if (gov.view === "最高評議会") return renderSupreme(box);
+  if (gov.view === "常任評議会") return renderStanding(box);
+}
+const backBtn = '<button type="button" class="back" data-gback>‹ 政府</button>';
+
+function renderGovHome(box){
+  const live = gov.amend.items.filter(a => ["審議待ち", "審議できる", "審議中"].includes(amendStatus(a))).length;
+  const decrees = gov.council.supreme.filter(x => x.closedAt).slice(-3).reverse();
+  const open = gov.council.standing.filter(x => x.status !== "実施済み").length;
+  box.innerHTML = '<div class="organs">' +
+    '<button type="button" class="organ" data-gview="憲法"><b>憲法</b><span>' + (gov.cons ? "第" + gov.cons.version + "版・" + gov.cons.articles.length + "条" : "まだ写していません") + "</span></button>" +
+    '<button type="button" class="organ" data-gview="憲政院"><b>憲政院</b><span>改憲案の起草' + (live ? "・進行中 " + live : "") + "</span></button>" +
+    '<button type="button" class="organ" data-gview="最高評議会"><b>最高評議会</b><span>改憲と重大国策の審議</span></button>' +
+    '<button type="button" class="organ" data-gview="常任評議会"><b>常任評議会</b><span>議題' + (open ? "・未了 " + open : "") + "</span></button></div>" +
+    (decrees.length ? '<div class="sec"><h3>最高評議会の議決</h3>' + decrees.map(x => '<div class="decree"><div class="dd">' + esc(x.closedAt.slice(0, 10)) + "　" + esc(x.title) +
+      "</div>" + esc(x.decision || "") + "</div>").join("") + "</div>" : "") +
+    '<span class="status" id="gov-msg"></span>';
+}
+
+function renderCons(box){
+  const c = gov.cons;
+  if (!c) { box.innerHTML = backBtn + '<div class="empty">まだ憲法を写していません。notion-daily の Actions で「Constitution import」を動かしてください。</div>'; return; }
+  const changed = {};
+  for (const h of c.history || []) for (const id of h.articles || []) changed[id] = h.version;
+  box.innerHTML = backBtn + '<div class="mh"><h2>' + esc(c.title) + '</h2><span>第' + c.version + "版</span></div>" +
+    '<p class="lock">この本文はここから直接は書き換えられません。変えるには、憲政院で改憲案を起草し、2日あけて最高評議会で可決する必要があります。</p>' +
+    c.articles.map(a => '<div class="art" style="padding-left:' + (a.depth * 0.9) + 'rem"><h4>' + esc(a.title) +
+      (changed[a.id] && changed[a.id] > 1 ? '<span class="amd">第' + changed[a.id] + "版で改正</span>" : "") + "</h4>" + (a.text ? "<p>" + esc(a.text) + "</p>" : "") + "</div>").join("") +
+    '<div class="sec"><h3>改正の履歴</h3>' + (c.history || []).slice().reverse().map(h => '<div class="decree"><div class="dd">第' + h.version + "版　" + esc(h.date) + "</div>" + esc(h.note || "") + "</div>").join("") + "</div>";
+}
+
+function renderKenseiin(box){
+  const d = gov.draft;
+  if (d) return renderDraft(box, d);
+  const items = gov.amend.items.slice().reverse();
+  box.innerHTML = backBtn + '<div class="mh"><h2>憲政院</h2></div>' +
+    '<p style="font-size:.86rem;color:var(--sub)">改憲案はここで練る。審議期間もここで決める。提出したら書き換えられない。</p>' +
+    (gov.cons ? '<button type="button" class="btn" data-new-amend>改憲案を起草する</button>' : '<div class="empty">先に憲法を写してください。</div>') +
+    '<div class="sec">' + (items.length ? items.map(a => { const st = amendStatus(a);
+      return '<button type="button" class="item" data-open-amend="' + esc(a.id) + '"><span>' + esc(a.title) + '<br><span style="font-size:.76rem;color:var(--sub)">起草 ' + esc(a.created) +
+        (a.submitted ? "　審議期間 " + esc(a.periodStart) + "〜" + esc(a.periodEnd) : "") + '</span></span><span class="st ' + stClass(st) + '">' + st + "</span></button>"; }).join("")
+      : '<div class="empty">改憲案はまだありません。</div>') + "</div>" + '<span class="status" id="gov-msg"></span>';
+}
+
+function renderDraft(box, d){
+  const arts = gov.cons.articles;
+  const locked = d.submitted;
+  const earliest = addDays(d.created, COOLING_DAYS);
+  const ch = (d.changes || []).map((c, i) => {
+    const a = arts.find(x => x.id === c.articleId);
+    return '<div class="peditor" style="margin:.4rem 0;background:#fff;border:1px solid var(--rule);padding:.5rem;border-radius:3px">' +
+      '<div class="f"><label>変える条文</label><select data-ch-art="' + i + '"' + (locked ? " disabled" : "") + ">" +
+        arts.map(x => '<option value="' + esc(x.id) + '"' + (x.id === c.articleId ? " selected" : "") + ">" + esc("　".repeat(x.depth) + x.title) + "</option>").join("") + "</select></div>" +
+      (a ? '<div class="diff"><div class="old">' + esc(a.text || "(本文なし)") + "</div></div>" : "") +
+      '<div class="f"><label>新しい文</label><textarea data-ch-text="' + i + '"' + (locked ? " disabled" : "") + ">" + esc(c.newText) + "</textarea></div>" +
+      (locked ? "" : '<button type="button" class="btn ghost sm" data-ch-del="' + i + '">この変更を外す</button>') + "</div>";
+  }).join("");
+  box.innerHTML = '<button type="button" class="back" data-draft-close>‹ 憲政院</button>' +
+    '<div class="mh"><h2>改憲案</h2><span>' + amendStatus(d) + "</span></div>" +
+    (locked ? '<p class="lock">提出済みです。改憲案も審議期間も、もう変えられません。</p>' : "") +
+    '<div class="f"><label>題名</label><input id="am-title" value="' + esc(d.title) + '"' + (locked ? " disabled" : "") + "></div>" +
+    '<div class="f" style="margin-top:.5rem"><label>改正の理由</label><textarea id="am-reason"' + (locked ? " disabled" : "") + ">" + esc(d.reason) + "</textarea></div>" +
+    '<h3 style="font-size:.9rem;margin:1rem 0 .3rem">変える条文</h3>' + ch +
+    (locked ? "" : '<button type="button" class="btn ghost sm" data-ch-add>条文の変更を足す</button>') +
+    '<h3 style="font-size:.9rem;margin:1rem 0 .3rem">審議期間</h3>' +
+    '<p style="font-size:.8rem;color:var(--sub);margin:.1rem 0 .4rem">起草した日(' + esc(d.created) + ")から2日あけるので、始められるのは " + esc(earliest) + " 以降。</p>" +
+    '<div class="grid2"><div class="f"><label>始め</label><input id="am-start" type="date" min="' + earliest + '" value="' + esc(d.periodStart || earliest) + '"' + (locked ? " disabled" : "") + "></div>" +
+    '<div class="f"><label>終わり</label><input id="am-end" type="date" min="' + earliest + '" value="' + esc(d.periodEnd || addDays(earliest, 6)) + '"' + (locked ? " disabled" : "") + "></div></div>" +
+    (locked ? "" : '<div class="row" style="margin-top:.8rem;display:flex;gap:.5rem;flex-wrap:wrap"><button type="button" class="btn ghost" data-draft-save>下書きを保存</button>' +
+      '<button type="button" class="btn" data-draft-submit>提出する</button></div>') +
+    '<span class="status" id="gov-msg"></span>';
+}
+
+function readDraft(d){
+  const v = id => (document.getElementById(id) || {}).value;
+  d.title = (v("am-title") || "").trim(); d.reason = (v("am-reason") || "").trim();
+  d.periodStart = v("am-start") || d.periodStart; d.periodEnd = v("am-end") || d.periodEnd;
+  (d.changes || []).forEach((c, i) => {
+    const a = document.querySelector('[data-ch-art="' + i + '"]'), t = document.querySelector('[data-ch-text="' + i + '"]');
+    if (a) c.articleId = a.value; if (t) c.newText = t.value;
+  });
+}
+function putAmend(d){
+  const items = gov.amend.items;
+  const i = items.findIndex(x => x.id === d.id);
+  const prev = i >= 0 ? items[i] : null;
+  if (prev && prev.submitted) return false;                 // 提出済みは書き換えさせない
+  const copy = JSON.parse(JSON.stringify(d));
+  if (i >= 0) items[i] = copy; else items.push(copy);
+  return true;
+}
+
+function renderSupreme(box){
+  const open = gov.open;
+  if (open && open.kind === "amend") return renderAmendSession(box, gov.amend.items.find(x => x.id === open.id));
+  if (open && open.kind === "policy") return renderPolicySession(box, gov.council.supreme.find(x => x.id === open.id));
+  const amends = gov.amend.items.filter(a => a.submitted).slice().reverse();
+  const pol = gov.council.supreme.slice().reverse();
+  box.innerHTML = backBtn + '<div class="mh"><h2>最高評議会</h2></div>' +
+    '<p style="font-size:.86rem;color:var(--sub)">最高議決機関。審議は制限時間を定めて深く集中して行う。議会終了を宣言した議決は確定し、すべての活動に優先する。</p>' +
+    '<div class="sec"><h3>改憲の審議</h3>' + (amends.length ? amends.map(a => { const st = amendStatus(a);
+      return '<button type="button" class="item" data-open-amend-s="' + esc(a.id) + '"><span>' + esc(a.title) + '<br><span style="font-size:.76rem;color:var(--sub)">審議期間 ' + esc(a.periodStart) + "〜" + esc(a.periodEnd) +
+        '</span></span><span class="st ' + stClass(st) + '">' + st + "</span></button>"; }).join("") : '<div class="empty">提出された改憲案はありません。</div>') + "</div>" +
+    '<div class="sec"><h3>重大国策の審議</h3>' +
+      '<div class="addrow"><input id="pol-title" placeholder="議題"><button type="button" class="btn sm" data-pol-new>議題を立てる</button></div>' +
+      pol.map(p => '<button type="button" class="item" data-open-pol="' + esc(p.id) + '"><span>' + esc(p.title) + '</span><span class="st ' + stClass(p.closedAt ? "議決" : (p.startedAt ? "審議中" : "")) + '">' +
+        (p.closedAt ? "議決" : p.startedAt ? "審議中" : "未審議") + "</span></button>").join("") + "</div>" +
+    '<p style="font-size:.8rem;margin-top:1rem"><a href="' + OLD_SUPREME + '" target="_blank" rel="noopener">過去の最高評議会(Notion)</a></p>' +
+    '<span class="status" id="gov-msg"></span>';
+}
+
+function sessionBlock(sess, closedHtml){
+  if (sess && sess.closedAt) return closedHtml;
+  if (!sessionLive(sess)) {
+    return '<div class="f" style="max-width:12rem"><label>制限時間</label><select id="ss-limit">' + LIMITS.map(m => '<option value="' + m + '"' + (m === 30 ? " selected" : "") + ">" + m + "分</option>").join("") + "</select></div>" +
+      '<div style="margin-top:.6rem"><button type="button" class="btn" data-ss-start>審議を始める</button></div>';
+  }
+  const left = timeLeft(sess), over = left <= 0;
+  return '<div class="timer" id="ss-timer">' + fmtLeft(left) + "</div>" +
+    (over ? '<p class="lock">制限時間が終わりました。理由はもう書き足せません。今の考えで議決してください。</p>' : "");
+}
+function fmtLeft(ms){ const s = Math.ceil(ms / 1000); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
+function startTimer(sess){
+  if (!sessionLive(sess)) return;
+  gov.timer = setInterval(() => {
+    const el = document.getElementById("ss-timer"); if (!el) { clearInterval(gov.timer); return; }
+    const left = timeLeft(sess); el.textContent = fmtLeft(left);
+    if (left <= 0) { clearInterval(gov.timer); renderGov(); }
+  }, 1000);
+}
+
+function renderAmendSession(box, a){
+  if (!a) { gov.open = null; return renderSupreme(box); }
+  const st = amendStatus(a), sess = a.session || {};
+  const arts = (gov.cons && gov.cons.articles) || [];
+  const diffs = (a.changes || []).map(c => { const art = arts.find(x => x.id === c.articleId);
+    return "<h4 style='margin:.6rem 0 .2rem;font-size:.88rem'>" + esc(art ? art.title : "(条文)") + "</h4>" +
+      '<div class="diff"><div class="old">' + esc(c.oldText != null ? c.oldText : (art ? art.text : "")) + '</div><div class="new">' + esc(c.newText) + "</div></div>"; }).join("");
+  const live = sessionLive(sess), over = live && timeLeft(sess) <= 0;
+  const closed = '<div class="decree"><div class="dd">' + esc((sess.closedAt || "").slice(0, 10)) + "　議会終了</div>" + esc(sess.decision) + "</div>" +
+    "<h4>賛成の理由</h4><p style='white-space:pre-wrap'>" + esc(sess.pro || "") + "</p><h4>反対の理由</h4><p style='white-space:pre-wrap'>" + esc(sess.con || "") + "</p>" +
+    '<p class="lock">議決は確定しています。書き換えられません。</p>';
+  box.innerHTML = '<button type="button" class="back" data-sclose>‹ 最高評議会</button>' +
+    '<div class="mh"><h2>' + esc(a.title) + '</h2><span class="st ' + stClass(st) + '">' + st + "</span></div>" +
+    '<p style="font-size:.84rem;color:var(--sub)">審議期間 ' + esc(a.periodStart) + "〜" + esc(a.periodEnd) + "</p>" +
+    "<h4>改正の理由</h4><p style='white-space:pre-wrap;font-size:.9rem'>" + esc(a.reason) + "</p>" + diffs +
+    (st === "審議待ち" ? '<p class="lock">審議期間は ' + esc(a.periodStart) + " から。まだ審議できません。</p>" : "") +
+    (st === "廃案" ? '<p class="lock">審議期間のうちに審議されなかったので廃案になりました。</p>' : "") +
+    ((st === "審議できる" || st === "審議中" || st === "可決" || st === "否決") ? sessionBlock(sess, closed) : "") +
+    (live ? '<div class="f" style="margin-top:.5rem"><label>賛成の理由</label><textarea id="ss-pro"' + (over ? " disabled" : "") + ">" + esc(sess.pro || "") + "</textarea></div>" +
+      '<div class="f" style="margin-top:.5rem"><label>反対の理由</label><textarea id="ss-con"' + (over ? " disabled" : "") + ">" + esc(sess.con || "") + "</textarea></div>" +
+      (over ? "" : '<div style="margin-top:.4rem"><button type="button" class="btn ghost sm" data-ss-save>書いたところまで保存</button></div>') +
+      '<div style="margin-top:.8rem;display:flex;gap:.8rem;align-items:center;flex-wrap:wrap"><label><input type="radio" name="ss-dec" value="可決"> 可決</label><label><input type="radio" name="ss-dec" value="否決"> 否決</label>' +
+      '<button type="button" class="btn" data-ss-close>議会終了を宣言する</button></div>' : "") +
+    '<span class="status" id="gov-msg"></span>';
+  startTimer(sess);
+}
+
+function renderPolicySession(box, p){
+  if (!p) { gov.open = null; return renderSupreme(box); }
+  const live = sessionLive(p), over = live && timeLeft(p) <= 0;
+  const closed = '<div class="decree"><div class="dd">' + esc((p.closedAt || "").slice(0, 10)) + "　議決</div>" + esc(p.decision) + "</div>" +
+    (p.notes ? "<h4>審議の記録</h4><p style='white-space:pre-wrap'>" + esc(p.notes) + "</p>" : "") + '<p class="lock">議決は確定しています。書き換えられません。</p>';
+  box.innerHTML = '<button type="button" class="back" data-sclose>‹ 最高評議会</button><div class="mh"><h2>' + esc(p.title) + "</h2></div>" +
+    sessionBlock(p, closed) +
+    (live ? '<div class="f" style="margin-top:.5rem"><label>審議の記録</label><textarea id="ps-notes"' + (over ? " disabled" : "") + ">" + esc(p.notes || "") + "</textarea></div>" +
+      '<div class="f" style="margin-top:.5rem"><label>議決(決めたこと)</label><textarea id="ps-dec">' + esc(p.decision || "") + "</textarea></div>" +
+      '<div style="margin-top:.6rem;display:flex;gap:.5rem"><button type="button" class="btn ghost sm" data-ps-save>保存</button><button type="button" class="btn" data-ps-close>議会終了を宣言する</button></div>' : "") +
+    '<span class="status" id="gov-msg"></span>';
+  startTimer(p);
+}
+
+function renderStanding(box){
+  const open = gov.open && gov.open.kind === "standing" ? gov.council.standing.find(x => x.id === gov.open.id) : null;
+  if (open) {
+    box.innerHTML = '<button type="button" class="back" data-sclose>‹ 常任評議会</button><div class="mh"><h2>' + esc(open.title) + "</h2></div>" +
+      '<div class="f"><label>状態</label><select id="st-status">' + ["審議中", "議決", "実施済み"].map(x => "<option" + (x === open.status ? " selected" : "") + ">" + x + "</option>").join("") + "</select></div>" +
+      '<div class="f" style="margin-top:.5rem"><label>議論</label><textarea id="st-disc">' + esc(open.discussion || "") + "</textarea></div>" +
+      '<div class="f" style="margin-top:.5rem"><label>決定</label><textarea id="st-dec">' + esc(open.decision || "") + "</textarea></div>" +
+      '<h4 style="margin:.8rem 0 .3rem">決めたことの実行</h4><ul class="orders">' + (open.orders || []).map(o => '<li class="' + (o.done ? "done" : "") + '"><input type="checkbox" data-st-check="' + esc(o.id) + '"' + (o.done ? " checked" : "") +
+        '><span class="ot">' + esc(o.text) + '</span><button type="button" class="del" data-st-del="' + esc(o.id) + '">消す</button></li>').join("") + "</ul>" +
+      '<div class="addrow"><input id="st-new" placeholder="やること"><button type="button" class="btn sm" data-st-add>足す</button></div>' +
+      '<div style="margin-top:.7rem"><button type="button" class="btn" data-st-save>保存する</button></div><span class="status" id="gov-msg"></span>';
+    return;
+  }
+  const items = gov.council.standing.slice().reverse();
+  box.innerHTML = backBtn + '<div class="mh"><h2>常任評議会</h2></div>' +
+    '<div class="addrow"><input id="st-title" placeholder="議題"><button type="button" class="btn sm" data-st-new>議題を立てる</button></div>' +
+    (items.length ? items.map(x => '<button type="button" class="item" data-open-st="' + esc(x.id) + '"><span>' + esc(x.title) + '<br><span style="font-size:.76rem;color:var(--sub)">' + esc(x.created) +
+      ((x.orders || []).length ? "　実行 " + x.orders.filter(o => o.done).length + "/" + x.orders.length : "") + '</span></span><span class="st ' + stClass(x.status) + '">' + esc(x.status) + "</span></button>").join("")
+      : '<div class="empty">議題はまだありません。</div>') +
+    '<p style="font-size:.8rem;margin-top:1rem"><a href="' + OLD_STANDING + '" target="_blank" rel="noopener">過去の常任評議会の記録(Notion)</a></p><span class="status" id="gov-msg"></span>';
+}
+
+// 可決した改憲案を憲法に当てはめ、新しい版にする
+function adopt(a){
+  const c = gov.cons; if (!c) return;
+  const ids = [];
+  for (const ch of a.changes || []) {
+    const art = c.articles.find(x => x.id === ch.articleId);
+    if (art) { art.text = ch.newText; ids.push(art.id); }
+  }
+  c.version += 1;
+  c.history = (c.history || []).concat([{ version: c.version, date: taskDay(), note: a.title + " — " + (a.reason || ""), amendment: a.id, articles: ids }]);
+}
+
+function bindGov(){
+  const box = document.getElementById("gov");
+  box.addEventListener("click", async e => {
+    const q = sel => e.target.closest(sel);
+    let b;
+    if (q("[data-gback]")) { gov.view = null; gov.open = null; gov.draft = null; return renderGov(); }
+    if ((b = q("[data-gview]"))) { gov.view = b.dataset.gview; gov.open = null; return renderGov(); }
+    if (q("[data-sclose]")) { gov.open = null; return renderGov(); }
+    // 憲政院:起草
+    if (q("[data-new-amend]")) { gov.draft = { id: uid(), created: taskDay(), title: "", reason: "", changes: [{ articleId: gov.cons.articles[0].id, newText: gov.cons.articles[0].text }], submitted: false }; return renderGov(); }
+    if ((b = q("[data-open-amend]"))) { const a = gov.amend.items.find(x => x.id === b.dataset.openAmend); gov.draft = JSON.parse(JSON.stringify(a)); return renderGov(); }
+    if (q("[data-draft-close]")) { gov.draft = null; return renderGov(); }
+    const d = gov.draft;
+    if (d && q("[data-ch-add]")) { readDraft(d); d.changes.push({ articleId: gov.cons.articles[0].id, newText: gov.cons.articles[0].text }); return renderGov(); }
+    if (d && (b = q("[data-ch-del]"))) { readDraft(d); d.changes.splice(+b.dataset.chDel, 1); return renderGov(); }
+    if (d && (q("[data-draft-save]") || q("[data-draft-submit]"))) {
+      readDraft(d);
+      const submit = !!q("[data-draft-submit]");
+      if (submit) {
+        const earliest = addDays(d.created, COOLING_DAYS);
+        if (!d.title) return govMsg("題名を入れてください。", true);
+        if (!d.reason) return govMsg("改正の理由を書いてください。", true);
+        if (!d.changes.length) return govMsg("変える条文を1つ以上入れてください。", true);
+        if (!d.periodStart || d.periodStart < earliest) return govMsg("審議期間は " + earliest + " 以降にしてください(起草した日から2日あける)。", true);
+        if (!d.periodEnd || d.periodEnd < d.periodStart) return govMsg("審議期間の終わりは始めより後にしてください。", true);
+        d.submitted = true; d.submittedAt = nowIso();
+        // 提出の時点の条文を控える(審議では、この文と新しい文を比べる)
+        d.changes.forEach(c => { const art = gov.cons.articles.find(x => x.id === c.articleId); c.oldText = art ? art.text : ""; });
+      }
+      const ok = await saveGov("amend", () => putAmend(d));
+      if (ok) { govMsg(submit ? "提出しました。審議期間まで変えられません。" : "下書きを保存しました"); if (submit) gov.draft = null; renderGov(); }
+      return;
+    }
+    // 最高評議会
+    if ((b = q("[data-open-amend-s]"))) { gov.open = { kind: "amend", id: b.dataset.openAmendS }; return renderGov(); }
+    if ((b = q("[data-open-pol]"))) { gov.open = { kind: "policy", id: b.dataset.openPol }; return renderGov(); }
+    if (q("[data-pol-new]")) {
+      const t = (document.getElementById("pol-title").value || "").trim(); if (!t) return;
+      await saveGov("council", () => { gov.council.supreme.push({ id: uid(), title: t, created: taskDay() }); });
+      return renderGov();
+    }
+    const target = gov.open && (gov.open.kind === "amend" ? gov.amend.items.find(x => x.id === gov.open.id) : gov.open.kind === "policy" ? gov.council.supreme.find(x => x.id === gov.open.id) : null);
+    if (target && q("[data-ss-start]")) {
+      const limit = +document.getElementById("ss-limit").value;
+      const isAmend = gov.open.kind === "amend";
+      if (isAmend && amendStatus(target) !== "審議できる") return govMsg("審議期間の中でだけ審議できます。", true);
+      const start = nowIso(), ends = new Date(Date.parse(start) + limit * 60000).toISOString();
+      await saveGov(isAmend ? "amend" : "council", () => {
+        const t = isAmend ? gov.amend.items.find(x => x.id === target.id) : gov.council.supreme.find(x => x.id === target.id);
+        const sess = isAmend ? (t.session = t.session || {}) : t;
+        if (sess.startedAt) return false;
+        sess.startedAt = start; sess.endsAt = ends; sess.limitMin = limit;
+      });
+      return renderGov();
+    }
+    if (target && (q("[data-ss-save]") || q("[data-ss-close]"))) {
+      const close = !!q("[data-ss-close]");
+      const sess = target.session || {};
+      const over = timeLeft(sess) <= 0;
+      const pro = over ? sess.pro : (document.getElementById("ss-pro") || {}).value;
+      const con = over ? sess.con : (document.getElementById("ss-con") || {}).value;
+      const dec = (document.querySelector('input[name="ss-dec"]:checked') || {}).value;
+      if (close) {
+        if (!(pro || "").trim() || !(con || "").trim()) return govMsg("賛成の理由と反対の理由の両方を書いてから議決してください。", true);
+        if (!dec) return govMsg("可決か否決かを選んでください。", true);
+      }
+      const ok = await saveGov("amend", () => {
+        const t = gov.amend.items.find(x => x.id === target.id);
+        if (!t.session || t.session.closedAt) return false;            // 確定した議決は変えない
+        if (timeLeft(t.session) > 0) { t.session.pro = pro; t.session.con = con; }
+        if (close) { t.session.decision = dec; t.session.closedAt = nowIso(); }
+      });
+      if (ok && close && dec === "可決") {
+        await saveGov("cons", () => { adopt(gov.amend.items.find(x => x.id === target.id)); });
+        govMsg("可決しました。憲法は第" + gov.cons.version + "版になりました。");
+      } else if (ok) govMsg(close ? "否決しました。" : "保存しました");
+      return renderGov();
+    }
+    if (target && (q("[data-ps-save]") || q("[data-ps-close]"))) {
+      const close = !!q("[data-ps-close]");
+      const notes = (document.getElementById("ps-notes") || {}).value, dec = ((document.getElementById("ps-dec") || {}).value || "").trim();
+      if (close && !dec) return govMsg("議決(決めたこと)を書いてください。", true);
+      await saveGov("council", () => {
+        const t = gov.council.supreme.find(x => x.id === target.id);
+        if (!t || t.closedAt) return false;
+        if (timeLeft(t) > 0) t.notes = notes;
+        t.decision = dec;
+        if (close) t.closedAt = nowIso();
+      });
+      return renderGov();
+    }
+    // 常任評議会
+    if (q("[data-st-new]")) {
+      const t = (document.getElementById("st-title").value || "").trim(); if (!t) return;
+      const id = uid();
+      await saveGov("council", () => { gov.council.standing.push({ id, title: t, created: taskDay(), status: "審議中", discussion: "", decision: "", orders: [] }); });
+      gov.open = { kind: "standing", id }; return renderGov();
+    }
+    if ((b = q("[data-open-st]"))) { gov.open = { kind: "standing", id: b.dataset.openSt }; return renderGov(); }
+    const st = gov.open && gov.open.kind === "standing" ? gov.open.id : null;
+    const readSt = it => { it.status = document.getElementById("st-status").value; it.discussion = document.getElementById("st-disc").value; it.decision = document.getElementById("st-dec").value; };
+    if (st && q("[data-st-add]")) {
+      const t = (document.getElementById("st-new").value || "").trim(); if (!t) return;
+      await saveGov("council", () => { const it = gov.council.standing.find(x => x.id === st); readSt(it); it.orders = (it.orders || []).concat([{ id: uid(), text: t, done: false }]); });
+      return renderGov();
+    }
+    if (st && (b = q("[data-st-del]"))) { await saveGov("council", () => { const it = gov.council.standing.find(x => x.id === st); it.orders = it.orders.filter(o => o.id !== b.dataset.stDel); }); return renderGov(); }
+    if (st && q("[data-st-save]")) { const ok = await saveGov("council", () => readSt(gov.council.standing.find(x => x.id === st))); if (ok) govMsg("保存しました"); return; }
+  });
+  box.addEventListener("change", async e => {
+    const c = e.target.closest("[data-st-check]"); if (!c) return;
+    const st = gov.open && gov.open.id, on = c.checked;
+    await saveGov("council", () => { const it = gov.council.standing.find(x => x.id === st); const o = it.orders.find(x => x.id === c.dataset.stCheck); o.done = on; o.doneAt = on ? taskDay() : null; });
+    renderGov(); renderOrders();
+  });
 }
 
 /* ───── 保存 ───── */
@@ -451,6 +941,68 @@ function entryFor(month, key, tag, kind, start){
 }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
+async function saveNotes(mutate){
+  const st = document.getElementById("pp-status");
+  for (let i = 0; i < 3; i++) {
+    try {
+      mutate(state.notes);
+      state.notesSha = await writeJson(NOTES, state.notes, state.notesSha);
+      lsSet(KEY_CACHE, { gov: state.gov, stats: state.stats, reviews: state.reviews, reviewShas: state.reviewShas, notes: state.notes });
+      return true;
+    } catch (e) {
+      if ((e.status === 409 || e.status === 422) && i < 2) {
+        const fresh = await readJson(NOTES);
+        state.notes = (fresh.data && fresh.data.purposes) ? fresh.data : { purposes: {} }; state.notesSha = fresh.sha; continue;
+      }
+      if (st) { st.textContent = e.message || "保存できませんでした"; st.classList.add("err"); }
+      return false;
+    }
+  }
+  return false;
+}
+async function savePurpose(tag, text){
+  const st = document.getElementById("pp-status");
+  for (let i = 0; i < 3; i++) {
+    try {
+      state.notes.purposes = Object.assign({}, state.notes.purposes, { [tag]: text });
+      state.notesSha = await writeJson(NOTES, state.notes, state.notesSha);
+      lsSet(KEY_CACHE, { gov: state.gov, stats: state.stats, reviews: state.reviews, reviewShas: state.reviewShas, notes: state.notes });
+      return true;
+    } catch (e) {
+      if ((e.status === 409 || e.status === 422) && i < 2) {
+        const fresh = await readJson(NOTES);
+        state.notes = (fresh.data && fresh.data.purposes) ? fresh.data : { purposes: {} }; state.notesSha = fresh.sha; continue;
+      }
+      if (st) { st.textContent = e.message || "保存できませんでした"; st.classList.add("err"); }
+      return false;
+    }
+  }
+  return false;
+}
+
+// Notionと同期:GitHubに書き出しだけを今すぐ走らせ、終わったら読み直す
+async function syncNow(){
+  const st = document.getElementById("sync-status");
+  const say = (t, err) => { st.textContent = t; st.classList.toggle("err", !!err); };
+  if (!state.conn || !state.conn.token) { say("先に設定で接続してください。", true); return; }
+  const before = (await readJson(P.gov).catch(() => ({}))).sha || null;
+  say("Notionから書き出しています…(1分ほど)");
+  const r = await fetchRetry(repoUrl() + "/actions/workflows/gov-export.yml/dispatches",
+    { method: "POST", headers: headers({ "Content-Type": "application/json" }), body: JSON.stringify({ ref: state.conn.branch || "main" }) }).catch(() => null);
+  if (!r || r.status !== 204) {
+    if (r && (r.status === 403 || r.status === 401)) say("トークンに Actions の権限(Read and write)が必要です。", true);
+    else if (r && r.status === 404) say("gov-export.yml が notion-daily の .github/workflows に見つかりません。", true);
+    else say("書き出しを始められませんでした。", true);
+    return;
+  }
+  for (let i = 0; i < 30; i++) {
+    await new Promise(res => setTimeout(res, window.__shoPoll || 8000));
+    const now = (await readJson(P.gov).catch(() => ({}))).sha || null;
+    if (now && now !== before) { await loadAll(); say("同期しました"); return; }
+  }
+  say("まだ書き出しが終わっていません。少し待ってから「読み込み直す」を押してください。", true);
+}
+
 /* ───── 操作 ───── */
 function showView(name){
   document.querySelectorAll(".view").forEach(v => v.hidden = v.id !== "view-" + name);
@@ -458,7 +1010,13 @@ function showView(name){
   window.scrollTo(0, 0);
 }
 function bind(){
-  document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => { if (b.dataset.view === "list") { state.open = null; render(); } showView(b.dataset.view); }));
+  document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => {
+    const v = b.dataset.view;
+    if (v === "list") { state.open = null; render(); }
+    if (v === "orders") renderOrders();
+    if (v === "gov") renderGov();
+    showView(v);
+  }));
   document.getElementById("list").addEventListener("click", e => {
     const b = e.target.closest("[data-open]"); if (!b) return;
     state.open = b.dataset.open; render(); window.scrollTo(0, 0);
@@ -473,12 +1031,43 @@ function bind(){
     });
   };
   document.getElementById("detail").addEventListener("change", onCheck);
-  document.getElementById("orders").addEventListener("change", onCheck);
+  document.getElementById("orders").addEventListener("change", async e => {
+    const c = e.target.closest("[data-cc-check]");
+    if (!c) return onCheck(e);
+    await saveGov("council", () => { const it = gov.council.standing.find(x => x.id === c.dataset.ccIt); const o = it && it.orders.find(x => x.id === c.dataset.ccCheck); if (o) { o.done = true; o.doneAt = taskDay(); } });
+    renderOrders();
+  });
+  bindGov();
+  document.getElementById("sync").addEventListener("click", syncNow);
   document.getElementById("detail").addEventListener("click", async e => {
-    if (e.target.closest("[data-back]")) { state.open = null; render(); return; }
+    if (e.target.closest("[data-back]")) { state.open = null; state.editPurpose = false; render(); return; }
+    if (e.target.closest("[data-sl-edit]")) { state.editSlogan = "edit"; renderDetail(); return; }
+    if (e.target.closest("[data-sl-new]")) { state.editSlogan = "new"; renderDetail(); return; }
+    if (e.target.closest("[data-sl-cancel]")) { state.editSlogan = false; renderDetail(); return; }
+    if (e.target.closest("[data-sl-save]")) {
+      const v = id => document.getElementById(id).value.trim();
+      const item = { title: v("sl-title") || "スローガン", text: v("sl-text"), note: v("sl-note"), from: taskDay() };
+      if (!item.text) { const st = document.getElementById("pp-status"); st.textContent = "スローガンを入れてください。"; st.classList.add("err"); return; }
+      const mode = state.editSlogan;
+      const ok = await saveNotes(n => {
+        const list = (n.slogans && n.slogans.length) ? n.slogans.slice() : DEFAULT_SLOGANS.map(x => Object.assign({}, x));
+        if (mode === "new") list.push(item);
+        else list[list.length - 1] = Object.assign({}, list[list.length - 1], { title: item.title, text: item.text, note: item.note });
+        n.slogans = list;
+      });
+      if (ok) { state.editSlogan = false; render(); }
+      return;
+    }
+    if (e.target.closest("[data-pp-edit]")) { state.editPurpose = true; renderDetail(); return; }
+    if (e.target.closest("[data-pp-cancel]")) { state.editPurpose = false; renderDetail(); return; }
+    if (e.target.closest("[data-pp-save]")) {
+      const text = document.getElementById("pp-text").value;
+      if (await savePurpose(state.open, text)) { state.editPurpose = false; renderDetail(); }
+      return;
+    }
     const pb = e.target.closest("[data-period]");
     if (pb) { state.period = pb.dataset.period; renderDetail(); document.getElementById("review").scrollIntoView({ block: "nearest" }); return; }
-    const m = state.gov.ministries.find(x => x.tag === state.open); if (!m) return;
+    const m = currentMinistry(); if (!m) return;
     const kind = state.period, start = periodStart(kind, taskDay()), month = start.slice(0, 7), key = rkey(m.tag, kind, start);
     if (e.target.closest("[data-add]")) {
       const inp = document.getElementById("rv-new"), text = inp.value.trim(); if (!text) return;
@@ -520,10 +1109,11 @@ function boot(){
   document.getElementById("c-token").value = c ? c.token : "";
   const cache = lsGet(KEY_CACHE, null);
   if (cache) { state.gov = cache.gov; state.stats = cache.stats; state.reviews = cache.reviews || {}; state.reviewShas = cache.reviewShas || {};
+               state.notes = cache.notes || { purposes: {} };
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { state, periodStart, periodPrev, loadAll };
+window.__sho = { state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
