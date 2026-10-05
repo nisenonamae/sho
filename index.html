@@ -213,7 +213,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-05 r7";
+const APP_VERSION = "2026-10-05 r8";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -617,6 +617,36 @@ function renderGov(){
   if (gov.view === "憲政院") return renderKenseiin(box);
   if (gov.view === "最高評議会") return renderSupreme(box);
   if (gov.view === "常任評議会") return renderStanding(box);
+  if (gov.view === "議題候補") return renderCandidates(box);
+}
+
+// 議題候補:思いついた議題を溜めておき、機が熟したら評議会にかける
+function renderCandidates(box){
+  const ms = (state.gov && state.gov.ministries) || [];
+  const tagName = t => t === "全体" ? "全体" : ((ms.find(m => m.tag === t) || { name: t || "" }).name);
+  const all = (gov.council.candidates || []).slice();
+  const live = all.filter(c => c.status === "候補").sort((a, b) => (b.star ? 1 : 0) - (a.star ? 1 : 0) || (a.created < b.created ? 1 : -1));
+  const done = all.filter(c => c.status !== "候補").sort((a, b) => (a.closedAt < b.closedAt ? 1 : -1));
+  const row = c => '<div class="goal" style="margin:.4rem 0"><div style="display:flex;justify-content:space-between;gap:.5rem;align-items:baseline">' +
+      '<b>' + (c.star ? "★ " : "") + esc(c.title) + '</b><span style="font-size:.76rem;color:var(--sub);white-space:nowrap">' + esc(tagName(c.tag)) + "　" + esc(c.created) + "</span></div>" +
+      (c.status === "候補"
+        ? '<textarea data-cd-note="' + esc(c.id) + '" placeholder="メモ(なぜ話したいか、気づいたこと)" style="min-height:2.6rem;margin-top:.3rem">' + esc(c.note || "") + "</textarea>" +
+          '<div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem">' +
+          '<button type="button" class="btn ghost sm" data-cd-star="' + esc(c.id) + '">' + (c.star ? "★を外す" : "★") + "</button>" +
+          '<button type="button" class="btn sm" data-cd-to="常任評議会" data-cd="' + esc(c.id) + '">常任評議会へ</button>' +
+          '<button type="button" class="btn sm" data-cd-to="最高評議会" data-cd="' + esc(c.id) + '">最高評議会へ</button>' +
+          '<button type="button" class="btn ghost sm" data-cd-skip="' + esc(c.id) + '">見送る</button>' +
+          '<button type="button" class="del" data-cd-del="' + esc(c.id) + '">消す</button></div>'
+        : (c.note ? '<p style="white-space:pre-wrap;font-size:.84rem;margin:.3rem 0">' + esc(c.note) + "</p>" : "") +
+          '<div style="font-size:.8rem;color:var(--sub)">' + esc(c.status) + (c.promotedTo ? "(" + esc(c.promotedTo) + ")" : "") + "　" + esc(c.closedAt || "") +
+          (c.status === "見送り" ? '　<button type="button" class="del" data-cd-back="' + esc(c.id) + '">候補に戻す</button>' : "") + "</div>") + "</div>";
+  box.innerHTML = backBtn + '<div class="mh"><h2>議題候補</h2></div>' +
+    '<p style="font-size:.84rem;color:var(--sub)">思いついた議題はここに溜めておき、機が熟したら評議会にかける。★を付けた候補は上に来る。</p>' +
+    '<div class="addrow"><input id="cd-title" placeholder="議題候補"><select id="cd-tag" style="max-width:7rem"><option value="">分野</option><option value="全体">全体</option>' +
+      ms.map(m => '<option value="' + esc(m.tag) + '">' + esc(m.name) + "</option>").join("") + '</select><button type="button" class="btn sm" data-cd-add>溜める</button></div>' +
+    (live.length ? live.map(row).join("") : '<div class="empty">候補はありません。</div>') +
+    foldHtml("議題にしたもの・見送ったもの", done.map(row).join(""), done.length) +
+    '<span class="status" id="gov-msg"></span>';
 }
 const backBtn = '<button type="button" class="back" data-gback>‹ 政府</button>';
 
@@ -624,7 +654,13 @@ function renderGovHome(box){
   const live = gov.amend.items.filter(a => ["審議待ち", "審議できる", "審議中"].includes(amendStatus(a))).length;
   const decrees = gov.council.supreme.filter(x => x.closedAt).slice(-3).reverse();
   const open = gov.council.standing.filter(x => standingStatus(x) !== "実施済み").length;
-  box.innerHTML = '<div class="organs">' +
+  const cands = (gov.council.candidates || []).filter(c => c.status === "候補");
+  const ms = (state.gov && state.gov.ministries) || [];
+  box.innerHTML = '<div class="addrow" style="margin-bottom:.8rem"><input id="cd-quick" placeholder="議題候補をすぐ溜める">' +
+      '<select id="cd-quick-tag" style="max-width:7rem"><option value="">分野</option><option value="全体">全体</option>' + ms.map(m => '<option value="' + esc(m.tag) + '">' + esc(m.name) + "</option>").join("") + "</select>" +
+      '<button type="button" class="btn sm" data-cd-quick>溜める</button></div>' +
+    '<div class="organs">' +
+    '<button type="button" class="organ" data-gview="議題候補"><b>議題候補</b><span>' + (cands.length ? cands.length + "件" + (cands.some(c => c.star) ? "・★" + cands.filter(c => c.star).length : "") : "まだありません") + "</span></button>" +
     '<button type="button" class="organ" data-gview="憲法"><b>憲法</b><span>' + (gov.cons ? "第" + gov.cons.version + "版・" + gov.cons.articles.length + "条" : "まだ写していません") + "</span></button>" +
     '<button type="button" class="organ" data-gview="憲政院"><b>憲政院</b><span>改憲案の起草' + (live ? "・進行中 " + live : "") + "</span></button>" +
     '<button type="button" class="organ" data-gview="最高評議会"><b>最高評議会</b><span>改憲と重大国策の審議</span></button>' +
@@ -983,6 +1019,37 @@ function bindGov(){
         t.decision = dec;
         if (close) t.closedAt = nowIso();
       });
+      return renderGov();
+    }
+    // 議題候補
+    if (q("[data-cd-quick]") || q("[data-cd-add]")) {
+      const quick = !!q("[data-cd-quick]");
+      const t = ((document.getElementById(quick ? "cd-quick" : "cd-title") || {}).value || "").trim();
+      const tag = (document.getElementById(quick ? "cd-quick-tag" : "cd-tag") || {}).value || "";
+      if (!t) return;
+      await saveGov("council", () => { gov.council.candidates = (gov.council.candidates || []).concat([{ id: uid(), title: t, tag, note: "", created: taskDay(), status: "候補", star: false }]); });
+      govMsg("溜めました");
+      return renderGov();
+    }
+    const cdNote = () => { document.querySelectorAll("[data-cd-note]").forEach(el => { const c = (gov.council.candidates || []).find(x => x.id === el.dataset.cdNote); if (c) c.note = el.value; }); };
+    if ((b = q("[data-cd-star]"))) { const id = b.dataset.cdStar; await saveGov("council", () => { cdNote(); const c = gov.council.candidates.find(x => x.id === id); c.star = !c.star; }); return renderGov(); }
+    if ((b = q("[data-cd-skip]"))) { const id = b.dataset.cdSkip; await saveGov("council", () => { cdNote(); const c = gov.council.candidates.find(x => x.id === id); c.status = "見送り"; c.closedAt = taskDay(); }); return renderGov(); }
+    if ((b = q("[data-cd-back]"))) { const id = b.dataset.cdBack; await saveGov("council", () => { const c = gov.council.candidates.find(x => x.id === id); c.status = "候補"; delete c.closedAt; }); return renderGov(); }
+    if ((b = q("[data-cd-del]"))) {
+      const id = b.dataset.cdDel, c = (gov.council.candidates || []).find(x => x.id === id);
+      if (!c || !confirm("候補「" + c.title + "」を消しますか。")) return;
+      await saveGov("council", () => { gov.council.candidates = gov.council.candidates.filter(x => x.id !== id); }); return renderGov();
+    }
+    if ((b = q("[data-cd-to]"))) {
+      const id = b.dataset.cd, to = b.dataset.cdTo, nid = uid();
+      await saveGov("council", () => {
+        cdNote();
+        const c = gov.council.candidates.find(x => x.id === id); if (!c || c.status !== "候補") return false;
+        if (to === "常任評議会") gov.council.standing.push({ id: nid, title: c.title, created: taskDay(), status: "未審議", summary: c.note || "", discussion: "", decision: "", orders: [], sessions: [], fromCandidate: c.id });
+        else gov.council.supreme.push({ id: nid, title: c.title, created: taskDay(), notes: c.note || "", fromCandidate: c.id });
+        c.status = "議題にした"; c.promotedTo = to; c.closedAt = taskDay();
+      });
+      govMsg(to + "の議題にしました");
       return renderGov();
     }
     // 常任評議会
