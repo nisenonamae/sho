@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>省</title>
+<meta name="theme-color" content="#26221E">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://nisenonamae.github.io/roadmap/engine.js"></script>
+<style>
+:root{--paper:#F6F3EC;--sheet:#FBF9F4;--ink:#26221E;--sub:#6E665C;--rule:#DCD5C7;--shu:#B5432F;--stage:#A33A2E;--wave:#2F4F8A;--ok:#3D7A55}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:"Zen Kaku Gothic New","Hiragino Sans",sans-serif;font-size:15px;line-height:1.65;
+  padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--wave);outline-offset:2px}
+.wrap{max-width:680px;margin:0 auto;padding:1.1rem 1rem 2rem}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding-bottom:.6rem;border-bottom:2px solid var(--ink);margin-bottom:1rem}
+.head h1{margin:0;font-size:1.35rem;letter-spacing:.12em}
+.head .date{color:var(--sub);font-size:.82rem;text-align:right}
+.view[hidden]{display:none}
+.empty{color:var(--sub);padding:1rem 0;font-size:.9rem}
+.notice{background:var(--sheet);border-left:3px solid var(--shu);padding:.5rem .75rem;font-size:.86rem;margin:0 0 1rem}
+.status{font-size:.84rem;color:var(--sub)}
+.status.err{color:var(--shu)}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:3px;padding:.4rem .9rem;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.sm{padding:.2rem .6rem;font-size:.82rem}
+.f label{display:block;font-size:.75rem;color:var(--sub);margin-bottom:.15rem}
+.f input,.f select,textarea{width:100%;padding:.4rem .5rem;border:1px solid var(--rule);border-radius:3px;background:#fff}
+textarea{min-height:7rem;line-height:1.6}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(9rem,1fr));gap:.5rem .7rem}
+/* 一覧 */
+.mlist{list-style:none;margin:0;padding:0}
+.mlist button{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.2rem 1rem;width:100%;text-align:left;border:none;background:none;
+  padding:.75rem .2rem;border-bottom:1px solid var(--rule);cursor:pointer;align-items:baseline}
+.mlist .mn{font-weight:700;font-size:1.05rem;letter-spacing:.06em}
+.mlist .mp{font-variant-numeric:tabular-nums;font-weight:700;text-align:right}
+.mlist .mm{grid-column:1/3;font-size:.78rem;color:var(--sub);display:flex;gap:.8rem;flex-wrap:wrap}
+.badge{display:inline-block;background:var(--shu);color:#fff;border-radius:9px;padding:0 .45rem;font-size:.72rem;line-height:1.5}
+/* 省のページ */
+.back{border:none;background:none;color:var(--sub);cursor:pointer;padding:0;margin:0 0 .6rem;font-size:.88rem}
+.mh{display:flex;align-items:baseline;justify-content:space-between;gap:.8rem;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:.4rem}
+.mh h2{margin:0;font-size:1.4rem;letter-spacing:.1em}
+.links{display:flex;gap:.4rem;flex-wrap:wrap;margin:.6rem 0}
+.links a{display:inline-block;border:1px solid var(--ink);border-radius:3px;padding:.25rem .7rem;text-decoration:none;color:var(--ink);font-size:.86rem}
+.links a.purpose{border-color:var(--shu);color:var(--shu)}
+.sec{margin-top:1.4rem}
+.sec>h3{font-size:.95rem;margin:0 0 .4rem;letter-spacing:.12em;display:flex;align-items:center;gap:.5rem}
+.sec>h3 i{display:inline-block;width:.7rem;height:.7rem;border-radius:2px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:.2rem .9rem;font-size:.88rem}
+.kv dt{color:var(--sub)}
+.kv dd{margin:0}
+.deps{display:flex;flex-wrap:wrap;gap:.3rem .5rem}
+.dep{border:1px solid var(--rule);background:var(--sheet);border-radius:3px;padding:.1rem .55rem;font-size:.84rem}
+.dep.neg{border-color:var(--shu);color:var(--shu)}
+.tide{font-size:.86rem}
+.tide b{font-variant-numeric:tabular-nums}
+.tide ul{margin:.3rem 0 0;padding-left:1.1rem;color:var(--sub)}
+/* STAGE・WAVE */
+.tree details{border-left:3px solid var(--c);margin:.35rem 0;background:var(--sheet);border-radius:0 3px 3px 0}
+.tree summary{cursor:pointer;padding:.45rem .6rem;font-weight:700;display:flex;justify-content:space-between;gap:.6rem;align-items:baseline;list-style:none}
+.tree summary::-webkit-details-marker{display:none}
+.tree summary .cnt{font-weight:400;font-size:.78rem;color:var(--sub)}
+.node{padding:.45rem .6rem .55rem 1rem;border-top:1px dashed var(--rule)}
+.node .nh{display:flex;justify-content:space-between;gap:.6rem;align-items:baseline}
+.node .nl{font-weight:700;color:var(--c)}
+.node .ns{font-size:.86rem}
+.node a{font-size:.8rem;color:var(--sub);white-space:nowrap}
+.tasks{display:flex;flex-direction:column;gap:.2rem;margin-top:.35rem}
+.tk{display:flex;justify-content:space-between;gap:.6rem;font-size:.82rem;background:#fff;border:1px solid var(--rule);border-radius:3px;padding:.2rem .5rem}
+.tk span:last-child{color:var(--sub);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tk.done{opacity:.7}
+.tk.fall span:first-child{color:var(--shu)}
+/* 内省 */
+.periods{display:flex;gap:.3rem;margin:.2rem 0 .6rem}
+.periods button{border:1px solid var(--rule);background:#fff;border-radius:3px;padding:.25rem .7rem;cursor:pointer;font-size:.86rem}
+.periods button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.prev{background:var(--sheet);border:1px solid var(--rule);border-radius:3px;padding:.5rem .7rem;margin-bottom:.7rem}
+.prev h4,.cur h4{margin:0 0 .3rem;font-size:.84rem;color:var(--sub);font-weight:700}
+.orders{list-style:none;margin:0;padding:0}
+.orders li{display:flex;gap:.5rem;align-items:flex-start;padding:.25rem 0;border-bottom:1px dashed var(--rule)}
+.orders li:last-child{border-bottom:none}
+.orders input[type=checkbox]{width:1.15rem;height:1.15rem;margin-top:.2rem;accent-color:var(--ok);flex:0 0 auto}
+.orders .ot{flex:1;min-width:0;word-break:break-word}
+.orders li.done .ot{text-decoration:line-through;color:var(--sub)}
+.orders .del{border:none;background:none;color:var(--sub);cursor:pointer;font-size:.8rem}
+.addrow{display:flex;gap:.4rem;margin-top:.4rem}
+.addrow input{flex:1;padding:.35rem .5rem;border:1px solid var(--rule);border-radius:3px;background:#fff}
+.hist details{margin-top:.4rem}
+.hist summary{cursor:pointer;color:var(--sub);font-size:.86rem}
+.hentry{border-top:1px solid var(--rule);padding:.5rem 0;font-size:.86rem}
+.hentry .hd{font-weight:700;color:var(--sub);font-size:.8rem}
+.hentry p{margin:.2rem 0;white-space:pre-wrap}
+/* タブ */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-top:1px solid var(--rule);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{flex:1;border:none;background:none;padding:.8rem 0;cursor:pointer;color:var(--sub);font-weight:700}
+nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--shu)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="view" id="view-list">
+    <header class="head"><h1>省</h1><div class="date" id="stamp">—</div></header>
+    <div id="notices"></div>
+    <div id="list"></div>
+    <div id="detail" hidden></div>
+  </section>
+
+  <section class="view" id="view-orders" hidden>
+    <header class="head"><h1>指令</h1><div class="date">まだ済んでいない作戦指令</div></header>
+    <div id="orders"></div>
+  </section>
+
+  <section class="view" id="view-settings" hidden>
+    <header class="head"><h1>設定</h1><div class="date" id="ver"></div></header>
+    <p class="notice">省の構造(目的・STAGE・WAVE・依存度・時勢)はNotionから毎朝書き出したものを見ています。変えるときはNotionで。内省はこのアプリで書いてGitHubに保存します。</p>
+    <div class="grid2">
+      <div class="f"><label for="c-owner">ユーザー名</label><input id="c-owner" autocomplete="off"></div>
+      <div class="f"><label for="c-repo">リポジトリ</label><input id="c-repo" autocomplete="off"></div>
+      <div class="f"><label for="c-branch">ブランチ</label><input id="c-branch" autocomplete="off"></div>
+    </div>
+    <div class="f" style="margin-top:.5rem"><label for="c-token">トークン(行軍表と同じもの)</label><input id="c-token" type="password" autocomplete="off"></div>
+    <div style="margin-top:.8rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center">
+      <button class="btn" id="connect" type="button">接続して読み込む</button>
+      <button class="btn ghost" id="reload" type="button">読み込み直す</button>
+      <span class="status" id="conn-status"></span>
+    </div>
+  </section>
+</div>
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-view="list">省</button>
+  <button role="tab" aria-selected="false" data-view="orders">指令</button>
+  <button role="tab" aria-selected="false" data-view="settings">設定</button>
+</nav>
+<script>
+(function(){
+"use strict";
+const APP_VERSION = "2026-10-05 r1";
+const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
+const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
+            defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
+const PERIODS = [["日", "1日"], ["週", "1週間"], ["月", "1ヶ月"], ["季", "3ヶ月"]];
+
+const state = { conn: null, gov: null, stats: null, defs: null, overlay: { tasks: {}, newTasks: [] }, logs: {}, applogs: {},
+  reviews: {}, reviewShas: {}, loadedMonths: new Set(), open: null, period: "日", tasks: [] };
+
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const lsGet = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+// 1日は朝5時区切り(行軍表と同じ)
+const taskDay = () => new Date(Date.now() + 4 * 3600e3).toISOString().slice(0, 10);
+const addDays = (d, n) => new Date(Date.parse(d + "T00:00:00Z") + n * 864e5).toISOString().slice(0, 10);
+
+/* ───── 期間 ───── */
+function periodStart(kind, day){
+  if (kind === "日") return day;
+  if (kind === "週") { const w = (new Date(day + "T00:00:00Z").getUTCDay() + 6) % 7; return addDays(day, -w); }
+  if (kind === "月") return day.slice(0, 8) + "01";
+  const m = +day.slice(5, 7), q = Math.floor((m - 1) / 3) * 3 + 1;
+  return day.slice(0, 5) + String(q).padStart(2, "0") + "-01";
+}
+function periodPrev(kind, start){
+  if (kind === "日") return addDays(start, -1);
+  if (kind === "週") return addDays(start, -7);
+  const y = +start.slice(0, 4), m = +start.slice(5, 7), back = kind === "月" ? 1 : 3;
+  const t = new Date(Date.UTC(y, m - 1 - back, 1));
+  return t.toISOString().slice(0, 10);
+}
+function periodLabel(kind, start){
+  const md = s => (+s.slice(5, 7)) + "/" + (+s.slice(8, 10));
+  if (kind === "日") return md(start);
+  if (kind === "週") return md(start) + "〜" + md(addDays(start, 6));
+  if (kind === "月") return (+start.slice(5, 7)) + "月";
+  return start.slice(0, 4) + "年" + (+start.slice(5, 7)) + "〜" + ((+start.slice(5, 7)) + 2) + "月";
+}
+const rkey = (tag, kind, start) => tag + "|" + kind + "|" + start;
+
+/* ───── GitHub ───── */
+function b64e(str){ const b = new TextEncoder().encode(str); let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); }
+function b64d(b64){ const bin = atob(String(b64).replace(/\s/g, "")); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new TextDecoder().decode(u); }
+const repoUrl = () => "https://api.github.com/repos/" + encodeURIComponent(state.conn.owner) + "/" + encodeURIComponent(state.conn.repo);
+const headers = extra => Object.assign({ "Authorization": "Bearer " + state.conn.token, "Accept": "application/vnd.github+json" }, extra || {});
+async function fetchRetry(url, opts){
+  let last;
+  for (let i = 0; i < 3; i++) { try { return await fetch(url, opts); } catch (e) { last = e; await new Promise(r => setTimeout(r, 500 * (i + 1))); } }
+  throw last;
+}
+function httpErr(status, path){
+  if (status === 401) return new Error("トークンが無効です。設定から入れ直してください。");
+  if (status === 409) { const e = new Error("別の場所で更新されていました。"); e.status = 409; return e; }
+  const e = new Error("GitHubとの通信に失敗しました(" + status + " " + path + ")。"); e.status = status; return e;
+}
+async function readJson(path){
+  const url = repoUrl() + "/contents/" + path + "?ref=" + encodeURIComponent(state.conn.branch);
+  const r = await fetchRetry(url, { headers: headers(), cache: "no-store" });
+  if (r.status === 404) return { data: null, sha: null };
+  if (!r.ok) throw httpErr(r.status, path);
+  const meta = await r.json();
+  let text = meta.content ? b64d(meta.content) : null;
+  if (text == null) {
+    const raw = await fetchRetry(url, { headers: headers({ "Accept": "application/vnd.github.raw+json" }), cache: "no-store" });
+    text = await raw.text();
+  }
+  return { data: JSON.parse(text), sha: meta.sha };
+}
+async function readBlob(sha){
+  const r = await fetchRetry(repoUrl() + "/git/blobs/" + sha, { headers: headers(), cache: "no-store" });
+  if (!r.ok) throw httpErr(r.status, sha);
+  const b = await r.json();
+  return JSON.parse(b.encoding === "base64" ? b64d(b.content) : b.content);
+}
+// フォルダの一覧。「/log」が広告ブロックなどに止められたら、中身の番号の経路で
+async function listDir(path){
+  try {
+    const r = await fetchRetry(repoUrl() + "/contents/" + path + "?ref=" + encodeURIComponent(state.conn.branch), { headers: headers(), cache: "no-store" });
+    if (r.status === 404) return [];
+    if (!r.ok) throw httpErr(r.status, path);
+    return (await r.json()).filter(x => x.type === "file").map(x => ({ name: x.name, sha: x.sha }));
+  } catch (e) {
+    if (e.status) throw e;
+    const parts = path.split("/"), name = parts.pop();
+    const up = await fetchRetry(repoUrl() + "/contents/" + parts.join("/") + "?ref=" + encodeURIComponent(state.conn.branch), { headers: headers(), cache: "no-store" });
+    const dir = (await up.json()).find(x => x.name === name && x.type === "dir");
+    if (!dir) return [];
+    const t = await (await fetchRetry(repoUrl() + "/git/trees/" + dir.sha, { headers: headers(), cache: "no-store" })).json();
+    return (t.tree || []).filter(x => x.type === "blob").map(x => ({ name: x.path, sha: x.sha, viaTree: true }));
+  }
+}
+async function writeJson(path, obj, sha){
+  const body = { message: "省: 内省を更新", content: b64e(JSON.stringify(obj, null, 1)), branch: state.conn.branch };
+  if (sha) body.sha = sha;
+  const r = await fetchRetry(repoUrl() + "/contents/" + path, { method: "PUT", headers: headers({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
+  if (!r.ok) throw httpErr(r.status, path);
+  return (await r.json()).content.sha;
+}
+async function readMonths(dir, list){
+  const out = {};
+  for (const f of list.filter(f => /^\d{4}-\d{2}\.json$/.test(f.name))) {
+    out[f.name.slice(0, 7)] = f.viaTree ? await readBlob(f.sha) : (await readJson(dir + "/" + f.name)).data || {};
+  }
+  return out;
+}
+
+/* ───── 読み込み ───── */
+function status(text, err){ const s = document.getElementById("conn-status"); s.textContent = text; s.classList.toggle("err", !!err); }
+async function loadAll(){
+  if (!state.conn || !state.conn.token) { showView("settings"); return false; }
+  status("読み込んでいます…");
+  try {
+    const [g, st, d, o, lf, af] = await Promise.all([readJson(P.gov), readJson(P.stats).catch(() => ({})), readJson(P.defs), readJson(P.overlay),
+                                                     listDir(P.log), listDir(P.applog)]);
+    state.gov = g.data; state.stats = st.data || null; state.defs = d.data;
+    state.overlay = o.data || { tasks: {}, newTasks: [] };
+    state.logs = await readMonths(P.log, lf);
+    state.applogs = await readMonths(P.applog, af);
+    state.reviews = {}; state.reviewShas = {}; state.loadedMonths = new Set();
+    const now = taskDay();
+    await loadReviewMonth(now.slice(0, 7));
+    await loadReviewMonth(periodPrev("季", periodStart("季", now)).slice(0, 7)); // 3ヶ月の前回ぶんまで
+    await loadReviewMonth(addDays(now.slice(0, 8) + "01", -1).slice(0, 7));
+    computeTasks();
+    lsSet(KEY_CACHE, { gov: state.gov, stats: state.stats, reviews: state.reviews, reviewShas: state.reviewShas });
+    status("読み込みました");
+    render();
+    return true;
+  } catch (e) { status(e.message, true); renderNotice(e.message); return false; }
+}
+async function loadReviewMonth(m){
+  if (state.loadedMonths.has(m)) return;
+  const r = await readJson(P.reviews + "/" + m + ".json");
+  state.reviews[m] = r.data || {}; state.reviewShas[m] = r.sha; state.loadedMonths.add(m);
+}
+
+/* ───── タスクの今の状態(行軍表と同じ計算) ───── */
+function computeTasks(){
+  const E = window.TaskEngine;
+  if (!E || !state.defs) { state.tasks = []; return; }
+  const today = taskDay();
+  state.tasks = E.allDefs(state.defs, state.overlay).map(raw => {
+    const def = E.mergeOverlay(raw, (state.overlay.tasks || {})[raw.id], today);
+    const rep = E.replay(def, E.mergedLogFor(state.logs, state.applogs, def.id), today);
+    const last = rep.days.length ? rep.days[rep.days.length - 1] : null;
+    const row = last && last.date === today ? last : null;
+    const s = row || rep.next;
+    return { def, status: s.status, gen: row ? row.gen : rep.gen, genTotal: s.genTotal, streak: s.streak,
+             target: E.targetAt(def, today), check: row ? row.check : null };
+  });
+}
+function tasksFor(tag, label){
+  return state.tasks.filter(t => (t.def.ministries || []).includes(tag) &&
+    (t.def.waves || []).some(w => (w.label || w).replace(/\s+/g, "").toUpperCase() === label.toUpperCase()));
+}
+
+/* ───── 描画 ───── */
+function renderNotice(msg){ document.getElementById("notices").innerHTML = msg ? '<p class="notice">' + esc(msg) + "</p>" : ""; }
+function powerOf(tag){
+  const ml = (state.stats && state.stats.ministry_latest) || [];
+  const m = ml.find(x => x.tag === tag);
+  return m ? m : null;
+}
+function openOrders(tag){
+  const out = [];
+  for (const [m, entries] of Object.entries(state.reviews)) for (const [k, e] of Object.entries(entries || {})) {
+    if (tag && e.tag !== tag) continue;
+    for (const o of e.orders || []) if (!o.done) out.push({ month: m, key: k, entry: e, order: o });
+  }
+  return out;
+}
+function render(){
+  document.getElementById("stamp").textContent = state.gov ? ("Notionから " + state.gov.generated_at) : "—";
+  renderNotice(state.gov ? "" : "まだ書き出しがありません。毎朝の計算(App daily)が一度動くと出ます。");
+  renderList(); renderDetail(); renderOrders();
+}
+function renderList(){
+  const box = document.getElementById("list");
+  const ms = (state.gov && state.gov.ministries) || [];
+  box.hidden = !!state.open;
+  box.innerHTML = '<ul class="mlist">' + ms.map(m => {
+    const p = powerOf(m.tag), open = openOrders(m.tag).length;
+    return '<li><button type="button" data-open="' + esc(m.tag) + '"><span class="mn">' + esc(m.name) +
+      (open ? ' <span class="badge">' + open + "</span>" : "") + '</span><span class="mp">' + (p ? Number(p.power).toFixed(1) : "—") + "</span>" +
+      '<span class="mm"><span>STAGE ' + m.stages.length + "</span><span>WAVE " + m.waves.length + "</span>" +
+      (p ? "<span>支配 " + Math.round(p.dominance) + "</span><span>領土 " + p.territory + "</span>" : "") + "</span></button></li>";
+  }).join("") + "</ul>";
+}
+function treeHtml(m, kind){
+  const items = kind === "STAGE" ? m.stages : m.waves;
+  const color = kind === "STAGE" ? "var(--stage)" : "var(--wave)";
+  if (!items.length) return '<div class="empty">' + kind + "のページはまだありません。Notionの計画のページの下に作ると、翌朝ここに出ます。</div>";
+  const tops = items.filter(x => !x.label.includes("-"));
+  const kids = top => items.filter(x => x.label.startsWith(top.label + "-") && x.label.split("-").length === 2);
+  const loose = items.filter(x => x.label.includes("-") && !tops.some(t => x.label.startsWith(t.label + "-")));
+  const node = x => {
+    const ts = tasksFor(m.tag, x.label);
+    return '<div class="node"><div class="nh"><span><span class="nl">' + esc(x.label) + "</span> " +
+      (x.subject ? '<span class="ns">' + esc(x.subject) + "</span>" : "") + '</span><a href="' + esc(x.url) + '" target="_blank" rel="noopener">Notionで開く</a></div>' +
+      (ts.length ? '<div class="tasks">' + ts.map(t => {
+        const done = window.TaskEngine && window.TaskEngine.DONE.has(t.check);
+        const prog = t.target ? "世代" + t.gen + " " + t.genTotal + "/" + t.target : (t.gen > 1 ? "世代" + t.gen : "");
+        return '<div class="tk' + (done ? " done" : "") + (t.status === "要再設定" ? " fall" : "") + '"><span>' + (done ? "✓ " : "") + esc(t.def.name) +
+          "</span><span>" + esc(t.status) + (prog ? " " + esc(prog) : "") + " 連続" + t.streak + "</span></div>";
+      }).join("") + "</div>" : "") + "</div>";
+  };
+  return '<div class="tree" style="--c:' + color + '">' + tops.map(t => {
+    const ks = kids(t);
+    return '<details open><summary><span>' + esc(t.label) + (t.subject ? "　" + esc(t.subject) : "") + '</span><span class="cnt">' + ks.length + "件</span></summary>" +
+      '<div class="node"><div class="nh"><span class="ns">' + esc(t.label) + 'のページ</span><a href="' + esc(t.url) + '" target="_blank" rel="noopener">Notionで開く</a></div></div>' +
+      ks.map(node).join("") + "</details>";
+  }).join("") + loose.map(node).join("") + "</div>";
+}
+function reviewHtml(m){
+  const today = taskDay(), kind = state.period;
+  const start = periodStart(kind, today), prevStart = periodPrev(kind, start);
+  const cur = ((state.reviews[start.slice(0, 7)] || {})[rkey(m.tag, kind, start)]) || { c: "", orders: [] };
+  const prev = (state.reviews[prevStart.slice(0, 7)] || {})[rkey(m.tag, kind, prevStart)];
+  const orderLi = (o, month, key) => '<li class="' + (o.done ? "done" : "") + '"><input type="checkbox" data-check="' + esc(o.id) +
+    '" data-month="' + esc(month) + '" data-key="' + esc(key) + '"' + (o.done ? " checked" : "") + ' aria-label="実行できた"><span class="ot">' + esc(o.text) + "</span>" +
+    (key === rkey(m.tag, kind, start) ? '<button type="button" class="del" data-del="' + esc(o.id) + '">消す</button>' : "") + "</li>";
+  const prevBox = prev && (prev.orders || []).length
+    ? '<div class="prev"><h4>前回(' + esc(periodLabel(kind, prevStart)) + ")の作戦指令 " + prev.orders.filter(o => o.done).length + "/" + prev.orders.length + " 実行</h4>" +
+      '<ul class="orders">' + prev.orders.map(o => orderLi(o, prevStart.slice(0, 7), rkey(m.tag, kind, prevStart))).join("") + "</ul></div>"
+    : '<div class="prev"><h4>前回(' + esc(periodLabel(kind, prevStart)) + ")の作戦指令はありません</h4></div>";
+  // これまでの内省(同じ周期)
+  const hist = [];
+  for (const entries of Object.values(state.reviews)) for (const e of Object.values(entries || {})) {
+    if (e.tag === m.tag && e.period === kind && e.start < start) hist.push(e);
+  }
+  hist.sort((a, b) => a.start < b.start ? 1 : -1);
+  return '<div class="periods" role="group" aria-label="周期">' + PERIODS.map(([k, l]) =>
+      '<button type="button" data-period="' + k + '" aria-pressed="' + (k === kind) + '">' + l + "</button>").join("") + "</div>" +
+    prevBox +
+    '<div class="cur"><h4>' + esc(periodLabel(kind, start)) + "の作戦会議(C)</h4>" +
+    '<textarea id="rv-c" placeholder="前回の指令の結果をふまえて、うまくいったこと・いかなかったこと・次の方針">' + esc(cur.c || "") + "</textarea>" +
+    '<h4 style="margin-top:.7rem">作戦指令(A)</h4><ul class="orders">' + (cur.orders || []).map(o => orderLi(o, start.slice(0, 7), rkey(m.tag, kind, start))).join("") + "</ul>" +
+    '<div class="addrow"><input id="rv-new" type="text" placeholder="次にやること"><button type="button" class="btn sm" data-add>足す</button></div>' +
+    '<div style="margin-top:.7rem;display:flex;gap:.6rem;align-items:center"><button type="button" class="btn" data-save>保存する</button><span class="status" id="rv-status"></span></div></div>' +
+    '<div class="hist">' + (hist.length ? "<details><summary>これまでの" + esc(PERIODS.find(p => p[0] === kind)[1]) + "の内省 " + hist.length + "件</summary>" +
+      hist.map(e => '<div class="hentry"><div class="hd">' + esc(periodLabel(kind, e.start)) + "</div>" + (e.c ? "<p>" + esc(e.c) + "</p>" : "") +
+        ((e.orders || []).length ? '<ul class="orders">' + e.orders.map(o => '<li class="' + (o.done ? "done" : "") + '"><span>' + (o.done ? "✓" : "・") + '</span><span class="ot">' + esc(o.text) + "</span></li>").join("") + "</ul>" : "") + "</div>").join("") +
+      "</details>" : "") + '<button type="button" class="btn ghost sm" data-older style="margin-top:.5rem">もっと前を読む</button></div>';
+}
+function renderDetail(){
+  const box = document.getElementById("detail");
+  const m = state.open && state.gov && state.gov.ministries.find(x => x.tag === state.open);
+  box.hidden = !m;
+  if (!m) { box.innerHTML = ""; return; }
+  const p = powerOf(m.tag);
+  const deps = Object.entries(m.deps || {});
+  const rev = state.gov.ministries.filter(x => (x.deps || {})[m.tag] != null).map(x => [x.name, x.deps[m.tag]]);
+  box.innerHTML = '<button type="button" class="back" data-back>‹ 省の一覧</button>' +
+    '<div class="mh"><h2>' + esc(m.name) + "</h2>" + (p ? '<span>国力 <b>' + Number(p.power).toFixed(1) + "</b>　支配 " + Math.round(p.dominance) + "　領土 " + p.territory + "</span>" : "") + "</div>" +
+    '<div class="links">' + (m.purpose ? '<a class="purpose" href="' + esc(m.purpose.url) + '" target="_blank" rel="noopener">目的</a>' : "") +
+      (m.plan ? '<a href="' + esc(m.plan.url) + '" target="_blank" rel="noopener">計画</a>' : "") +
+      '<a href="' + esc(m.url) + '" target="_blank" rel="noopener">省のページ</a></div>' +
+    ((m.goal || m.deadline) ? '<dl class="kv">' + (m.goal ? "<dt>到達点</dt><dd>" + esc(m.goal) + "</dd>" : "") +
+      (m.deadline ? "<dt>期限</dt><dd>" + esc(m.deadline) + (m.progress != null ? "(進捗 " + Math.round(m.progress * 100) + "%)" : "") + "</dd>" : "") + "</dl>" : "") +
+    '<div class="sec"><h3>依存度</h3>' + (deps.length ? '<div class="deps">' + deps.map(([k, v]) => '<span class="dep' + (v < 0 ? " neg" : "") + '">' + esc(k) + " " + v + "</span>").join("") + "</div>" : '<div class="empty">依存先はありません。Notionの省一覧で設定します。</div>') +
+      (rev.length ? '<p style="font-size:.82rem;color:var(--sub);margin:.4rem 0 0">この省に依存している:' + rev.map(([n, v]) => esc(n) + " " + v).join("、") + "</p>" : "") + "</div>" +
+    '<div class="sec tide"><h3>時勢</h3>合計 <b>' + (m.tide.total > 0 ? "+" : "") + m.tide.total + "</b>" +
+      (m.tide.recent.length ? "<ul>" + m.tide.recent.map(t => "<li>" + esc(t.date) + " " + esc(t.title) + "(" + (t.delta > 0 ? "+" : "") + esc(t.delta) + ")</li>").join("") + "</ul>" : "") + "</div>" +
+    '<div class="sec"><h3><i style="background:var(--stage)"></i>STAGE</h3>' + treeHtml(m, "STAGE") + "</div>" +
+    '<div class="sec"><h3><i style="background:var(--wave)"></i>WAVE</h3>' + treeHtml(m, "WAVE") + "</div>" +
+    '<div class="sec" id="review"><h3>内省</h3>' + reviewHtml(m) + "</div>";
+}
+function renderOrders(){
+  const box = document.getElementById("orders");
+  const list = openOrders(null);
+  if (!list.length) { box.innerHTML = '<div class="empty">済んでいない作戦指令はありません。</div>'; return; }
+  const byTag = {};
+  for (const x of list) (byTag[x.entry.tag] = byTag[x.entry.tag] || []).push(x);
+  const nameOf = tag => ((state.gov && state.gov.ministries.find(m => m.tag === tag)) || { name: tag }).name;
+  box.innerHTML = Object.entries(byTag).map(([tag, xs]) => '<div class="sec"><h3>' + esc(nameOf(tag)) + '</h3><ul class="orders">' +
+    xs.sort((a, b) => a.entry.start < b.entry.start ? 1 : -1).map(x => '<li><input type="checkbox" data-check="' + esc(x.order.id) + '" data-month="' + esc(x.month) +
+      '" data-key="' + esc(x.key) + '" aria-label="実行できた"><span class="ot">' + esc(x.order.text) +
+      ' <span style="color:var(--sub);font-size:.78rem">' + esc((PERIODS.find(p => p[0] === x.entry.period) || [0, ""])[1]) + " " + esc(periodLabel(x.entry.period, x.entry.start)) + "</span></span></li>").join("") +
+    "</ul></div>").join("");
+}
+
+/* ───── 保存 ───── */
+async function commitReview(month, mutate){
+  const path = P.reviews + "/" + month + ".json";
+  mutate();
+  render();
+  for (let i = 0; i < 3; i++) {
+    try {
+      state.reviewShas[month] = await writeJson(path, state.reviews[month] || {}, state.reviewShas[month] || null);
+      lsSet(KEY_CACHE, { gov: state.gov, stats: state.stats, reviews: state.reviews, reviewShas: state.reviewShas });
+      return true;
+    } catch (e) {
+      if ((e.status === 409 || e.status === 422) && i < 2) {
+        const fresh = await readJson(path);
+        state.reviews[month] = fresh.data || {}; state.reviewShas[month] = fresh.sha;
+        mutate(); render(); continue;
+      }
+      const s = document.getElementById("rv-status"); if (s) { s.textContent = e.message || "保存できませんでした"; s.classList.add("err"); }
+      return false;
+    }
+  }
+  return false;
+}
+function entryFor(month, key, tag, kind, start){
+  const mo = state.reviews[month] = state.reviews[month] || {};
+  return mo[key] = mo[key] || { tag, period: kind, start, c: "", orders: [] };
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+/* ───── 操作 ───── */
+function showView(name){
+  document.querySelectorAll(".view").forEach(v => v.hidden = v.id !== "view-" + name);
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.view === name)));
+  window.scrollTo(0, 0);
+}
+function bind(){
+  document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => { if (b.dataset.view === "list") { state.open = null; render(); } showView(b.dataset.view); }));
+  document.getElementById("list").addEventListener("click", e => {
+    const b = e.target.closest("[data-open]"); if (!b) return;
+    state.open = b.dataset.open; render(); window.scrollTo(0, 0);
+  });
+  const onCheck = async e => {
+    const c = e.target.closest("[data-check]"); if (!c) return;
+    const { month, key } = c.dataset, id = c.dataset.check, on = c.checked;
+    await commitReview(month, () => {
+      const en = (state.reviews[month] || {})[key]; if (!en) return;
+      const o = (en.orders || []).find(x => x.id === id); if (!o) return;
+      o.done = on; o.doneAt = on ? taskDay() : null; en.updatedAt = new Date().toISOString();
+    });
+  };
+  document.getElementById("detail").addEventListener("change", onCheck);
+  document.getElementById("orders").addEventListener("change", onCheck);
+  document.getElementById("detail").addEventListener("click", async e => {
+    if (e.target.closest("[data-back]")) { state.open = null; render(); return; }
+    const pb = e.target.closest("[data-period]");
+    if (pb) { state.period = pb.dataset.period; renderDetail(); document.getElementById("review").scrollIntoView({ block: "nearest" }); return; }
+    const m = state.gov.ministries.find(x => x.tag === state.open); if (!m) return;
+    const kind = state.period, start = periodStart(kind, taskDay()), month = start.slice(0, 7), key = rkey(m.tag, kind, start);
+    if (e.target.closest("[data-add]")) {
+      const inp = document.getElementById("rv-new"), text = inp.value.trim(); if (!text) return;
+      const c = document.getElementById("rv-c").value;
+      await commitReview(month, () => { const en = entryFor(month, key, m.tag, kind, start); en.c = c; en.orders = (en.orders || []).concat([{ id: uid(), text, done: false }]); en.updatedAt = new Date().toISOString(); });
+      const s = document.getElementById("rv-new"); if (s) s.focus();
+      return;
+    }
+    const del = e.target.closest("[data-del]");
+    if (del) { const id = del.dataset.del; await commitReview(month, () => { const en = entryFor(month, key, m.tag, kind, start); en.orders = (en.orders || []).filter(o => o.id !== id); }); return; }
+    if (e.target.closest("[data-save]")) {
+      const c = document.getElementById("rv-c").value;
+      const ok = await commitReview(month, () => { const en = entryFor(month, key, m.tag, kind, start); en.c = c; en.updatedAt = new Date().toISOString(); });
+      const s = document.getElementById("rv-status"); if (s && ok) s.textContent = "保存しました";
+      return;
+    }
+    if (e.target.closest("[data-older]")) {
+      const months = Array.from(state.loadedMonths).sort();
+      const older = addDays(months[0] + "-01", -1).slice(0, 7);
+      try { await loadReviewMonth(older); renderDetail(); } catch (err) { const s = document.getElementById("rv-status"); if (s) s.textContent = err.message; }
+    }
+  });
+  document.getElementById("connect").addEventListener("click", async () => {
+    const v = id => document.getElementById(id).value.trim();
+    state.conn = { owner: v("c-owner"), repo: v("c-repo"), branch: v("c-branch") || "main", token: v("c-token") };
+    lsSet(KEY_CONN, state.conn);
+    if (await loadAll()) showView("list");
+  });
+  document.getElementById("reload").addEventListener("click", loadAll);
+}
+function boot(){
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+  bind();
+  document.getElementById("ver").textContent = "版 " + APP_VERSION;
+  const c = lsGet(KEY_CONN, null);
+  document.getElementById("c-owner").value = c ? c.owner : "nisenonamae";
+  document.getElementById("c-repo").value = c ? c.repo : "notion-daily";
+  document.getElementById("c-branch").value = c ? c.branch : "main";
+  document.getElementById("c-token").value = c ? c.token : "";
+  const cache = lsGet(KEY_CACHE, null);
+  if (cache) { state.gov = cache.gov; state.stats = cache.stats; state.reviews = cache.reviews || {}; state.reviewShas = cache.reviewShas || {};
+               Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
+  if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
+}
+window.__sho = { state, periodStart, periodPrev, loadAll };
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+})();
+</script>
+</body>
+</html>
