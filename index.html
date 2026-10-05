@@ -137,7 +137,19 @@ textarea{min-height:7rem;line-height:1.6}
 .diff{display:grid;gap:.3rem;margin:.4rem 0}
 .diff .old{background:#F4E4E0;padding:.4rem .6rem;white-space:pre-wrap;font-size:.86rem;text-decoration:line-through;text-decoration-color:rgba(181,67,47,.5)}
 .diff .new{background:#E3EEE6;padding:.4rem .6rem;white-space:pre-wrap;font-size:.86rem}
-.timer{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;margin:.4rem 0;color:var(--shu)}
+.donut{position:relative;width:180px;height:180px;margin:.6rem auto}
+.donut svg{width:100%;height:100%;transform:rotate(-90deg)}
+.donut .bg{fill:none;stroke:var(--rule);stroke-width:14}
+.donut .fg{fill:none;stroke-width:14;stroke-linecap:round;transition:stroke-dashoffset .9s linear,stroke .6s}
+.donut .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut .mid b{font-size:2rem;font-variant-numeric:tabular-nums;line-height:1.1}
+.donut .mid span{font-size:.74rem;color:var(--sub)}
+.fold{margin-top:1rem}
+.fold>summary{cursor:pointer;color:var(--sub);font-size:.88rem;padding:.4rem 0}
+.arc{border-left:3px solid var(--rule);padding:.3rem .7rem;margin:.3rem 0}
+.arc summary{cursor:pointer;font-size:.9rem}
+.arc .ad{font-size:.74rem;color:var(--sub);margin-left:.4rem}
+.arc p{white-space:pre-wrap;font-size:.86rem;margin:.3rem 0 .2rem;line-height:1.7}
 .lock{font-size:.82rem;color:var(--sub);border:1px dashed var(--rule);padding:.4rem .6rem;margin:.5rem 0}
 /* タブ */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-top:1px solid var(--rule);display:flex;padding-bottom:env(safe-area-inset-bottom)}
@@ -190,7 +202,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-05 r4";
+const APP_VERSION = "2026-10-05 r6";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -530,16 +542,16 @@ function renderOrders(){
 
 /* ───────── 政府(憲法・憲政院・最高評議会・常任評議会) ───────── */
 const GOVP = { cons: "roadmap/gov/constitution.json", amend: "roadmap/gov/amendments.json", council: "roadmap/gov/councils.json" };
-const OLD_STANDING = "https://app.notion.com/p/3cc48dd8079581d6ae52ddd90c07a50b";
-const OLD_SUPREME = "https://app.notion.com/p/3bc48dd807958043a0fbf282537a74b1";
+const ARCHIVE = "roadmap/gov/council_archive.json";   // Notionから一度だけ写した過去の記録(見るだけ)
 const COOLING_DAYS = 3;          // 改憲は起草した日から2日飛ばし、3日目以降に審議できる(最高評議会の条文)
 const LIMITS = [15, 30, 60, 90];  // 審議の制限時間(分)
-const gov = { cons: null, consSha: null, amend: { items: [] }, amendSha: null, council: { supreme: [], standing: [] }, councilSha: null,
+const gov = { archive: null, cons: null, consSha: null, amend: { items: [] }, amendSha: null, council: { supreme: [], standing: [] }, councilSha: null,
               view: null, open: null, draft: null };
 const nowIso = () => new Date(window.__shoNow || Date.now()).toISOString();
 
 async function loadGov(){
-  const [c, a, k] = await Promise.all([readJson(GOVP.cons), readJson(GOVP.amend), readJson(GOVP.council)]);
+  const [c, a, k, ar] = await Promise.all([readJson(GOVP.cons), readJson(GOVP.amend), readJson(GOVP.council), readJson(ARCHIVE).catch(() => ({}))]);
+  gov.archive = ar.data || null;
   gov.cons = c.data; gov.consSha = c.sha;
   gov.amend = (a.data && a.data.items) ? a.data : { items: [] }; gov.amendSha = a.sha;
   gov.council = Object.assign({ supreme: [], standing: [] }, k.data || {}); gov.councilSha = k.sha;
@@ -598,7 +610,7 @@ const backBtn = '<button type="button" class="back" data-gback>‹ 政府</butto
 function renderGovHome(box){
   const live = gov.amend.items.filter(a => ["審議待ち", "審議できる", "審議中"].includes(amendStatus(a))).length;
   const decrees = gov.council.supreme.filter(x => x.closedAt).slice(-3).reverse();
-  const open = gov.council.standing.filter(x => x.status !== "実施済み").length;
+  const open = gov.council.standing.filter(x => standingStatus(x) !== "実施済み").length;
   box.innerHTML = '<div class="organs">' +
     '<button type="button" class="organ" data-gview="憲法"><b>憲法</b><span>' + (gov.cons ? "第" + gov.cons.version + "版・" + gov.cons.articles.length + "条" : "まだ写していません") + "</span></button>" +
     '<button type="button" class="organ" data-gview="憲政院"><b>憲政院</b><span>改憲案の起草' + (live ? "・進行中 " + live : "") + "</span></button>" +
@@ -687,17 +699,23 @@ function renderSupreme(box){
   if (open && open.kind === "amend") return renderAmendSession(box, gov.amend.items.find(x => x.id === open.id));
   if (open && open.kind === "policy") return renderPolicySession(box, gov.council.supreme.find(x => x.id === open.id));
   const amends = gov.amend.items.filter(a => a.submitted).slice().reverse();
-  const pol = gov.council.supreme.slice().reverse();
+  const doneSt = ["可決", "否決", "廃案"];
+  const aRow = a => { const st = amendStatus(a);
+    return '<button type="button" class="item" data-open-amend-s="' + esc(a.id) + '"><span>' + esc(a.title) + '<br><span style="font-size:.76rem;color:var(--sub)">審議期間 ' + esc(a.periodStart) + "〜" + esc(a.periodEnd) +
+      '</span></span><span class="st ' + stClass(st) + '">' + st + "</span></button>"; };
+  const pRow = p => '<button type="button" class="item" data-open-pol="' + esc(p.id) + '"><span>' + esc(p.title) +
+      (p.closedAt ? '<br><span style="font-size:.8rem">' + esc((p.decision || "").slice(0, 60)) + "</span>" : "") + '</span><span class="st ' + stClass(p.closedAt ? "議決" : (p.startedAt ? "審議中" : "")) + '">' +
+      (p.closedAt ? "議決" : p.startedAt ? "審議中" : "未審議") + "</span></button>";
+  const aLive = amends.filter(a => !doneSt.includes(amendStatus(a))), aDone = amends.filter(a => doneSt.includes(amendStatus(a)));
+  const pol = gov.council.supreme.slice().reverse(), pLive = pol.filter(p => !p.closedAt), pDone = pol.filter(p => p.closedAt);
   box.innerHTML = backBtn + '<div class="mh"><h2>最高評議会</h2></div>' +
     '<p style="font-size:.86rem;color:var(--sub)">最高議決機関。審議は制限時間を定めて深く集中して行う。議会終了を宣言した議決は確定し、すべての活動に優先する。</p>' +
-    '<div class="sec"><h3>改憲の審議</h3>' + (amends.length ? amends.map(a => { const st = amendStatus(a);
-      return '<button type="button" class="item" data-open-amend-s="' + esc(a.id) + '"><span>' + esc(a.title) + '<br><span style="font-size:.76rem;color:var(--sub)">審議期間 ' + esc(a.periodStart) + "〜" + esc(a.periodEnd) +
-        '</span></span><span class="st ' + stClass(st) + '">' + st + "</span></button>"; }).join("") : '<div class="empty">提出された改憲案はありません。</div>') + "</div>" +
+    '<div class="sec"><h3>改憲の審議</h3>' + (aLive.length ? aLive.map(aRow).join("") : '<div class="empty">審議を待っている改憲案はありません。</div>') +
+      foldHtml("これまでの改憲", aDone.map(aRow).join(""), aDone.length) + "</div>" +
     '<div class="sec"><h3>重大国策の審議</h3>' +
       '<div class="addrow"><input id="pol-title" placeholder="議題"><button type="button" class="btn sm" data-pol-new>議題を立てる</button></div>' +
-      pol.map(p => '<button type="button" class="item" data-open-pol="' + esc(p.id) + '"><span>' + esc(p.title) + '</span><span class="st ' + stClass(p.closedAt ? "議決" : (p.startedAt ? "審議中" : "")) + '">' +
-        (p.closedAt ? "議決" : p.startedAt ? "審議中" : "未審議") + "</span></button>").join("") + "</div>" +
-    '<p style="font-size:.8rem;margin-top:1rem"><a href="' + OLD_SUPREME + '" target="_blank" rel="noopener">過去の最高評議会(Notion)</a></p>' +
+      pLive.map(pRow).join("") + foldHtml("これまでの議決", pDone.map(pRow).join(""), pDone.length) + "</div>" +
+    archiveHtml("supreme", "Notionの記録") +
     '<span class="status" id="gov-msg"></span>';
 }
 
@@ -708,8 +726,19 @@ function sessionBlock(sess, closedHtml){
       '<div style="margin-top:.6rem"><button type="button" class="btn" data-ss-start>審議を始める</button></div>';
   }
   const left = timeLeft(sess), over = left <= 0;
-  return '<div class="timer" id="ss-timer">' + fmtLeft(left) + "</div>" +
+  return donutHtml(sess) +
     (over ? '<p class="lock">制限時間が終わりました。理由はもう書き足せません。今の考えで議決してください。</p>' : "");
+}
+
+// ドーナツの時計:残り時間が輪の形で減っていく
+const RING_R = 76, RING_C = 2 * Math.PI * RING_R;
+function ringColor(frac){ return frac > 0.5 ? "var(--ok)" : frac > 0.2 ? "#B07D2A" : "var(--shu)"; }
+function donutHtml(sess){
+  const total = Math.max(1, Date.parse(sess.endsAt) - Date.parse(sess.startedAt)), left = timeLeft(sess), frac = Math.max(0, Math.min(1, left / total));
+  return '<div class="donut" role="timer" aria-label="残り時間"><svg viewBox="0 0 180 180"><circle class="bg" cx="90" cy="90" r="' + RING_R + '"></circle>' +
+    '<circle class="fg" id="ss-ring" cx="90" cy="90" r="' + RING_R + '" stroke="' + ringColor(frac) + '" stroke-dasharray="' + RING_C.toFixed(1) +
+    '" stroke-dashoffset="' + (RING_C * (1 - frac)).toFixed(1) + '"></circle></svg>' +
+    '<div class="mid"><b id="ss-timer">' + fmtLeft(left) + "</b><span>" + (left > 0 ? "残り" : "時間です") + "</span></div></div>";
 }
 function fmtLeft(ms){ const s = Math.ceil(ms / 1000); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
 function startTimer(sess){
@@ -717,6 +746,11 @@ function startTimer(sess){
   gov.timer = setInterval(() => {
     const el = document.getElementById("ss-timer"); if (!el) { clearInterval(gov.timer); return; }
     const left = timeLeft(sess); el.textContent = fmtLeft(left);
+    const ring = document.getElementById("ss-ring");
+    if (ring) {
+      const total = Math.max(1, Date.parse(sess.endsAt) - Date.parse(sess.startedAt)), frac = Math.max(0, Math.min(1, left / total));
+      ring.setAttribute("stroke-dashoffset", (RING_C * (1 - frac)).toFixed(1)); ring.setAttribute("stroke", ringColor(frac));
+    }
     if (left <= 0) { clearInterval(gov.timer); renderGov(); }
   }, 1000);
 }
@@ -762,26 +796,77 @@ function renderPolicySession(box, p){
   startTimer(p);
 }
 
+// 常任評議会の議題の状態。審議の記録と実行のチェックから決まる
+function standingStatus(it){
+  if (it.status === "実施済み") return "実施済み";
+  if (it.decidedAt) {
+    const os = it.orders || [];
+    return os.length && os.every(o => o.done) ? "実施済み" : "議決";
+  }
+  if ((it.sessions || []).length) return "審議中";
+  if (it.status === "審議中" && (it.discussion || it.summary)) return "審議中";   // 前の形で書いた議題
+  return "未審議";
+}
+const liveSession = it => { const ss = it.sessions || []; const l = ss[ss.length - 1]; return l && !l.closedAt ? l : null; };
+const stTotalMin = it => Math.round((it.sessions || []).reduce((m, x) => m + (Date.parse(x.closedAt || x.endsAt) - Date.parse(x.startedAt)) / 60000, 0));
+
+function archiveHtml(key, label){
+  const list = (gov.archive && gov.archive[key]) || [];
+  const items = list.filter(a => a.depth > 0 && (a.text || "").trim());
+  if (!items.length) return "";
+  return '<details class="fold"><summary>アーカイブ(' + esc(label) + ") " + items.length + "件</summary>" +
+    items.map(a => '<details class="arc"><summary>' + esc(a.title) + (a.date ? '<span class="ad">' + esc(a.date) + "</span>" : "") +
+      (a.path && a.path.length > 1 ? '<span class="ad">' + esc(a.path.slice(1).join(" / ")) + "</span>" : "") + "</summary><p>" + esc(a.text) + "</p></details>").join("") + "</details>";
+}
+function foldHtml(label, inner, n){ return n ? '<details class="fold"><summary>' + esc(label) + " " + n + "件</summary>" + inner + "</details>" : ""; }
+
 function renderStanding(box){
   const open = gov.open && gov.open.kind === "standing" ? gov.council.standing.find(x => x.id === gov.open.id) : null;
   if (open) {
-    box.innerHTML = '<button type="button" class="back" data-sclose>‹ 常任評議会</button><div class="mh"><h2>' + esc(open.title) + "</h2></div>" +
-      '<div class="f"><label>状態</label><select id="st-status">' + ["審議中", "議決", "実施済み"].map(x => "<option" + (x === open.status ? " selected" : "") + ">" + x + "</option>").join("") + "</select></div>" +
-      '<div class="f" style="margin-top:.5rem"><label>議論</label><textarea id="st-disc">' + esc(open.discussion || "") + "</textarea></div>" +
-      '<div class="f" style="margin-top:.5rem"><label>決定</label><textarea id="st-dec">' + esc(open.decision || "") + "</textarea></div>" +
-      '<h4 style="margin:.8rem 0 .3rem">決めたことの実行</h4><ul class="orders">' + (open.orders || []).map(o => '<li class="' + (o.done ? "done" : "") + '"><input type="checkbox" data-st-check="' + esc(o.id) + '"' + (o.done ? " checked" : "") +
+    const st = standingStatus(open), live = liveSession(open), left = live ? timeLeft(live) : 0, over = live && left <= 0;
+    const decided = !!open.decidedAt;
+    const canWrite = !decided && (!live || !over);
+    box.innerHTML = '<button type="button" class="back" data-sclose>‹ 常任評議会</button>' +
+      '<div class="mh"><h2>' + esc(open.title) + '</h2><span class="st ' + stClass(st) + '">' + st + "</span></div>" +
+      '<p style="font-size:.8rem;color:var(--sub);margin:.3rem 0">立てた日 ' + esc(open.created) + ((open.sessions || []).length ? "　審議 " + open.sessions.length + "回・計" + stTotalMin(open) + "分" : "") + "</p>" +
+      // 審議(制限時間)
+      (!decided ? (live
+        ? donutHtml(live) +
+          (over ? '<p class="lock">時間です。続けるなら延長、今日はここまでなら区切ってください。</p>' : "") +
+          '<div style="display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center"><button type="button" class="btn ghost sm" data-st-ext="10">+10分延長</button>' +
+          '<button type="button" class="btn ghost sm" data-st-ext="30">+30分延長</button><button type="button" class="btn ghost sm" data-st-pause>区切る(続きは後で)</button></div>'
+        : '<div style="display:flex;gap:.5rem;align-items:flex-end;flex-wrap:wrap"><div class="f" style="width:9rem"><label>制限時間</label><select id="st-limit">' +
+            LIMITS.map(m => '<option value="' + m + '"' + (m === 30 ? " selected" : "") + ">" + m + "分</option>").join("") + "</select></div>" +
+          '<button type="button" class="btn" data-st-start>' + ((open.sessions || []).length ? "審議を再開する" : "審議を始める") + "</button></div>") : "") +
+      '<div class="f" style="margin-top:.8rem"><label>概要(議論の要点を短く)</label><textarea id="st-sum" style="min-height:4rem"' + (canWrite ? "" : " disabled") + ">" + esc(open.summary || "") + "</textarea></div>" +
+      '<div class="f" style="margin-top:.5rem"><label>議論</label><textarea id="st-disc"' + (canWrite ? "" : " disabled") + ">" + esc(open.discussion || "") + "</textarea></div>" +
+      '<div class="f" style="margin-top:.5rem"><label>決定</label><textarea id="st-dec" style="min-height:4rem"' + (decided ? " disabled" : "") + ">" + esc(open.decision || "") + "</textarea></div>" +
+      (!decided ? '<div style="margin-top:.6rem;display:flex;gap:.5rem;flex-wrap:wrap"><button type="button" class="btn ghost" data-st-save>保存する</button><button type="button" class="btn" data-st-decide>議決する</button></div>'
+                : '<div style="margin-top:.6rem;display:flex;gap:.5rem;flex-wrap:wrap"><button type="button" class="btn ghost sm" data-st-reopen>審議に戻す</button>' +
+                  (st !== "実施済み" && !(open.orders || []).length ? '<button type="button" class="btn sm" data-st-done>実施済みにする</button>' : "") + "</div>") +
+      '<h4 style="margin:1rem 0 .3rem">決めたことの実行</h4><ul class="orders">' + (open.orders || []).map(o => '<li class="' + (o.done ? "done" : "") + '"><input type="checkbox" data-st-check="' + esc(o.id) + '"' + (o.done ? " checked" : "") +
         '><span class="ot">' + esc(o.text) + '</span><button type="button" class="del" data-st-del="' + esc(o.id) + '">消す</button></li>').join("") + "</ul>" +
       '<div class="addrow"><input id="st-new" placeholder="やること"><button type="button" class="btn sm" data-st-add>足す</button></div>' +
-      '<div style="margin-top:.7rem"><button type="button" class="btn" data-st-save>保存する</button></div><span class="status" id="gov-msg"></span>';
+      '<div style="margin-top:1.4rem"><button type="button" class="btn ghost sm" data-st-remove style="border-color:var(--shu);color:var(--shu)">この議題を消す</button></div>' +
+      '<span class="status" id="gov-msg"></span>';
+    if (live && !over) startTimer(live);
     return;
   }
-  const items = gov.council.standing.slice().reverse();
+  const all = gov.council.standing.slice().reverse();
+  const order = { "審議中": 0, "未審議": 1, "議決": 2, "実施済み": 3 };
+  all.sort((x, y) => order[standingStatus(x)] - order[standingStatus(y)]);
+  const items = all.filter(x => standingStatus(x) !== "実施済み"), done = all.filter(x => standingStatus(x) === "実施済み");
   box.innerHTML = backBtn + '<div class="mh"><h2>常任評議会</h2></div>' +
+    '<p style="font-size:.84rem;color:var(--sub)">議題は先に立てておいて、審議は後でもいい。</p>' +
     '<div class="addrow"><input id="st-title" placeholder="議題"><button type="button" class="btn sm" data-st-new>議題を立てる</button></div>' +
-    (items.length ? items.map(x => '<button type="button" class="item" data-open-st="' + esc(x.id) + '"><span>' + esc(x.title) + '<br><span style="font-size:.76rem;color:var(--sub)">' + esc(x.created) +
-      ((x.orders || []).length ? "　実行 " + x.orders.filter(o => o.done).length + "/" + x.orders.length : "") + '</span></span><span class="st ' + stClass(x.status) + '">' + esc(x.status) + "</span></button>").join("")
-      : '<div class="empty">議題はまだありません。</div>') +
-    '<p style="font-size:.8rem;margin-top:1rem"><a href="' + OLD_STANDING + '" target="_blank" rel="noopener">過去の常任評議会の記録(Notion)</a></p><span class="status" id="gov-msg"></span>';
+    (items.length ? items.map(stRow).join("") : '<div class="empty">動いている議題はありません。</div>') +
+    foldHtml("これまでの実施済み", done.map(stRow).join(""), done.length) +
+    archiveHtml("standing", "Notionの記録") + '<span class="status" id="gov-msg"></span>';
+  function stRow(x){ const st = standingStatus(x);
+      return '<button type="button" class="item" data-open-st="' + esc(x.id) + '"><span>' + esc(x.title) +
+        (x.summary ? '<br><span style="font-size:.8rem">' + esc(x.summary.length > 60 ? x.summary.slice(0, 60) + "…" : x.summary) + "</span>" : "") +
+        '<br><span style="font-size:.76rem;color:var(--sub)">' + esc(x.created) + ((x.orders || []).length ? "　実行 " + x.orders.filter(o => o.done).length + "/" + x.orders.length : "") +
+        '</span></span><span class="st ' + stClass(st) + '">' + st + "</span></button>"; }
 }
 
 // 可決した改憲案を憲法に当てはめ、新しい版にする
@@ -891,24 +976,78 @@ function bindGov(){
     if (q("[data-st-new]")) {
       const t = (document.getElementById("st-title").value || "").trim(); if (!t) return;
       const id = uid();
-      await saveGov("council", () => { gov.council.standing.push({ id, title: t, created: taskDay(), status: "審議中", discussion: "", decision: "", orders: [] }); });
-      gov.open = { kind: "standing", id }; return renderGov();
+      await saveGov("council", () => { gov.council.standing.push({ id, title: t, created: taskDay(), status: "未審議", summary: "", discussion: "", decision: "", orders: [], sessions: [] }); });
+      govMsg("議題を立てました。審議は後でもできます。");
+      return renderGov();
     }
     if ((b = q("[data-open-st]"))) { gov.open = { kind: "standing", id: b.dataset.openSt }; return renderGov(); }
     const st = gov.open && gov.open.kind === "standing" ? gov.open.id : null;
-    const readSt = it => { it.status = document.getElementById("st-status").value; it.discussion = document.getElementById("st-disc").value; it.decision = document.getElementById("st-dec").value; };
-    if (st && q("[data-st-add]")) {
-      const t = (document.getElementById("st-new").value || "").trim(); if (!t) return;
-      await saveGov("council", () => { const it = gov.council.standing.find(x => x.id === st); readSt(it); it.orders = (it.orders || []).concat([{ id: uid(), text: t, done: false }]); });
+    const find = () => gov.council.standing.find(x => x.id === st);
+    // 書いている途中のものを拾う(止まっている欄は拾わない)
+    const readSt = it => {
+      const sum = document.getElementById("st-sum"), disc = document.getElementById("st-disc"), dec = document.getElementById("st-dec");
+      if (sum && !sum.disabled) it.summary = sum.value;
+      if (disc && !disc.disabled) it.discussion = disc.value;
+      if (dec && !dec.disabled) it.decision = dec.value;
+    };
+    if (st && q("[data-st-start]")) {
+      const limit = +document.getElementById("st-limit").value, start = nowIso();
+      await saveGov("council", () => { const it = find(); if (!it || liveSession(it)) return false; readSt(it);
+        it.sessions = (it.sessions || []).concat([{ startedAt: start, endsAt: new Date(Date.parse(start) + limit * 60000).toISOString(), limitMin: limit }]);
+        it.status = "審議中"; });
       return renderGov();
     }
-    if (st && (b = q("[data-st-del]"))) { await saveGov("council", () => { const it = gov.council.standing.find(x => x.id === st); it.orders = it.orders.filter(o => o.id !== b.dataset.stDel); }); return renderGov(); }
-    if (st && q("[data-st-save]")) { const ok = await saveGov("council", () => readSt(gov.council.standing.find(x => x.id === st))); if (ok) govMsg("保存しました"); return; }
+    if (st && (b = q("[data-st-ext]"))) {
+      const add = +b.dataset.stExt;
+      await saveGov("council", () => { const it = find(), l = it && liveSession(it); if (!l) return false;
+        const base = Math.max(Date.parse(l.endsAt), Date.parse(nowIso()));      // 時間切れのあとなら、今から延ばす
+        l.endsAt = new Date(base + add * 60000).toISOString(); l.extended = (l.extended || 0) + add; });
+      govMsg(add + "分延長しました");
+      return renderGov();
+    }
+    if (st && q("[data-st-pause]")) {
+      await saveGov("council", () => { const it = find(), l = it && liveSession(it); if (!l) return false; readSt(it);
+        const now = nowIso(); l.closedAt = Date.parse(now) < Date.parse(l.endsAt) ? now : l.endsAt; });
+      govMsg("区切りました。続きはいつでも再開できます。");
+      return renderGov();
+    }
+    if (st && q("[data-st-decide]")) {
+      const dec = (document.getElementById("st-dec").value || "").trim();
+      if (!dec) return govMsg("決定を書いてから議決してください。", true);
+      await saveGov("council", () => { const it = find(); if (!it) return false; readSt(it);
+        const l = liveSession(it); if (l) { const now = nowIso(); l.closedAt = Date.parse(now) < Date.parse(l.endsAt) ? now : l.endsAt; }
+        it.decision = dec; it.decidedAt = nowIso(); it.status = "議決"; });
+      govMsg("議決しました。決めたことの実行を下に足せます。");
+      return renderGov();
+    }
+    if (st && q("[data-st-reopen]")) {
+      await saveGov("council", () => { const it = find(); if (!it) return false; delete it.decidedAt; it.status = "審議中"; });
+      return renderGov();
+    }
+    if (st && q("[data-st-done]")) {
+      await saveGov("council", () => { const it = find(); if (!it) return false; it.status = "実施済み"; });
+      return renderGov();
+    }
+    if (st && q("[data-st-remove]")) {
+      const it = find(); if (!it) return;
+      if (!confirm("議題「" + it.title + "」を消しますか。議論と決定も消えます。")) return;
+      await saveGov("council", () => { gov.council.standing = gov.council.standing.filter(x => x.id !== st); });
+      gov.open = null; govMsg("消しました"); renderOrders();
+      return renderGov();
+    }
+    if (st && q("[data-st-add]")) {
+      const t = (document.getElementById("st-new").value || "").trim(); if (!t) return;
+      await saveGov("council", () => { const it = find(); readSt(it); it.orders = (it.orders || []).concat([{ id: uid(), text: t, done: false }]); if (it.status === "実施済み") it.status = "議決"; });
+      return renderGov();
+    }
+    if (st && (b = q("[data-st-del]"))) { await saveGov("council", () => { const it = find(); it.orders = it.orders.filter(o => o.id !== b.dataset.stDel); }); return renderGov(); }
+    if (st && q("[data-st-save]")) { const ok = await saveGov("council", () => readSt(find())); if (ok) govMsg("保存しました"); return; }
   });
   box.addEventListener("change", async e => {
     const c = e.target.closest("[data-st-check]"); if (!c) return;
     const st = gov.open && gov.open.id, on = c.checked;
-    await saveGov("council", () => { const it = gov.council.standing.find(x => x.id === st); const o = it.orders.find(x => x.id === c.dataset.stCheck); o.done = on; o.doneAt = on ? taskDay() : null; });
+    await saveGov("council", () => { const it = gov.council.standing.find(x => x.id === st); const o = it.orders.find(x => x.id === c.dataset.stCheck); o.done = on; o.doneAt = on ? taskDay() : null;
+      if (!on && it.status === "実施済み") it.status = it.decidedAt ? "議決" : "審議中"; });
     renderGov(); renderOrders();
   });
 }
@@ -1113,7 +1252,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus };
+window.__sho = { state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
