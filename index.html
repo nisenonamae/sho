@@ -323,7 +323,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-06 r19";
+const APP_VERSION = "2026-10-06 r20";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -466,6 +466,7 @@ async function loadAll(){
     await loadPages().catch(() => {});
     await loadMins().catch(() => {});
     setTimeout(fromHash, 0);      // 「#page=…」のリンクで開かれたら、そのページへ
+    renderPlaces();
     computeTasks();
     lsSet(KEY_CACHE, { gov: state.gov, stats: state.stats, reviews: state.reviews, reviewShas: state.reviewShas, notes: state.notes });
     status("読み込みました");
@@ -1543,7 +1544,11 @@ const stOf = p => (!p.status || p.status === "未着手") ? "作成中" : p.stat
 const RANK_ST = { "要再設定": 0, "新規": 1, "進行中": 2, "定着": 3, "熟達": 4, "殿堂入り": 5 };
 const APP_BASE = "https://nisenonamae.github.io/sho/";
 const pageUrl = id => APP_BASE + "#page=" + id;
-async function loadPages(){ const r = await readJson(PAGES); pg.doc = Object.assign({ version: 1, pages: [] }, r.data || {}); pg.sha = r.sha; }
+async function loadPages(){
+  const r = await readJson(PAGES); pg.doc = Object.assign({ version: 1, pages: [] }, r.data || {}); pg.sha = r.sha;
+  // 計画(省アプリのSTAGE・WAVE)に無いタスクは待機中にする。その決まりが始まった日を一度だけ記録する
+  if (!pg.doc.strictFrom) await savePages(doc => { if (doc.strictFrom) return false; doc.strictFrom = taskDay(); }).catch(() => {});
+}
 async function savePages(mutate){
   for (let i = 0; i < 3; i++) {
     try { if (mutate(pg.doc) === false) return false; pg.sha = await writeJson(PAGES, pg.doc, pg.sha); return true; }
@@ -1867,6 +1872,13 @@ function bindMins(){
   });
 }
 
+function renderPlaces(){
+  document.getElementById("notion-places").innerHTML =
+    '<p style="font-size:.84rem;margin:.2rem 0">省・STAGE・WAVE・ページは、このアプリで足したり直したりします。</p>' +
+    (pg.doc.strictFrom ? '<p style="font-size:.84rem;margin:.4rem 0">タスクは計画のもとで進めます。STAGE・WAVEが進行中でないタスクと、このアプリに無いSTAGE・WAVEのタスクは、' + esc(pg.doc.strictFrom.slice(5).replace("-", "/")) + 'から「待機中」になり、行軍表に出ません。</p>' : "") +
+    '<p style="font-size:.84rem;margin:.4rem 0 .2rem">次のものはNotionにあり、<b>Claudeに頼んで</b>直します:</p>' +
+    '<ul style="font-size:.84rem;margin:.2rem 0;padding-left:1.2rem"><li>時勢(出来事と省の重要度の増減)</li><li>国富(達成して残った成果)</li><li>レギュレーション(国力の計算を変えた記録)</li><li>国家運営規程</li></ul>';
+}
 function bindPages(){
   const box = document.getElementById("detail");
   box.addEventListener("click", e => {
@@ -2212,10 +2224,7 @@ function bind(){
 function boot(){
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
   bind();
-  document.getElementById("notion-places").innerHTML =
-    '<p style="font-size:.84rem;margin:.2rem 0">省・STAGE・WAVE・ページは、このアプリで足したり直したりします。</p>' +
-    '<p style="font-size:.84rem;margin:.4rem 0 .2rem">次のものはNotionにあり、<b>Claudeに頼んで</b>直します:</p>' +
-    '<ul style="font-size:.84rem;margin:.2rem 0;padding-left:1.2rem"><li>時勢(出来事と省の重要度の増減)</li><li>国富(達成して残った成果)</li><li>レギュレーション(国力の計算を変えた記録)</li><li>国家運営規程</li></ul>';
+  renderPlaces();
   document.getElementById("ver").textContent = "版 " + APP_VERSION;
   const c = lsGet(KEY_CONN, null);
   document.getElementById("c-owner").value = c ? c.owner : "nisenonamae";
