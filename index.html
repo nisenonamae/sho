@@ -75,6 +75,10 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.gstat{display:flex;gap:.5rem;align-items:center;font-size:.78rem;color:var(--sub);margin:-.2rem 0 .6rem}
+.unit{display:grid;grid-template-columns:auto 1fr auto;gap:.15rem .6rem;align-items:center;padding:.45rem 0;border-bottom:1px dashed var(--rule);text-decoration:none;color:var(--ink)}
+.unit:last-child{border-bottom:none}.u-lab{font-weight:700}.u-tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.u-meta{grid-column:2/4;font-size:.76rem;color:var(--sub)}
 .mlist-bar{display:flex;justify-content:flex-end;align-items:center;gap:.6rem;margin:.2rem 0 .3rem}
 .mlist.reorder li{display:flex;align-items:stretch;gap:.3rem}.mlist.reorder li>button{flex:1}
 .mv{display:flex;flex-direction:column;gap:2px}.mv button{border:1px solid var(--rule);background:#fff;border-radius:3px;padding:0 .45rem;cursor:pointer;font-size:.7rem;flex:1}
@@ -328,7 +332,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r24";
+const APP_VERSION = "2026-10-07 r25";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1616,6 +1620,19 @@ function nextLabel(kind, parentId, tag){
   return kind + (base ? base + "-" + n : n);
 }
 // クリア条件の判定
+const isUnit = p => p && p.kind !== "page" && String(p.label || "").includes("-");     // STAGE1-1 など:主題・クリア条件を持つ
+const isGroup = p => p && p.kind !== "page" && !isUnit(p);                             // STAGE1 など:中身のまとまり
+// まとまりの状態は中身から決まる:どれかが進行中なら進行中、全部クリアならクリア、全部中止なら中止、それ以外は作成中
+function groupStatusFrom(doc, gid){
+  const kids = doc.pages.filter(x => x.parent === gid && !x.deleted && !x.imported && isUnit(x)).map(stOf);
+  if (!kids.length) return "作成中";
+  if (kids.includes("進行中")) return "進行中";
+  if (kids.every(k => k === "クリア")) return "クリア";
+  if (kids.every(k => k === "中止")) return "中止";
+  if (kids.every(k => k === "クリア" || k === "中止")) return "クリア";
+  return "作成中";
+}
+function syncGroup(doc, unit){ const g = doc.pages.find(x => x.id === unit.parent); if (g && isGroup(g)) setStatus(g, groupStatusFrom(doc, g.id)); }
 function setStatus(x, v){
   if (stOf(x) === v) return;
   const d = taskDay();
@@ -1712,13 +1729,13 @@ function roadHtml(tag, kind){
   const tops = pages().filter(p => p.parent === "m:" + tag && p.kind === kind).sort(byLabel);
   const now = nowOf(tops);
   const card = p => {
-    const st = stOf(p), ts = tasksFor(tag, p.label), firm = ts.filter(t => (RANK_ST[t.status] ?? 0) >= 3).length;
-    const subs = childrenOf(p.id).filter(c => c.kind === kind).sort(byLabel);
+    const st = stOf(p), ts = childrenOf(p.id).filter(isUnit).flatMap(c => tasksFor(tag, c.label)).concat(tasksFor(tag, p.label)), firm = ts.filter(t => (RANK_ST[t.status] ?? 0) >= 3).length;
+    const subs = childrenOf(p.id).filter(c => c.kind === kind && isUnit(c)).sort(byLabel);
     const icon = st === "クリア" ? "✓" : st === "中止" ? "×" : p === now ? "●" : "○";
     return '<div class="rcard r-' + (p === now ? "now" : st) + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-ico">' + icon + '</span>' +
       '<span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || (p.theme || "").split("\\n")[0] || "") + "</span>" +
       (p === now ? '<span class="rc-now">いまここ</span>' : "") + "</a>" +
-      '<div class="rc-meta"><span>' + esc(st === "クリア" ? "クリア" : remainText(p)) + "</span>" + (ts.length ? "<span>タスク " + ts.length + (firm ? "(定着 " + firm + ")" : "") + "</span>" : "") +
+      '<div class="rc-meta"><span>' + esc(st === "クリア" ? "クリア" : (subs.length ? subs.filter(c => stOf(c) === "クリア").length + "つクリア" : "中身はまだありません")) + "</span>" + (ts.length ? "<span>タスク " + ts.length + (firm ? "(定着 " + firm + ")" : "") + "</span>" : "") +
         (ts.some(t => t.waiting) ? '<span class="rc-wait">待機中 ' + ts.filter(t => t.waiting).length + "</span>" : "") + "</div>" +
       (subs.length ? '<div class="rc-subs">' + subs.map(c => '<a href="#" data-goto-page="' + c.id + '" class="rc-sub s-' + esc(stOf(c)) + '">' + esc(c.label.replace(/^(STAGE|WAVE)/, "")) + "</a>").join("") + "</div>" : "") + "</div>";
   };
@@ -1754,8 +1771,8 @@ function renderBox(box, p){
     (p.theme ? '<div class="pf"><span>主題</span><p>' + esc(p.theme) + "</p></div>" : "") + (p.content ? '<div class="pf"><span>タスク内容</span><p>' + esc(p.content) + "</p></div>" : "") +
     ((p.clear || []).length ? '<div class="pf"><span>クリア条件</span><p>' + esc(p.clear.map(c => c.text).join("\\n")) + "</p></div>" : "") +
     '<div class="pbody">' + renderPageBody(p) + "</div>" +
-    '<div class="sec"><h3>使う</h3><div class="cform"><label style="font-size:.82rem">置く場所 <select id="box-parent"><option value="root">省の直下</option>' +
-      opts.map(x => '<option value="' + x.id + '">' + esc(x.label + " " + (x.title || "")) + " の下</option>").join("") + "</select></label>" +
+    '<div class="sec"><h3>使う</h3><div class="cform"><label style="font-size:.82rem">置く場所 <select id="box-parent"><option value="root">新しいまとまりを作って、その中身として</option>' +
+      opts.filter(isGroup).map(x => '<option value="' + x.id + '">' + esc(x.label + " " + (x.title || "")) + " の中身として</option>").join("") + "</select></label>" +
     '<button type="button" class="btn sm" data-box-use="STAGE">STAGEとして使う</button><button type="button" class="btn sm" data-box-use="WAVE">WAVEとして使う</button>' +
     '<button type="button" class="btn ghost sm" data-box-use="page">資料として使う</button></div>' +
     '<p style="font-size:.78rem;color:var(--sub)">主題・タスク内容・クリア条件・タスク分析(と表)を写した新しいカードができます。それ以外の本文は持っていかないので、必要なところだけ書き直してください。</p>' +
@@ -1786,7 +1803,7 @@ function analysisHtml(p){
 function renderPage(box, p){
   if (p.body && EMPTY_TMPL.test(p.body)) p.body = "";
   const tag = rootTag(p), m = state.gov && (state.gov.ministries || []).find(x => x.tag === tag);
-  const tr = trail(p), isSW = p.kind !== "page";
+  const tr = trail(p), isSW = isUnit(p), isG = isGroup(p);
   let h = '<button type="button" class="back" data-page-back>‹ ' + esc(m ? m.name : "省") + "</button>" +
     '<div class="crumb">' + esc(m ? m.name : "") + tr.map(x => ' › <a href="#" data-goto-page="' + x.id + '">' + esc(x.label || x.title || "(無題)") + "</a>").join("") + "</div>";
   if (pg.edit) {
@@ -1794,7 +1811,7 @@ function renderPage(box, p){
       (isSW ? '<div class="f"><label>状態</label><select id="pg-status">' + PST.map(x => "<option" + (x === stOf(p) ? " selected" : "") + ">" + x + "</option>").join("") + "</select></div>" : "") + "</div>" +
       (isSW ? '<div class="f"><label>主題</label><textarea id="pg-theme" style="min-height:3rem">' + esc(p.theme || "") + '</textarea></div><div class="f"><label>タスク内容</label><textarea id="pg-content" style="min-height:3rem">' + esc(p.content || "") + "</textarea></div>" : "") +
       (isSW ? '<div class="agrid" style="margin:.4rem 0">' + ANALYSIS.map(([k, l, q]) => '<div class="f"><label>' + l + '</label><textarea id="pg-a-' + k + '" placeholder="' + q + '" style="min-height:3rem">' + esc((p.analysis || {})[k] || "") + "</textarea></div>").join("") + "</div>" : "") +
-      '<div class="f"><label>' + (isSW ? "メモ(自由に。" : "本文(") + '# 見出し・- 箇条書き・- [ ] チェック・[[ページの名前]]・URL)</label><textarea id="pg-body" style="min-height:12rem">' + esc(p.body || "") + "</textarea></div>" +
+      '<div class="f"><label>' + (isSW || isG ? "メモ(自由に。" : "本文(") + '# 見出し・- 箇条書き・- [ ] チェック・[[ページの名前]]・URL)</label><textarea id="pg-body" style="min-height:12rem">' + esc(p.body || "") + "</textarea></div>" +
       '<div class="row-btns"><button type="button" class="btn" data-page-save>保存</button><button type="button" class="btn ghost" data-page-cancel>やめる</button>' +
       '<button type="button" class="btn ghost sm" data-page-del style="margin-left:auto;border-color:var(--shu);color:var(--shu)">このページを消す</button>' +
       '<button type="button" class="btn ghost sm" data-page-addtable>表を足す</button><button type="button" class="btn ghost sm" data-page-addapp>アプリを置く</button></div></div>';
@@ -1802,10 +1819,20 @@ function renderPage(box, p){
     const kids = childrenOf(p.id);
     const panel = (title, right, body) => '<section class="panel"><div class="panel-h"><span>' + title + "</span><span class=\"ph-r\">" + right + '</span></div><div class="panel-b">' + body + "</div></section>";
     const empty = t => '<div class="panel-e">' + t + "</div>";
-    h += '<div class="pg-head"><span class="pk pk-' + p.kind + '">' + (isSW ? esc(p.label) : "ページ") + "</span>" +
+    h += '<div class="pg-head"><span class="pk pk-' + p.kind + '">' + (isSW || isG ? esc(p.label) : "ページ") + "</span>" +
       (p.title ? "<h2>" + esc(p.title) + "</h2>" : '<h2><button type="button" class="linkbtn big" data-page-edit>名前を付ける</button></h2>') +
       '<button type="button" class="btn ghost sm" data-page-edit>直す</button></div>' +
-      (isSW ? '<div class="stchips">' + PST.map(x => '<button type="button" data-page-status="' + x + '" aria-pressed="' + (stOf(p) === x) + '">' + x + "</button>").join("") + "</div>" : "");
+      (isSW ? '<div class="stchips">' + PST.map(x => '<button type="button" data-page-status="' + x + '" aria-pressed="' + (stOf(p) === x) + '">' + x + "</button>").join("") + "</div>" : "") +
+      (isG ? '<div class="gstat"><span class="pst st-' + esc(stOf(p)) + '">' + esc(stOf(p)) + "</span>中身の状態から自動で決まります</div>" : "");
+    if (isG) {
+      // まとまり:中身(◯-1、◯-2…)を並べる
+      const units = childrenOf(p.id).filter(isUnit).sort(byLabel);
+      h += panelHtml("中身", '<button type="button" class="linkbtn" data-page-new="' + p.kind + '" data-page-parent="' + p.id + '">+ ' + esc(p.label) + "-" + (units.length + 1) + "を足す</button>",
+        units.length ? units.map(u => { const ts = tasksFor(tag, u.label), w = ts.filter(t => t.waiting).length;
+          return '<a href="#" class="unit" data-goto-page="' + u.id + '"><span class="u-lab">' + esc(u.label) + '</span><span class="u-tt">' + esc(u.title || (u.theme || "").split("\n")[0] || "") + "</span>" +
+            '<span class="pst st-' + esc(stOf(u)) + '">' + esc(stOf(u)) + '</span><span class="u-meta">' + esc(stOf(u) === "クリア" ? "クリア" : remainText(u)) + (ts.length ? "・タスク " + ts.length + (w ? "(待機中 " + w + ")" : "") : "") + "</span></a>"; }).join("")
+          : emptyHtml("まだありません。"));
+    }
     if (isSW) {
       const st = stOf(p);
       // 主題
@@ -1832,12 +1859,14 @@ function renderPage(box, p){
         (an[k] ? "<p>" + esc(an[k]) + "</p>" : '<p class="aq">' + q + "</p>") + "</div>").join("") + "</div>");
     }
     const hasBody = String(p.body || "").trim();
-    if (isSW) { if (hasBody) h += panelHtml("メモ", '<button type="button" class="linkbtn" data-page-edit>直す</button>', '<div class="pbody">' + renderPageBody(p) + "</div>"); }
+    if (isSW || isG) { if (hasBody) h += panelHtml("メモ", '<button type="button" class="linkbtn" data-page-edit>直す</button>', '<div class="pbody">' + renderPageBody(p) + "</div>"); }
     else h += panelHtml("本文", '<button type="button" class="linkbtn" data-page-edit>' + (hasBody ? "直す" : "+ 書く") + "</button>", hasBody ? '<div class="pbody">' + renderPageBody(p) + "</div>" : emptyHtml("まだありません。見出し・箇条書き・表・アプリを置けます。"));
-    if (!isSW || kids.length) h += panelHtml("この下のページ", '<button type="button" class="linkbtn" data-page-new="' + (isSW ? p.kind : "page") + '" data-page-parent="' + p.id + '">+ 足す</button>',
+    const otherKids = kids.filter(k => !(isG && isUnit(k)));
+    if (!isSW && !isG) h += panelHtml("この下のページ", '<button type="button" class="linkbtn" data-page-new="page" data-page-parent="' + p.id + '">+ 足す</button>',
       kids.length ? '<div class="dgrid">' + kids.map(k => k.kind === "page" ? docCard(k) : '<a href="#" class="dcard" data-goto-page="' + k.id + '"><b>' + esc(k.label) + " " + esc(k.title || "") + '</b><span class="dmeta">' + esc(stOf(k)) + "</span></a>").join("") + "</div>" : emptyHtml("まだありません。"));
+    else if (otherKids.filter(k => k.kind === "page").length) h += panelHtml("資料", "", '<div class="dgrid">' + otherKids.filter(k => k.kind === "page").map(docCard).join("") + "</div>");
     // その他:この下に足す・リンク・消す
-    h += '<details class="pg-more"><summary>その他</summary><div class="pt-new">' + (p.kind !== "page" ? '<button type="button" class="btn ghost sm" data-page-new="' + p.kind + '" data-page-parent="' + p.id + '">この下に' + p.kind + "を足す</button>" : "") +
+    h += '<details class="pg-more"><summary>その他</summary><div class="pt-new">' +
       '<button type="button" class="btn ghost sm" data-page-new="page" data-page-parent="' + p.id + '">この下にページを足す</button></div>' +
       '<div class="pg-foot"><span>このページのリンク</span><input readonly value="' + esc(pageUrl(p.id)) + '" onclick="this.select()"><button type="button" class="btn ghost sm" data-page-del style="border-color:var(--shu);color:var(--shu)">このページを消す</button></div></details>';
   }
@@ -1955,8 +1984,17 @@ function bindPages(){
     if ((b = q("[data-page-new]"))) {
       const kind = b.dataset.pageNew, parent = b.dataset.pageParent;
       const tag = parent.startsWith("m:") ? parent.slice(2) : rootTag(pageById(parent));
+      if (kind !== "page" && parent.startsWith("m:")) {
+        const gid = "pg" + uid(), glabel = nextLabel(kind, parent, tag), uidv = "pg" + uid();
+        await savePages(doc => {
+          doc.pages.push({ id: gid, parent, kind, label: glabel, title: "", status: "作成中", statusLog: [{ date: taskDay(), status: "作成中" }], body: "", tables: {}, created: taskDay(), updated: taskDay() });
+          doc.pages.push({ id: uidv, parent: gid, kind, label: glabel + "-1", title: "", theme: "", content: "", clear: [], analysis: {}, status: "作成中", statusLog: [{ date: taskDay(), status: "作成中" }], body: "", tables: {}, created: taskDay(), updated: taskDay() });
+        });
+        pg.edit = true; openPage(uidv); return;
+      }
       const id = "pg" + uid(), label = kind === "page" ? "" : nextLabel(kind, parent, tag);
-      await savePages(doc => { doc.pages.push({ id, parent, kind, label, title: kind === "page" ? "新しいページ" : "", theme: "", content: "", clear: [], analysis: {}, status: kind === "page" ? "" : "作成中", statusLog: kind === "page" ? [] : [{ date: taskDay(), status: "作成中" }], body: "", tables: {}, created: taskDay(), updated: taskDay() }); });
+      await savePages(doc => { doc.pages.push({ id, parent, kind, label, title: kind === "page" ? "新しいページ" : "", theme: "", content: "", clear: [], analysis: {}, status: kind === "page" ? "" : "作成中", statusLog: kind === "page" ? [] : [{ date: taskDay(), status: "作成中" }], body: "", tables: {}, created: taskDay(), updated: taskDay() });
+        const np = doc.pages[doc.pages.length - 1]; if (isUnit(np)) syncGroup(doc, np); });
       pg.edit = true; openPage(id); return;
     }
     // 引っ越し箱
@@ -1969,7 +2007,12 @@ function bindPages(){
     }
     if (pg.box && (b = q("[data-box-use]"))) {
       const src = pg.doc.pages.find(x => x.id === pg.box), kind = b.dataset.boxUse, sel = document.getElementById("box-parent").value;
-      const tag = pg.boxTag, parent = sel === "root" ? "m:" + tag : sel;
+      const tag = pg.boxTag; let parent = sel === "root" ? "m:" + tag : sel;
+      if (kind !== "page" && parent.startsWith("m:")) {
+        const gid = "pg" + uid(), glabel = nextLabel(kind, parent, tag);
+        await savePages(doc => { doc.pages.push({ id: gid, parent, kind, label: glabel, title: src.title || "", status: "作成中", statusLog: [{ date: taskDay(), status: "作成中" }], body: "", tables: {}, created: taskDay(), updated: taskDay() }); });
+        parent = gid;
+      }
       const id = "pg" + uid(), label = kind === "page" ? "" : nextLabel(kind, parent, tag);
       const tmpl = kind === "page" ? (src.body || "") : "";
       const analysis = kind === "page" ? {} : analysisFromBody(src.body || "");
@@ -1984,7 +2027,7 @@ function bindPages(){
     }
     if (pg.box && q("[data-box-del]")) { const id = pg.box; await savePages(doc => { doc.pages.find(x => x.id === id).deleted = taskDay(); }); pg.box = null; renderDetail(); return; }
     const p = pg.open && pageById(pg.open);
-    if (p && (b = q("[data-page-status]"))) { const v = b.dataset.pageStatus; await savePages(doc => setStatus(doc.pages.find(y => y.id === p.id), v)); computeTasks(); renderDetail(); return; }
+    if (p && (b = q("[data-page-status]"))) { const v = b.dataset.pageStatus; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); setStatus(x, v); syncGroup(doc, x); }); computeTasks(); renderDetail(); return; }
     if (q("[data-page-back]")) { pg.open = null; pg.edit = false; history.replaceState && history.replaceState(null, "", location.pathname); rerender(); return; }
     if (!p) return;
     if (q("[data-page-edit]")) { pg.edit = true; rerender(); return; }
@@ -1993,7 +2036,7 @@ function bindPages(){
     if (q("[data-page-save]")) {
       const v = id => (document.getElementById(id) || {}).value;
       await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.title = (v("pg-title") || "").trim(); x.body = v("pg-body") || "";
-        if (x.kind !== "page") { x.theme = v("pg-theme") || ""; x.content = v("pg-content") || ""; if (v("pg-status") && v("pg-status") !== stOf(x)) setStatus(x, v("pg-status"));
+        if (x.kind !== "page") { x.theme = v("pg-theme") || ""; x.content = v("pg-content") || ""; if (v("pg-status") && v("pg-status") !== stOf(x) && isUnit(x)) { setStatus(x, v("pg-status")); syncGroup(doc, x); }
           x.analysis = {}; ANALYSIS.forEach(([k]) => { const t = (v("pg-a-" + k) || "").trim(); if (t) x.analysis[k] = t; }); } x.updated = taskDay(); });
       pg.edit = false; rerender(); return;
     }
@@ -2013,7 +2056,7 @@ function bindPages(){
       pg.edit = false; computeTasks();
       const parent = p.parent; pg.open = String(parent).startsWith("m:") ? null : parent; rerender(); return;
     }
-    if (q("[data-page-clear]")) { await savePages(doc => setStatus(doc.pages.find(y => y.id === p.id), "クリア")); computeTasks(); rerender(); return; }
+    if (q("[data-page-clear]")) { await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); setStatus(x, "クリア"); syncGroup(doc, x); }); computeTasks(); rerender(); return; }
     // クリア条件
     if (q("[data-cond-new]")) { pg.condForm = true; rerender(); return; }
     if (q("[data-cond-cancel]")) { pg.condForm = false; rerender(); return; }
