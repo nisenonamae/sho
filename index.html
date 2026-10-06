@@ -75,6 +75,8 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.wtag{font-size:.72rem;border:1px dashed var(--sub);color:var(--sub);border-radius:3px;padding:0 .3rem;margin-right:.35rem}
+.tk.waiting{opacity:.7}.rc-wait{color:var(--sub);border:1px dashed var(--sub);border-radius:3px;padding:0 .3rem}
 .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(12rem,1fr));gap:.5rem}
 .dcard{display:flex;flex-direction:column;gap:.15rem;border:1px solid var(--rule);border-radius:5px;padding:.5rem .65rem;text-decoration:none;color:var(--ink);background:#FDFCF9}
 .dcard:hover{border-color:var(--ink)}.dcard b{font-size:.92rem}
@@ -321,7 +323,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-06 r18";
+const APP_VERSION = "2026-10-06 r19";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -489,7 +491,7 @@ function computeTasks(){
     const last = rep.days.length ? rep.days[rep.days.length - 1] : null;
     const row = last && last.date === today ? last : null;
     const s = row || rep.next;
-    return { def, status: s.status, gen: row ? row.gen : rep.gen, genTotal: s.genTotal, streak: s.streak, total: s.total,
+    return { def, waiting: E.waitingOn ? E.waitingOn(def, today) : null, status: s.status, gen: row ? row.gen : rep.gen, genTotal: s.genTotal, streak: s.streak, total: s.total,
              target: E.targetAt(def, today), check: row ? row.check : null };
   });
 }
@@ -1672,7 +1674,8 @@ function roadHtml(tag, kind){
     return '<div class="rcard r-' + (p === now ? "now" : st) + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-ico">' + icon + '</span>' +
       '<span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || (p.theme || "").split("\\n")[0] || "") + "</span>" +
       (p === now ? '<span class="rc-now">いまここ</span>' : "") + "</a>" +
-      '<div class="rc-meta"><span>' + esc(st === "クリア" ? "クリア" : remainText(p)) + "</span>" + (ts.length ? "<span>タスク " + ts.length + (firm ? "(定着 " + firm + ")" : "") + "</span>" : "") + "</div>" +
+      '<div class="rc-meta"><span>' + esc(st === "クリア" ? "クリア" : remainText(p)) + "</span>" + (ts.length ? "<span>タスク " + ts.length + (firm ? "(定着 " + firm + ")" : "") + "</span>" : "") +
+        (ts.some(t => t.waiting) ? '<span class="rc-wait">待機中 ' + ts.filter(t => t.waiting).length + "</span>" : "") + "</div>" +
       (subs.length ? '<div class="rc-subs">' + subs.map(c => '<a href="#" data-goto-page="' + c.id + '" class="rc-sub s-' + esc(stOf(c)) + '">' + esc(c.label.replace(/^(STAGE|WAVE)/, "")) + "</a>").join("") + "</div>" : "") + "</div>";
   };
   return '<div class="road road-' + kind + '"><h4>' + (kind === "STAGE" ? "領土を広げる(STAGE)" : "支配を深める(WAVE)") + "</h4>" + tops.map(card).join("") +
@@ -1776,8 +1779,8 @@ function renderPage(box, p){
       const ts = tasksFor(tag, p.label);
       const gateNote = st === "進行中" ? "" : '<div class="gate-note">' + (st === "作成中" ? "作成中のあいだ、この" + p.kind + "のタスクは行軍表に出ません。「進行中」にすると、その日から行軍表に出ます。" : "「" + st + "」なので、この" + p.kind + "のタスクは行軍表から外れています。") + "</div>";
       h += panel("タスク", (ts.length ? '<span class="ph-n">' + ts.length + "つ</span>" : "") + (pg.taskForm ? "" : '<button type="button" class="linkbtn" data-task-new>+ 作る</button>'),
-        gateNote + (ts.length ? '<div class="tasks">' + ts.map(t => '<div class="tk' + (t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
-          "</span><span>" + esc(t.status) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span></div>").join("") + "</div>" : (pg.taskForm ? "" : empty("まだありません。"))) +
+        gateNote + (ts.length ? '<div class="tasks">' + ts.map(t => '<div class="tk' + (t.waiting ? " waiting" : t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
+          "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span></div>").join("") + "</div>" : (pg.taskForm ? "" : empty("まだありません。"))) +
         (pg.taskForm ? taskFormHtml(p) : ""));
       // タスク分析:4つの枠をいつも並べる
       const an = p.analysis || {};
