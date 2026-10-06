@@ -74,6 +74,39 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace{display:flex;gap:.6rem;align-items:baseline;padding:.35rem 0;border-bottom:1px dashed var(--rule);flex-wrap:wrap}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
+.crumb{font-size:.8rem;color:var(--sub);margin:.2rem 0 .6rem}
+.crumb a{color:var(--sub)}
+.pg-head{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.3rem 0 .6rem}
+.pg-head h2{margin:0;font-size:1.25rem;flex:1;min-width:8rem}
+.pk{font-size:.75rem;font-weight:700;border-radius:3px;padding:.1rem .45rem;color:#fff;background:var(--sub)}
+.pk-STAGE{background:var(--stage)}.pk-WAVE{background:var(--wave)}
+a.pk-STAGE b{color:var(--stage)}a.pk-WAVE b{color:var(--wave)}
+.pst{font-size:.72rem;border:1px solid var(--rule);border-radius:10px;padding:0 .45rem;color:var(--sub)}
+.st-進行中{color:#2F6E8A;border-color:#2F6E8A}.st-クリア{color:#fff;background:#3D8A5A;border-color:#3D8A5A}.st-中止{text-decoration:line-through}
+.pf{margin:.3rem 0}.pf span{font-size:.75rem;color:var(--sub);letter-spacing:.08em}.pf p{margin:.1rem 0 .4rem;white-space:pre-wrap}
+.cbar{height:8px;background:var(--rule);border-radius:4px;overflow:hidden;margin:.3rem 0 .5rem}.cbar i{display:block;height:100%;background:#3D8A5A}
+.cond{display:flex;gap:.5rem;align-items:center;padding:.3rem 0;border-bottom:1px dashed var(--rule)}
+.cond span{flex:1}.cond.met span{color:#3D8A5A}.cond small{color:var(--sub)}
+.cform,.tform{border:1px dashed var(--rule);border-radius:4px;padding:.6rem;margin:.4rem 0;display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;background:#fff}
+.tform{display:block}
+.pbody{margin:.8rem 0;line-height:1.8}
+.ph1{font-size:1.15rem;font-weight:700;margin:.6rem 0 .2rem}.ph2{font-size:1.02rem;font-weight:700;margin:.5rem 0 .15rem}.ph3{font-weight:700;margin:.4rem 0 .1rem}
+.pli{padding-left:1em;text-indent:-1em}.pcl{display:flex;gap:.4rem}.wl-miss{color:var(--sub);text-decoration:underline dotted}
+.ptree ul{list-style:none;margin:0;padding-left:1rem;border-left:1px solid var(--rule)}.ptree>ul{padding-left:0;border:none}
+.ptree li{margin:.25rem 0}.ptree a{text-decoration:none;color:var(--ink)}
+.pt-new{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.5rem}
+.ptable{margin:.6rem 0;border:1px solid var(--rule);border-radius:4px;background:#fff}
+.pt-bar,.pt-add{display:flex;gap:.35rem;flex-wrap:wrap;padding:.4rem}
+.pt-bar input{flex:1;min-width:8rem}
+.pt-wrap{overflow-x:auto}.ptable table{border-collapse:collapse;width:100%;font-size:.86rem}
+.ptable th,.ptable td{border-top:1px solid var(--rule);padding:.3rem .45rem;text-align:left;white-space:nowrap}
+.ptable th{cursor:pointer;background:#F6F4EE;font-weight:600}.ptable td.t-num{text-align:right}
+.ptable td input{width:100%;min-width:5rem;border:1px solid var(--rule);border-radius:3px;padding:.15rem .3rem;font:inherit}
+.papp{border:1px solid var(--rule);border-radius:4px;margin:.6rem 0;background:#fff}
+.papp-h{display:flex;justify-content:space-between;padding:.3rem .5rem;font-size:.8rem;color:var(--sub)}
+.papp iframe{width:100%;height:440px;border:none;border-top:1px solid var(--rule)}
+.pg-foot{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-top:1.2rem;font-size:.8rem;color:var(--sub)}
+.pg-foot input{flex:1;min-width:10rem;font-size:.78rem}
 .syncbar{display:flex;gap:.6rem;align-items:center;margin:0 0 .8rem;flex-wrap:wrap}
 /* 一覧 */
 .mlist{list-style:none;margin:0;padding:0}
@@ -180,7 +213,8 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
   <section class="view" id="view-list">
     <header class="head"><h1>省</h1><div class="date" id="stamp">—</div></header>
     <div id="notices"></div>
-    <div class="syncbar"><button type="button" class="btn ghost sm" id="sync">Notionと同期</button><a class="nlink" id="add-ministry" href="https://app.notion.com/p/211ec28615e5494a97490bfd5f52d135" target="_blank" rel="noopener">省を足す・直す(Notionの省一覧)</a><span class="status" id="sync-status"></span></div>
+    <div id="min-form"></div>
+    <div class="syncbar"><button type="button" class="btn ghost sm" id="sync">Notionと同期</button><button type="button" class="btn ghost sm" id="add-ministry">省を足す</button><span class="status" id="sync-status"></span></div>
     <div id="list"></div>
     <div id="detail" hidden></div>
   </section>
@@ -197,8 +231,8 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 
   <section class="view" id="view-settings" hidden>
     <header class="head"><h1>設定</h1><div class="date" id="ver"></div></header>
-    <div class="card" style="margin-bottom:1rem"><h3 style="margin:0 0 .3rem">Notionで直すところ</h3>
-      <p style="font-size:.82rem;color:var(--sub);margin:.1rem 0 .5rem">省の構造(STAGE・WAVE・依存度・時勢)はNotionが元です。直したら、省のタブの「Notionと同期」を押すと1分ほどで反映されます。</p>
+    <div class="card" style="margin-bottom:1rem"><h3 style="margin:0 0 .3rem">どこで直すか</h3>
+      <p style="font-size:.82rem;color:var(--sub);margin:.1rem 0 .5rem">何をどこで直すか</p>
       <div id="notion-places"></div>
     </div>
     <div class="grid2">
@@ -223,7 +257,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-06 r10";
+const APP_VERSION = "2026-10-06 r12";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -363,6 +397,9 @@ async function loadAll(){
     await loadReviewMonth(addDays(now.slice(0, 8) + "01", -1).slice(0, 7));
     await loadGov().catch(() => {});
     await loadStaff().catch(() => {});
+    await loadPages().catch(() => {});
+    await loadMins().catch(() => {});
+    setTimeout(fromHash, 0);      // 「#page=…」のリンクで開かれたら、そのページへ
     computeTasks();
     lsSet(KEY_CACHE, { gov: state.gov, stats: state.stats, reviews: state.reviews, reviewShas: state.reviewShas, notes: state.notes });
     status("読み込みました");
@@ -387,7 +424,7 @@ function computeTasks(){
     const last = rep.days.length ? rep.days[rep.days.length - 1] : null;
     const row = last && last.date === today ? last : null;
     const s = row || rep.next;
-    return { def, status: s.status, gen: row ? row.gen : rep.gen, genTotal: s.genTotal, streak: s.streak,
+    return { def, status: s.status, gen: row ? row.gen : rep.gen, genTotal: s.genTotal, streak: s.streak, total: s.total,
              target: E.targetAt(def, today), check: row ? row.check : null };
   });
 }
@@ -517,6 +554,7 @@ function renderDetail(){
   box.hidden = !m;
   if (!m) { box.innerHTML = ""; return; }
   if (m === ALL) { renderStaff(box); return; }
+  if (pg.open && pageById(pg.open) && rootTag(pageById(pg.open)) === m.tag) { renderPage(box, pageById(pg.open)); return; }
   const p = powerOf(m.tag);
   const deps = Object.entries(m.deps || {});
   const rev = state.gov.ministries.filter(x => (x.deps || {})[m.tag] != null).map(x => [x.name, x.deps[m.tag]]);
@@ -537,16 +575,22 @@ function renderDetail(){
     ((m.goal || m.deadline) ? '<dl class="kv">' + (m.goal ? "<dt>到達点</dt><dd>" + esc(m.goal) + "</dd>" : "") +
       (m.deadline ? "<dt>期限</dt><dd>" + esc(m.deadline) + (m.progress != null ? "(進捗 " + Math.round(m.progress * 100) + "%)" : "") + "</dd>" : "") + "</dl>" : "") +
     '<div class="sec"><h3>依存度</h3>' + (deps.length ? '<div class="deps">' + deps.map(([k, v]) => '<span class="dep' + (v < 0 ? " neg" : "") + '">' + esc(k) + " " + v + "</span>").join("") + "</div>" : '<div class="empty">依存先はありません。</div>') +
-      '<div class="nrow">' + (m.url ? '<a class="nlink" href="' + esc(m.url) + '" target="_blank" rel="noopener">この省をNotionで直す(依存先・タグ)</a>' : nlink("ministries", "Notionの省一覧で直す")) + "</div>" +
+      (mins.edit === m.tag
+        ? '<div class="cform"><input id="me-name" value="' + esc(m.name) + '" placeholder="名前"><input id="me-deps" value="' + esc(depsText(m.deps)) + '" placeholder="依存先(例:受験:2, 家族:1)" style="flex:1">' +
+          '<button type="button" class="btn sm" data-min-save="' + esc(m.tag) + '">保存</button><button type="button" class="btn ghost sm" data-min-cancel>やめる</button>' +
+          '<span style="font-size:.76rem;color:var(--sub);flex-basis:100%">所属タグ「' + esc(m.tag) + '」は、タスクや国力の記録と結びついているので変えられません。</span></div>'
+        : '<div class="nrow"><button type="button" class="btn ghost sm" data-min-edit="' + esc(m.tag) + '">名前・依存先を直す</button></div>') +
       (rev.length ? '<p style="font-size:.82rem;color:var(--sub);margin:.4rem 0 0">この省に依存している:' + rev.map(([n, v]) => esc(n) + " " + v).join("、") + "</p>" : "") + "</div>" +
     '<div class="sec tide"><h3>時勢</h3>合計 <b>' + (m.tide.total > 0 ? "+" : "") + m.tide.total + "</b>" +
       (m.tide.recent.length ? "<ul>" + m.tide.recent.map(t => "<li>" + esc(t.date) + " " + esc(t.title) + "(" + (t.delta > 0 ? "+" : "") + esc(t.delta) + ")</li>").join("") + "</ul>" : "") +
-      '<div class="nrow">' + nlink("tide", "時勢を足す(Notion)") + "</div></div>" +
+      "</div>" +
     (m.plan ? '<div class="links"><a class="plan-link" href="' + esc(m.plan.url) + '" target="_blank" rel="noopener">Notionの計画を開く(STAGE・WAVEを足すところ)</a></div>' +
       '<p style="font-size:.78rem;color:var(--sub);margin:-.2rem 0 .4rem">足したら、一覧の上の「Notionと同期」を押すと1分ほどでここに出ます。</p>'
       : '<p style="font-size:.82rem;color:var(--sub)">この省の計画のページは、Notionの省一覧のこの省のページの下に「計画:' + esc(m.name) + '」として作ると、次の同期から開けるようになります。</p>') +
-    '<div class="sec"><h3><i style="background:var(--stage)"></i>STAGE</h3>' + treeHtml(m, "STAGE") + "</div>" +
-    '<div class="sec"><h3><i style="background:var(--wave)"></i>WAVE</h3>' + treeHtml(m, "WAVE") + "</div>" +
+    '<div class="sec"><h3>STAGE・WAVE・ページ</h3>' + pageTreeHtml(m.tag) + "</div>" +
+    ((m.stages.length || m.waves.length) ? '<details class="fold"><summary>Notionにあるもの(引っ越し前)</summary>' +
+      '<div class="sec"><h3><i style="background:var(--stage)"></i>STAGE</h3>' + treeHtml(m, "STAGE") + "</div>" +
+      '<div class="sec"><h3><i style="background:var(--wave)"></i>WAVE</h3>' + treeHtml(m, "WAVE") + "</div></details>" : "") +
     '<div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(m) + "</div>";
 }
 function renderOrders(){
@@ -1384,6 +1428,369 @@ const NOTION = {
 };
 const nlink = (k, label) => '<a class="nlink" href="' + NOTION[k].url + '" target="_blank" rel="noopener">' + esc(label || NOTION[k].name) + "</a>";
 
+
+
+/* ───────── 省一覧(アプリが元。roadmap/gov/ministries.json) ───────── */
+const MINS = "roadmap/gov/ministries.json";
+const mins = { doc: null, sha: null, form: false, edit: false };
+async function loadMins(){ const r = await readJson(MINS); mins.doc = r.data || null; mins.sha = r.sha; mergeMins(); }
+function parseDeps(t){ const out = {}; String(t || "").split(/[、,，\n]/).forEach(x => { const m = /^\s*(.+?)\s*[::]\s*(-?[\d.]+)\s*$/.exec(x); if (m) out[m[1]] = +m[2]; }); return out; }
+const depsText = d => Object.entries(d || {}).map(([k, v]) => k + ":" + v).join(", ");
+// 省一覧をアプリの表示に反映する(朝の書き出しを待たずに、足した省がすぐ出る)
+function mergeMins(){
+  if (!mins.doc || !state.gov) return;
+  state.gov.ministries = state.gov.ministries || [];
+  for (const m of mins.doc.ministries) {
+    if (m.archived) continue;
+    let g = state.gov.ministries.find(x => x.tag === m.tag);
+    if (!g) { g = { tag: m.tag, name: m.name, url: "", deps: {}, stages: [], waves: [], tide: { total: 0, recent: [] }, purpose: null, plan: null }; state.gov.ministries.push(g); }
+    g.name = m.name; g.deps = parseDeps(m.deps);
+  }
+}
+async function saveMins(mutate){
+  for (let i = 0; i < 3; i++) {
+    const doc = mins.doc || { version: 1, ministries: [] };
+    if (mutate(doc) === false) return false;
+    try { mins.sha = await writeJson(MINS, doc, mins.sha); mins.doc = doc; mergeMins(); return true; }
+    catch (e) { if ((e.status === 409 || e.status === 422) && i < 2) { await loadMins(); continue; } renderNotice(e.message); return false; }
+  }
+  return false;
+}
+
+/* ───────── ページ(入れ子のページ・STAGE・WAVE・表・アプリの部品) ───────── */
+const PAGES = "roadmap/gov/pages.json";
+const pg = { doc: { version: 1, pages: [] }, sha: null, open: null, edit: false, taskForm: false, condForm: false, tableEdit: null };
+const PST = ["未着手", "進行中", "クリア", "中止"];
+const RANK_ST = { "要再設定": 0, "新規": 1, "進行中": 2, "定着": 3, "熟達": 4, "殿堂入り": 5 };
+const APP_BASE = "https://nisenonamae.github.io/sho/";
+const pageUrl = id => APP_BASE + "#page=" + id;
+async function loadPages(){ const r = await readJson(PAGES); pg.doc = Object.assign({ version: 1, pages: [] }, r.data || {}); pg.sha = r.sha; }
+async function savePages(mutate){
+  for (let i = 0; i < 3; i++) {
+    try { if (mutate(pg.doc) === false) return false; pg.sha = await writeJson(PAGES, pg.doc, pg.sha); return true; }
+    catch (e) {
+      if ((e.status === 409 || e.status === 422) && i < 2) { await loadPages(); continue; }
+      const el = document.getElementById("pg-msg"); if (el) { el.textContent = e.message; el.classList.add("err"); } return false;
+    }
+  }
+  return false;
+}
+const pages = () => pg.doc.pages.filter(p => !p.deleted);
+const pageById = id => pg.doc.pages.find(p => p.id === id);
+const childrenOf = pid => pages().filter(p => p.parent === pid).sort((a, b) => (a.order || 0) - (b.order || 0) || String(a.label || a.title).localeCompare(String(b.label || b.title), "ja", { numeric: true }));
+function rootTag(p){ let c = p, g = 0; while (c && g++ < 50) { if (String(c.parent).startsWith("m:")) return c.parent.slice(2); c = pageById(c.parent); } return null; }
+function trail(p){ const out = []; let c = p, g = 0; while (c && g++ < 50) { out.unshift(c); c = pageById(c.parent); } return out; }
+// 次の番号:STAGE は省の中で次の数、STAGE3 の下の STAGE は 3-1、3-2…。WAVE は親の STAGE の番号に続ける
+function nextLabel(kind, parentId, tag){
+  const parent = pageById(parentId);
+  const all = pages().filter(p => rootTag(p) === tag && p.kind === kind).map(p => p.label);
+  const base = parent && parent.kind === "STAGE" ? parent.label.replace(/^STAGE/, "") : "";
+  const used = all.filter(l => base ? l.startsWith(kind + base + "-") && l.split("-").length === base.split("-").length + 1 : !l.includes("-"))
+    .map(l => +l.split("-").pop().replace(/^\D+/, "")).filter(n => !isNaN(n));
+  const n = (used.length ? Math.max(...used) : 0) + 1;
+  return kind + (base ? base + "-" + n : n);
+}
+// クリア条件の判定
+function condMet(c){
+  if (c.type === "manual") return !!c.done;
+  const t = state.tasks.find(x => x.def.name === c.task); if (!t) return false;
+  if (c.metric === "status") return (RANK_ST[t.status] ?? -1) >= (RANK_ST[c.value] ?? 99);
+  const v = c.metric === "streak" ? t.streak : (t.total || 0);
+  return v >= +c.value;
+}
+function condText(c){
+  if (c.type === "manual") return c.text;
+  return "「" + c.task + "」が" + (c.metric === "status" ? c.value + "以上" : (c.metric === "streak" ? "連続" : "累計") + c.value + "回以上");
+}
+function condNow(c){
+  if (c.type === "manual") return "";
+  const t = state.tasks.find(x => x.def.name === c.task); if (!t) return "(タスクが見つかりません)";
+  return "(今 " + (c.metric === "status" ? t.status : (c.metric === "streak" ? "連続" + t.streak : "累計" + (t.total || 0))) + ")";
+}
+
+/* 本文:見出し・箇条書き・チェック・リンク・[[ページ]]・{{表:id}}・{{アプリ:URL}} */
+function pageInline(sx){
+  let h = esc(sx);
+  h = h.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  h = h.replace(/\[\[([^\]\n]+)\]\]/g, (m, t) => { const raw = t.replace(/&amp;/g, "&"); const hit = pages().find(p => (p.label ? p.label + " " : "") + p.title === raw || p.title === raw || p.label === raw);
+    return hit ? '<a href="#" data-goto-page="' + hit.id + '">' + t + "</a>" : '<span class="wl-miss">' + t + "</span>"; });
+  return h;
+}
+function renderPageBody(p){
+  const lines = String(p.body || "").split("\n"), out = [];
+  lines.forEach((ln, i) => {
+    let m;
+    if ((m = /^\{\{表:([\w-]+)\}\}$/.exec(ln.trim()))) { out.push(tableHtml(p, m[1])); return; }
+    if ((m = /^\{\{アプリ:(\S+)\}\}$/.exec(ln.trim()))) { out.push(appHtml(p, m[1])); return; }
+    if ((m = /^\s*- \[( |x)\] (.*)$/.exec(ln))) { out.push('<label class="pcl"><input type="checkbox" data-pcl="' + i + '"' + (m[1] === "x" ? " checked" : "") + "> <span>" + pageInline(m[2]) + "</span></label>"); return; }
+    if ((m = /^(#{1,3}) (.*)$/.exec(ln))) { out.push('<div class="ph' + m[1].length + '">' + pageInline(m[2]) + "</div>"); return; }
+    if ((m = /^\s*[-・] (.*)$/.exec(ln))) { out.push('<div class="pli">・' + pageInline(m[1]) + "</div>"); return; }
+    out.push('<div class="pp">' + (ln.trim() ? pageInline(ln) : "&nbsp;") + "</div>");
+  });
+  return out.join("");
+}
+// アプリの部品:そのページの中で開く。どのページから開かれたかを伝える
+function appHtml(p, url){
+  const sep = url.includes("?") ? "&" : "?";
+  const src = url + sep + "tag=" + encodeURIComponent(rootTag(p) || "") + "&page=" + encodeURIComponent(p.id) + "&label=" + encodeURIComponent(p.label || "");
+  return '<div class="papp"><div class="papp-h"><span>アプリ</span><a href="' + esc(src) + '" target="_blank" rel="noopener">全画面で開く</a></div><iframe src="' + esc(src) + '" loading="lazy" title="アプリ"></iframe></div>';
+}
+// 表:列ごとに種類、並べ替え・絞り込み、行と列の追加、セルの編集
+const COLT = [["text", "文字"], ["num", "数"], ["date", "日付"], ["check", "チェック"], ["select", "選択肢"]];
+function tableHtml(p, tid){
+  const t = (p.tables || {})[tid];
+  if (!t) return '<div class="empty">(表が見つかりません)</div>';
+  const editing = pg.tableEdit === p.id + ":" + tid;
+  const q = ((pg.tFilter || {})[tid] || "").toLowerCase();
+  let rows = t.rows.map((r, i) => ({ r, i }));
+  if (q) rows = rows.filter(x => x.r.some(v => String(v == null ? "" : v).toLowerCase().includes(q)));
+  const so = (pg.tSort || {})[tid];
+  if (so) { const ci = so.col, dir = so.dir, ty = (t.cols[ci] || {}).type;
+    rows.sort((a, b) => { let x = a.r[ci], y = b.r[ci]; if (ty === "num") { x = +x || 0; y = +y || 0; } else if (ty === "check") { x = x ? 1 : 0; y = y ? 1 : 0; } else { x = String(x || ""); y = String(y || ""); }
+      return (x < y ? -1 : x > y ? 1 : 0) * dir; }); }
+  const cell = (v, ty, ri, ci) => {
+    if (!editing) return ty === "check" ? (v ? "✓" : "") : esc(v == null ? "" : v);
+    if (ty === "check") return '<input type="checkbox" data-tcell="' + tid + ":" + ri + ":" + ci + '"' + (v ? " checked" : "") + ">";
+    const opts = (t.cols[ci].options || []);
+    if (ty === "select") return '<select data-tcell="' + tid + ":" + ri + ":" + ci + '"><option></option>' + opts.map(o => "<option" + (o === v ? " selected" : "") + ">" + esc(o) + "</option>").join("") + "</select>";
+    return '<input data-tcell="' + tid + ":" + ri + ":" + ci + '" type="' + (ty === "num" ? "number" : ty === "date" ? "date" : "text") + '" value="' + esc(v == null ? "" : v) + '">';
+  };
+  return '<div class="ptable"><div class="pt-bar"><input type="search" data-tfilter="' + tid + '" placeholder="表の中を絞り込む" value="' + esc((pg.tFilter || {})[tid] || "") + '">' +
+    '<button type="button" class="btn ghost sm" data-tedit="' + tid + '">' + (editing ? "編集を終える" : "表を編集") + "</button></div>" +
+    '<div class="pt-wrap"><table><thead><tr>' + t.cols.map((c, ci) => '<th data-tsort="' + tid + ":" + ci + '">' + esc(c.name) + (so && so.col === ci ? (so.dir > 0 ? " ▲" : " ▼") : "") +
+      (editing ? '<button type="button" class="del" data-tcol-del="' + tid + ":" + ci + '" aria-label="列を消す">×</button>' : "") + "</th>").join("") + (editing ? "<th></th>" : "") + "</tr></thead><tbody>" +
+    rows.map(({ r, i }) => "<tr>" + t.cols.map((c, ci) => '<td class="t-' + c.type + '">' + cell(r[ci], c.type, i, ci) + "</td>").join("") +
+      (editing ? '<td><button type="button" class="del" data-trow-del="' + tid + ":" + i + '">消す</button></td>' : "") + "</tr>").join("") + "</tbody></table></div>" +
+    (editing ? '<div class="pt-add"><button type="button" class="btn ghost sm" data-trow-add="' + tid + '">行を足す</button>' +
+      '<input data-tcol-name="' + tid + '" placeholder="新しい列の名前"><select data-tcol-type="' + tid + '">' + COLT.map(([v, l]) => '<option value="' + v + '">' + l + "</option>").join("") + "</select>" +
+      '<input data-tcol-opts="' + tid + '" placeholder="選択肢(読点で区切る)"><button type="button" class="btn ghost sm" data-tcol-add="' + tid + '">列を足す</button></div>' : "") + "</div>";
+}
+
+function pageTreeHtml(tag){
+  const node = p => '<li><a href="#" data-goto-page="' + p.id + '" class="pk-' + p.kind + '">' + (p.label ? '<b>' + esc(p.label) + "</b> " : "") + esc(p.title || "(無題)") +
+    (p.kind !== "page" && p.status ? ' <span class="pst st-' + esc(p.status) + '">' + esc(p.status) + "</span>" : "") + "</a>" +
+    (childrenOf(p.id).length ? "<ul>" + childrenOf(p.id).map(node).join("") + "</ul>" : "") + "</li>";
+  const tops = childrenOf("m:" + tag);
+  return '<div class="ptree">' + (tops.length ? "<ul>" + tops.map(node).join("") + "</ul>" : '<div class="empty">まだありません。</div>') +
+    '<div class="pt-new"><button type="button" class="btn sm" data-page-new="STAGE" data-page-parent="m:' + esc(tag) + '">STAGEを足す</button>' +
+    '<button type="button" class="btn ghost sm" data-page-new="WAVE" data-page-parent="m:' + esc(tag) + '">WAVEを足す</button>' +
+    '<button type="button" class="btn ghost sm" data-page-new="page" data-page-parent="m:' + esc(tag) + '">ページを足す</button></div></div>';
+}
+
+function renderPage(box, p){
+  const tag = rootTag(p), m = state.gov && (state.gov.ministries || []).find(x => x.tag === tag);
+  const tr = trail(p), isSW = p.kind !== "page";
+  let h = '<button type="button" class="back" data-page-back>‹ ' + esc(m ? m.name : "省") + "</button>" +
+    '<div class="crumb">' + esc(m ? m.name : "") + tr.map(x => ' › <a href="#" data-goto-page="' + x.id + '">' + esc(x.label || x.title || "(無題)") + "</a>").join("") + "</div>";
+  if (pg.edit) {
+    h += '<div class="pg-edit"><div class="grid2"><div class="f"><label>名前</label><input id="pg-title" value="' + esc(p.title) + '"></div>' +
+      (isSW ? '<div class="f"><label>状態</label><select id="pg-status">' + PST.map(x => "<option" + (x === p.status ? " selected" : "") + ">" + x + "</option>").join("") + "</select></div>" : "") + "</div>" +
+      (isSW ? '<div class="f"><label>主題</label><textarea id="pg-theme" style="min-height:3rem">' + esc(p.theme || "") + '</textarea></div><div class="f"><label>タスク内容</label><textarea id="pg-content" style="min-height:3rem">' + esc(p.content || "") + "</textarea></div>" : "") +
+      '<div class="f"><label>本文(# 見出し・- 箇条書き・- [ ] チェック・[[ページの名前]]・URL)</label><textarea id="pg-body" style="min-height:12rem">' + esc(p.body || "") + "</textarea></div>" +
+      '<div class="row-btns"><button type="button" class="btn" data-page-save>保存</button><button type="button" class="btn ghost" data-page-cancel>やめる</button>' +
+      '<button type="button" class="btn ghost sm" data-page-addtable>表を足す</button><button type="button" class="btn ghost sm" data-page-addapp>アプリを置く</button></div></div>';
+  } else {
+    h += '<div class="pg-head"><span class="pk pk-' + p.kind + '">' + (isSW ? esc(p.label) : "ページ") + "</span><h2>" + esc(p.title || "(無題)") + "</h2>" +
+      (isSW ? '<span class="pst st-' + esc(p.status || "未着手") + '">' + esc(p.status || "未着手") + "</span>" : "") +
+      '<button type="button" class="btn ghost sm" data-page-edit>直す</button></div>';
+    if (isSW) h += (p.theme ? '<div class="pf"><span>主題</span><p>' + esc(p.theme) + "</p></div>" : "") + (p.content ? '<div class="pf"><span>タスク内容</span><p>' + esc(p.content) + "</p></div>" : "");
+    if (isSW) {
+      const cs = p.clear || [], met = cs.filter(condMet).length;
+      h += '<div class="sec"><h3>クリア条件 ' + (cs.length ? met + " / " + cs.length : "") + "</h3>" +
+        (cs.length ? '<div class="cbar"><i style="width:' + (cs.length ? met / cs.length * 100 : 0) + '%"></i></div>' : "") +
+        cs.map(c => '<div class="cond' + (condMet(c) ? " met" : "") + '">' + (c.type === "manual" ? '<input type="checkbox" data-cond-check="' + c.id + '"' + (c.done ? " checked" : "") + ">" : (condMet(c) ? "✓" : "○")) +
+          '<span>' + esc(condText(c)) + ' <small>' + esc(condNow(c)) + '</small></span><button type="button" class="del" data-cond-del="' + c.id + '">外す</button></div>').join("") +
+        (pg.condForm ? condFormHtml(p) : '<button type="button" class="btn ghost sm" data-cond-new>条件を足す</button>') +
+        (cs.length && met === cs.length && p.status !== "クリア" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-page-clear>クリアにする</button></div>' : "") + "</div>";
+      const ts = tasksFor(tag, p.label);
+      h += '<div class="sec"><h3>この' + p.kind + "のタスク " + ts.length + "</h3>" + (ts.length ? '<div class="tasks">' + ts.map(t => '<div class="tk' + (t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
+          "</span><span>" + esc(t.status) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span></div>").join("") + "</div>" : '<div class="empty">まだありません。</div>') +
+        (pg.taskForm ? taskFormHtml(p) : '<button type="button" class="btn sm" data-task-new>この' + p.kind + "からタスクを作る</button>") + "</div>";
+    }
+    h += '<div class="pbody">' + renderPageBody(p) + "</div>";
+    const kids = childrenOf(p.id);
+    h += '<div class="sec"><h3>この下のページ ' + kids.length + "</h3>" + (kids.length ? '<div class="ptree"><ul>' + kids.map(k => '<li><a href="#" data-goto-page="' + k.id + '">' + (k.label ? "<b>" + esc(k.label) + "</b> " : "") + esc(k.title || "(無題)") + "</a></li>").join("") + "</ul></div>" : "") +
+      '<div class="pt-new">' + (p.kind === "STAGE" ? '<button type="button" class="btn ghost sm" data-page-new="STAGE" data-page-parent="' + p.id + '">この下にSTAGE</button><button type="button" class="btn ghost sm" data-page-new="WAVE" data-page-parent="' + p.id + '">この下にWAVE</button>' : "") +
+      '<button type="button" class="btn ghost sm" data-page-new="page" data-page-parent="' + p.id + '">この下にページ</button></div></div>' +
+      '<div class="pg-foot"><span>このページのリンク</span><input readonly value="' + esc(pageUrl(p.id)) + '" onclick="this.select()"><button type="button" class="btn ghost sm" data-page-del style="border-color:var(--shu);color:var(--shu)">このページを消す</button></div>';
+  }
+  h += '<span class="status" id="pg-msg"></span>';
+  box.innerHTML = h;
+}
+function condFormHtml(p){
+  const names = state.tasks.filter(t => !["アーカイブ", "達成済み"].includes(t.status)).map(t => t.def.name).sort((a, b) => a.localeCompare(b, "ja"));
+  return '<div class="cform"><select id="cf-type"><option value="task">タスクの数字で</option><option value="manual">手で確かめる</option></select>' +
+    '<select id="cf-task">' + names.map(n => "<option>" + esc(n) + "</option>").join("") + "</select>" +
+    '<select id="cf-metric"><option value="status">状況が</option><option value="total">累計が</option><option value="streak">連続が</option></select>' +
+    '<input id="cf-value" placeholder="定着 / 30"><input id="cf-text" placeholder="手で確かめること">' +
+    '<button type="button" class="btn sm" data-cond-add>足す</button><button type="button" class="btn ghost sm" data-cond-cancel>やめる</button></div>';
+}
+// このWAVEからタスクを作る:続けやすいタスクに整えるための問い
+function taskFormHtml(p){
+  return '<div class="tform"><p style="font-size:.84rem;color:var(--sub);margin:.2rem 0 .5rem">続けやすいタスクにするための問いに答えてください。省と' + esc(p.label) + "は最初から結びつきます。</p>" +
+    '<div class="f"><label>何をする?(タスクの名前)</label><input id="tf-name" placeholder="例:青チャート例題を3題"></div>' +
+    '<div class="f"><label>最初の一歩は?(これだけはやる、という小さな行動)</label><input id="tf-step" placeholder="例:例題を1題だけ開く"></div>' +
+    '<div class="grid2"><div class="f"><label>1回何分?</label><input id="tf-min" type="number" min="1" value="15"></div>' +
+    '<div class="f"><label>いつ?</label><select id="tf-slot"><option>朝</option><option>昼</option><option>夜</option><option>一日中</option></select></div>' +
+    '<div class="f"><label>どこで?</label><input id="tf-place" placeholder="机"></div>' +
+    '<div class="f"><label>どのくらいの間隔?</label><input id="tf-interval" placeholder="空欄なら毎日(例:月水金)"></div></div>' +
+    '<div class="row-btns"><button type="button" class="btn" data-task-add>行軍表に入れる</button><button type="button" class="btn ghost" data-task-cancel>やめる</button></div></div>';
+}
+async function sha1Hex(sx){ const b = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(sx)); return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, "0")).join(""); }
+
+
+function renderMinForm(){
+  const box = document.getElementById("min-form"); if (!box) return;
+  box.innerHTML = mins.form ? '<div class="cform" style="margin-bottom:.6rem"><input id="mf-name" placeholder="名前(例:経済省)"><input id="mf-tag" placeholder="所属タグ(例:経済)">' +
+    '<input id="mf-deps" placeholder="依存先(例:受験:2, 家族:1)" style="flex:1"><button type="button" class="btn sm" id="mf-add">足す</button><button type="button" class="btn ghost sm" id="mf-cancel">やめる</button>' +
+    '<span style="font-size:.76rem;color:var(--sub);flex-basis:100%">所属タグはタスクや国力の記録と結びつく短い名前で、あとから変えられません。国力には翌朝の計算から入ります。</span><span class="status" id="mf-msg"></span></div>' : "";
+}
+function bindMins(){
+  document.getElementById("add-ministry").addEventListener("click", () => { mins.form = !mins.form; renderMinForm(); });
+  document.getElementById("min-form").addEventListener("input", e => {
+    if (e.target.id === "mf-name") { const t = document.getElementById("mf-tag"); if (!t.dataset.touched) t.value = e.target.value.replace(/省$/, ""); }
+    if (e.target.id === "mf-tag") e.target.dataset.touched = "1";
+  });
+  document.getElementById("min-form").addEventListener("click", async e => {
+    if (e.target.id === "mf-cancel") { mins.form = false; renderMinForm(); return; }
+    if (e.target.id !== "mf-add") return;
+    const name = document.getElementById("mf-name").value.trim(), tag = document.getElementById("mf-tag").value.trim(), deps = document.getElementById("mf-deps").value.trim();
+    const msg = t => { document.getElementById("mf-msg").textContent = t; document.getElementById("mf-msg").classList.add("err"); };
+    if (!name || !tag) return msg("名前と所属タグを入れてください。");
+    if (((state.gov && state.gov.ministries) || []).some(m => m.tag === tag)) return msg("その所属タグの省はもうあります。");
+    const ok = await saveMins(doc => { doc.ministries = (doc.ministries || []).concat([{ tag, name, deps, deadline: "", progress: 0, created: taskDay() }]); });
+    if (ok) { mins.form = false; renderMinForm(); render(); }
+  });
+  document.getElementById("detail").addEventListener("click", async e => {
+    let b;
+    if ((b = e.target.closest("[data-min-edit]"))) { mins.edit = b.dataset.minEdit; renderDetail(); return; }
+    if (e.target.closest("[data-min-cancel]")) { mins.edit = false; renderDetail(); return; }
+    if ((b = e.target.closest("[data-min-save]"))) {
+      const tag = b.dataset.minSave, name = document.getElementById("me-name").value.trim() || tag, deps = document.getElementById("me-deps").value.trim();
+      const ok = await saveMins(doc => { let m = (doc.ministries || []).find(x => x.tag === tag);
+        if (!m) { const g = state.gov.ministries.find(x => x.tag === tag) || {}; m = { tag, progress: g.progress || 0, deadline: g.deadline || "" }; doc.ministries = (doc.ministries || []).concat([m]); }
+        m.name = name; m.deps = deps; });
+      if (ok) { mins.edit = false; renderDetail(); }
+    }
+  });
+}
+
+function bindPages(){
+  const box = document.getElementById("detail");
+  const msg = (t, err) => { const el = document.getElementById("pg-msg"); if (el) { el.textContent = t; el.classList.toggle("err", !!err); } };
+  const rerender = () => renderDetail();
+  box.addEventListener("click", async e => {
+    const q = sx => e.target.closest(sx); let b;
+    if ((b = q("[data-goto-page]"))) { e.preventDefault(); openPage(b.dataset.gotoPage); return; }
+    if ((b = q("[data-page-new]"))) {
+      const kind = b.dataset.pageNew, parent = b.dataset.pageParent;
+      const tag = parent.startsWith("m:") ? parent.slice(2) : rootTag(pageById(parent));
+      const id = "pg" + uid(), label = kind === "page" ? "" : nextLabel(kind, parent, tag);
+      await savePages(doc => { doc.pages.push({ id, parent, kind, label, title: kind === "page" ? "新しいページ" : "", theme: "", content: "", clear: [], status: kind === "page" ? "" : "未着手", body: "", tables: {}, created: taskDay(), updated: taskDay() }); });
+      pg.edit = true; openPage(id); return;
+    }
+    const p = pg.open && pageById(pg.open);
+    if (q("[data-page-back]")) { pg.open = null; pg.edit = false; history.replaceState && history.replaceState(null, "", location.pathname); rerender(); return; }
+    if (!p) return;
+    if (q("[data-page-edit]")) { pg.edit = true; rerender(); return; }
+    if (q("[data-page-cancel]")) { pg.edit = false; rerender(); return; }
+    if (q("[data-page-save]")) {
+      const v = id => (document.getElementById(id) || {}).value;
+      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.title = (v("pg-title") || "").trim(); x.body = v("pg-body") || "";
+        if (x.kind !== "page") { x.theme = v("pg-theme") || ""; x.content = v("pg-content") || ""; x.status = v("pg-status") || x.status; } x.updated = taskDay(); });
+      pg.edit = false; rerender(); return;
+    }
+    if (q("[data-page-addtable]") || q("[data-page-addapp]")) {
+      const ta = document.getElementById("pg-body");
+      if (q("[data-page-addtable]")) { const tid = "t" + uid().slice(-6);
+        p.tables = Object.assign({}, p.tables || {}, { [tid]: { cols: [{ name: "名前", type: "text" }, { name: "メモ", type: "text" }], rows: [["", ""]] } });
+        ta.value = ta.value.replace(/\s*$/, "") + "\n{{表:" + tid + "}}\n"; pg.tableEdit = p.id + ":" + tid; }
+      else { const url = prompt("置くアプリのURL(例:https://nisenonamae.github.io/…)"); if (!url) return; ta.value = ta.value.replace(/\s*$/, "") + "\n{{アプリ:" + url.trim() + "}}\n"; }
+      return;
+    }
+    if (q("[data-page-del]")) {
+      if (childrenOf(p.id).length) { msg("この下にページがあるので消せません。先に下のページを消すか移してください。", true); return; }
+      if (!confirm("「" + (p.label || p.title) + "」を消しますか。")) return;
+      await savePages(doc => { doc.pages.find(y => y.id === p.id).deleted = taskDay(); });
+      const parent = p.parent; pg.open = String(parent).startsWith("m:") ? null : parent; rerender(); return;
+    }
+    if (q("[data-page-clear]")) { await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.status = "クリア"; x.clearedAt = taskDay(); }); rerender(); return; }
+    // クリア条件
+    if (q("[data-cond-new]")) { pg.condForm = true; rerender(); return; }
+    if (q("[data-cond-cancel]")) { pg.condForm = false; rerender(); return; }
+    if (q("[data-cond-add]")) {
+      const type = document.getElementById("cf-type").value;
+      const c = type === "manual" ? { id: uid(), type, text: (document.getElementById("cf-text").value || "").trim(), done: false }
+        : { id: uid(), type, task: document.getElementById("cf-task").value, metric: document.getElementById("cf-metric").value, value: (document.getElementById("cf-value").value || "").trim() };
+      if (type === "manual" ? !c.text : (!c.task || !c.value || (c.metric !== "status" && isNaN(+c.value)) || (c.metric === "status" && !(c.value in RANK_ST)))) { msg("条件の中身を入れてください(状況なら 新規・進行中・定着・熟達・殿堂入り、数なら数字)。", true); return; }
+      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.clear = (x.clear || []).concat([c]); }); pg.condForm = false; rerender(); return;
+    }
+    if ((b = q("[data-cond-del]"))) { const id = b.dataset.condDel; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.clear = x.clear.filter(c => c.id !== id); }); rerender(); return; }
+    // タスクを作る
+    if (q("[data-task-new]")) { pg.taskForm = true; rerender(); return; }
+    if (q("[data-task-cancel]")) { pg.taskForm = false; rerender(); return; }
+    if (q("[data-task-add]")) {
+      const v = id => (document.getElementById(id).value || "").trim();
+      const name = v("tf-name"); if (!name) { msg("タスクの名前を入れてください。", true); return; }
+      if (state.tasks.some(t => t.def.name === name)) { msg("同じ名前のタスクがもうあります。", true); return; }
+      const tag = rootTag(p), day = taskDay(), id = "t" + (await sha1Hex(name + "|" + day)).slice(0, 10);
+      const def = { id, name, aliases: [], ministries: [tag], waves: [{ label: p.label, url: pageUrl(p.id) }], slot: v("tf-slot") || "一日中", stance: "攻", kind: "習慣型",
+        interval: v("tf-interval"), weight: null, quota: null, requirement: v("tf-step") ? "最初の一歩:" + v("tf-step") : "", created: day, initial: { status: "新規" },
+        generations: [{ gen: 1, from: day, target: 10 }], events: [] };
+      for (let i = 0; i < 3; i++) {
+        const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] };
+        ov.newTasks = (ov.newTasks || []).concat([def]);
+        try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); state.overlay = ov; break; } catch (err) { if (err.status !== 409 && err.status !== 422) { msg(err.message, true); return; } }
+      }
+      // 行軍表の組み立てに使う設定(所要時間・場所)も入れておく
+      for (let i = 0; i < 3; i++) {
+        const r = await readJson("roadmap/settings.json"); if (!r.data) break;
+        const st = r.data; st.tasks = st.tasks || {};
+        st.tasks[name] = Object.assign({ min: Math.max(1, +v("tf-min") || 15), place: v("tf-place") || "どこでも", organs: ["目", "手"], mode: "", priority: 0, fixed: "", next: "" }, st.tasks[name] || {});
+        try { await writeJson("roadmap/settings.json", st, r.sha); break; } catch (err) { if (err.status !== 409 && err.status !== 422) break; }
+      }
+      computeTasks(); pg.taskForm = false; rerender(); msg("「" + name + "」を行軍表に入れました。"); return;
+    }
+    // 表
+    if ((b = q("[data-tedit]"))) { const k = p.id + ":" + b.dataset.tedit; pg.tableEdit = pg.tableEdit === k ? null : k; rerender(); return; }
+    if ((b = q("[data-tsort]")) && !q("[data-tcol-del]")) { const [tid, ci] = b.dataset.tsort.split(":"); pg.tSort = pg.tSort || {}; const cur = pg.tSort[tid];
+      pg.tSort[tid] = cur && cur.col === +ci ? (cur.dir > 0 ? { col: +ci, dir: -1 } : null) : { col: +ci, dir: 1 }; rerender(); return; }
+    const tsave = async f => { await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); f(x); x.updated = taskDay(); }); rerender(); };
+    if ((b = q("[data-trow-add]"))) { const tid = b.dataset.trowAdd; return tsave(x => { const t = x.tables[tid]; t.rows.push(t.cols.map(c => c.type === "check" ? false : "")); }); }
+    if ((b = q("[data-trow-del]"))) { const [tid, ri] = b.dataset.trowDel.split(":"); return tsave(x => { x.tables[tid].rows.splice(+ri, 1); }); }
+    if ((b = q("[data-tcol-del]"))) { const [tid, ci] = b.dataset.tcolDel.split(":"); if (!confirm("この列を消しますか。")) return; return tsave(x => { const t = x.tables[tid]; t.cols.splice(+ci, 1); t.rows.forEach(r => r.splice(+ci, 1)); }); }
+    if ((b = q("[data-tcol-add]"))) { const tid = b.dataset.tcolAdd, nm = (box.querySelector('[data-tcol-name="' + tid + '"]').value || "").trim(); if (!nm) return;
+      const ty = box.querySelector('[data-tcol-type="' + tid + '"]').value, op = (box.querySelector('[data-tcol-opts="' + tid + '"]').value || "").split(/[、,]/).map(x => x.trim()).filter(Boolean);
+      return tsave(x => { const t = x.tables[tid]; t.cols.push(ty === "select" ? { name: nm, type: ty, options: op } : { name: nm, type: ty }); t.rows.forEach(r => r.push(ty === "check" ? false : "")); }); }
+  });
+  box.addEventListener("change", async e => {
+    const p = pg.open && pageById(pg.open); if (!p) return;
+    const c = e.target.closest("[data-cond-check]");
+    if (c) { const id = c.dataset.condCheck, on = c.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const k = x.clear.find(z => z.id === id); k.done = on; }); renderDetail(); return; }
+    const pc = e.target.closest("[data-pcl]");
+    if (pc) { const i = +pc.dataset.pcl, on = pc.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const ls = x.body.split("\n"); ls[i] = ls[i].replace(/- \[( |x)\]/, on ? "- [x]" : "- [ ]"); x.body = ls.join("\n"); }); return; }
+    const tc = e.target.closest("[data-tcell]");
+    if (tc) { const [tid, ri, ci] = tc.dataset.tcell.split(":"), t = p.tables[tid], ty = t.cols[+ci].type;
+      const val = ty === "check" ? tc.checked : (ty === "num" ? (tc.value === "" ? "" : +tc.value) : tc.value);
+      await savePages(doc => { doc.pages.find(y => y.id === p.id).tables[tid].rows[+ri][+ci] = val; }); return; }
+  });
+  box.addEventListener("input", e => {
+    const f = e.target.closest("[data-tfilter]"); if (!f) return;
+    pg.tFilter = pg.tFilter || {}; pg.tFilter[f.dataset.tfilter] = f.value;
+    const pos = f.selectionStart; renderDetail();
+    const nf = document.querySelector('[data-tfilter="' + f.dataset.tfilter + '"]'); if (nf) { nf.focus(); try { nf.setSelectionRange(pos, pos); } catch (err) {} }
+  });
+  window.addEventListener("hashchange", fromHash);
+}
+function openPage(id){
+  const p = pageById(id); if (!p) return;
+  pg.open = id; pg.condForm = false; pg.taskForm = false;
+  state.open = rootTag(p); showView("list"); renderDetail();
+  if (history.replaceState) history.replaceState(null, "", "#page=" + id);
+  window.scrollTo && window.scrollTo(0, 0);
+}
+function fromHash(){ const m = /^#page=(.+)$/.exec(location.hash || ""); if (m && pageById(m[1])) openPage(m[1]); }
+
 /* ───── 保存 ───── */
 async function commitReview(month, mutate){
   const path = P.reviews + "/" + month + ".json";
@@ -1510,9 +1917,11 @@ function bind(){
   });
   bindGov();
   bindStaff();
+  bindPages();
+  bindMins();
   document.getElementById("sync").addEventListener("click", syncNow);
   document.getElementById("detail").addEventListener("click", async e => {
-    if (e.target.closest("[data-back]")) { state.open = null; state.editPurpose = false; render(); return; }
+    if (e.target.closest("[data-back]")) { state.open = null; state.editPurpose = false; pg.open = null; pg.edit = false; render(); return; }
     if (e.target.closest("[data-sl-edit]")) { state.editSlogan = "edit"; renderDetail(); return; }
     if (e.target.closest("[data-sl-new]")) { state.editSlogan = "new"; renderDetail(); return; }
     if (e.target.closest("[data-sl-cancel]")) { state.editSlogan = false; renderDetail(); return; }
@@ -1573,8 +1982,10 @@ function bind(){
 function boot(){
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
   bind();
-  document.getElementById("notion-places").innerHTML = Object.keys(NOTION).map(k => '<div class="nplace">' + nlink(k) + "<span>" + esc(NOTION[k].why) + "</span></div>").join("") +
-    '<div class="nplace"><span class="nlike">計画:◯◯省</span><span>STAGE・WAVEを足す(各省のページから開けます)</span></div>';
+  document.getElementById("notion-places").innerHTML =
+    '<p style="font-size:.84rem;margin:.2rem 0">省・STAGE・WAVE・ページは、このアプリで足したり直したりします。</p>' +
+    '<p style="font-size:.84rem;margin:.4rem 0 .2rem">次のものはNotionにあり、<b>Claudeに頼んで</b>直します:</p>' +
+    '<ul style="font-size:.84rem;margin:.2rem 0;padding-left:1.2rem"><li>時勢(出来事と省の重要度の増減)</li><li>国富(達成して残った成果)</li><li>レギュレーション(国力の計算を変えた記録)</li><li>国家運営規程</li></ul>';
   document.getElementById("ver").textContent = "版 " + APP_VERSION;
   const c = lsGet(KEY_CONN, null);
   document.getElementById("c-owner").value = c ? c.owner : "nisenonamae";
@@ -1587,7 +1998,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
