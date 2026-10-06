@@ -75,7 +75,7 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
-.mlist-bar{display:flex;justify-content:flex-end;margin:.2rem 0 .3rem}
+.mlist-bar{display:flex;justify-content:flex-end;align-items:center;gap:.6rem;margin:.2rem 0 .3rem}
 .mlist.reorder li{display:flex;align-items:stretch;gap:.3rem}.mlist.reorder li>button{flex:1}
 .mv{display:flex;flex-direction:column;gap:2px}.mv button{border:1px solid var(--rule);background:#fff;border-radius:3px;padding:0 .45rem;cursor:pointer;font-size:.7rem;flex:1}
 .mv button:disabled{opacity:.3;cursor:default}
@@ -328,7 +328,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r22";
+const APP_VERSION = "2026-10-07 r24";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -468,7 +468,7 @@ async function loadAll(){
     await loadReviewMonth(addDays(now.slice(0, 8) + "01", -1).slice(0, 7));
     await loadGov().catch(() => {});
     await loadStaff().catch(() => {});
-    await loadPages().catch(() => {});
+    if (!pgQ.pending.length) await loadPages().catch(() => {});
     await loadMins().catch(() => {});
     setTimeout(fromHash, 0);      // 「#page=…」のリンクで開かれたら、そのページへ
     renderPlaces();
@@ -534,7 +534,7 @@ function renderList(){
   box.innerHTML = '<button type="button" class="allcard" data-open="' + ALL.tag + '"><div class="an">参謀本部' +
       (openAll ? ' <span class="badge">' + openAll + "</span>" : "") + (openEmergencies().length ? '　<b style="color:#F0A090">緊急会議 ' + openEmergencies().length + "</b>" : "") +
       '</div><div class="as">' + esc(sl.text) + '</div><div class="an">' + (term ? esc(term.name) + "　残り" + Math.max(0, daysBetween(taskDay(), term.end)) + "日" : "作戦期はまだありません") + "</div></button>" +
-    '<div class="mlist-bar"><button type="button" class="linkbtn" data-reorder>' + (state.reorder ? "並べ替えを終える" : "並べ替える") + "</button></div>" +
+    '<div class="mlist-bar"><span class="status" id="order-status"></span><button type="button" class="linkbtn" data-reorder>' + (state.reorder ? "並べ替えを終える" : "並べ替える") + "</button></div>" +
     '<ul class="mlist' + (state.reorder ? " reorder" : "") + '">' + orderedMinistries(ms).map((m, i, arr) => {
     const p = powerOf(m.tag), open = openOrders(m.tag).length;
     const nS = deepNow(m.tag, "STAGE"), nW = deepNow(m.tag, "WAVE");
@@ -554,6 +554,7 @@ function deepNow(tag, kind){
 }
 // 省の並び:アプリの省一覧の order の順(無いものは後ろに、今の順のまま)
 function orderedMinistries(ms){
+  if (state.orderDraft) { const pos = {}; state.orderDraft.forEach((t, k) => pos[t] = k); return ms.slice().sort((a, b) => (pos[a.tag] ?? 999) - (pos[b.tag] ?? 999)); }
   const ord = {}; ((mins.doc && mins.doc.ministries) || []).forEach(m => { if (m.order != null) ord[m.tag] = m.order; });
   return ms.map((m, i) => ({ m, k: ord[m.tag] != null ? ord[m.tag] : 1000 + i })).sort((a, b) => a.k - b.k).map(x => x.m);
 }
@@ -1569,15 +1570,33 @@ async function loadPages(){
   // 計画(省アプリのSTAGE・WAVE)に無いタスクは待機中にする。その決まりが始まった日を一度だけ記録する
   if (!pg.doc.strictFrom) await savePages(doc => { if (doc.strictFrom) return false; doc.strictFrom = taskDay(); }).catch(() => {});
 }
-async function savePages(mutate){
-  for (let i = 0; i < 3; i++) {
-    try { if (mutate(pg.doc) === false) return false; pg.sha = await writeJson(PAGES, pg.doc, pg.sha); return true; }
-    catch (e) {
-      if ((e.status === 409 || e.status === 422) && i < 2) { await loadPages(); continue; }
-      const el = document.getElementById("pg-msg"); if (el) { el.textContent = e.message; el.classList.add("err"); } return false;
+// ページの保存:すぐ手元に反映して画面を描けるようにし、GitHubへの書き込みは裏で順番に行う。
+// 別の端末で先に変わっていたら、読み直して、まだ書けていない変更をかけ直す
+const pgQ = { pending: [], busy: false, again: false };
+function savePages(mutate){
+  if (mutate(pg.doc) === false) return Promise.resolve(false);
+  pgQ.pending.push(mutate);
+  pgQ.done = flushPages();
+  return Promise.resolve(true);
+}
+async function flushPages(){
+  if (pgQ.busy) { pgQ.again = true; return pgQ.running; }
+  pgQ.busy = true;
+  pgQ.running = (async () => {
+    for (let guard = 0; guard < 6 && pgQ.pending.length; guard++) {
+      const n = pgQ.pending.length;
+      try { pg.sha = await writeJson(PAGES, pg.doc, pg.sha); pgQ.pending = pgQ.pending.slice(n); }
+      catch (e) {
+        if (e.status === 409 || e.status === 422) {
+          const r = await readJson(PAGES); pg.doc = Object.assign({ version: 1, pages: [] }, r.data || {}); pg.sha = r.sha;
+          pgQ.pending.forEach(m => { try { m(pg.doc); } catch (err) {} }); renderDetail(); continue;
+        }
+        const el = document.getElementById("pg-msg"); if (el) { el.textContent = "保存できませんでした:" + e.message; el.classList.add("err"); }
+        break;
+      }
     }
-  }
-  return false;
+  })();
+  try { await pgQ.running; } finally { pgQ.busy = false; if (pgQ.again && pgQ.pending.length) { pgQ.again = false; flushPages(); } }
 }
 const pages = () => pg.doc.pages.filter(p => !p.deleted && !p.imported);       // 地図に出るもの(アプリで作ったもの)
 const boxPages = () => pg.doc.pages.filter(p => !p.deleted && p.imported);     // 引っ越し箱(Notionから写したもの)
@@ -1854,17 +1873,26 @@ function renderMinForm(){
     '<span style="font-size:.76rem;color:var(--sub);flex-basis:100%">所属タグはタスクや国力の記録と結びつく短い名前で、あとから変えられません。国力には翌朝の計算から入ります。</span><span class="status" id="mf-msg"></span></div>' : "";
 }
 function bindMins(){
+  // 並べ替え:押したらすぐ入れ替えて描き、保存は裏でまとめて1回(最後に押してから少し待って、または終えるときに)
+  const flushOrder = async () => {
+    clearTimeout(state.orderTimer); const list = state.orderDraft; if (!list) return;
+    const st = document.getElementById("order-status"); if (st) st.textContent = "保存中…";
+    const ok = await saveMins(doc => { list.forEach((t, k) => { let m = (doc.ministries || []).find(x => x.tag === t);
+      if (!m) { const g = state.gov.ministries.find(x => x.tag === t) || {}; m = { tag: t, name: g.name || t, deps: depsText(g.deps) }; doc.ministries = (doc.ministries || []).concat([m]); }
+      m.order = k; }); });
+    if (ok && state.orderDraft === list) state.orderDraft = null;
+    const st2 = document.getElementById("order-status"); if (st2) st2.textContent = ok ? "保存しました" : "保存できませんでした";
+  };
   document.getElementById("list").addEventListener("click", async e => {
-    if (e.target.closest("[data-reorder]")) { state.reorder = !state.reorder; renderList(); return; }
+    if (e.target.closest("[data-reorder]")) { if (state.reorder) await flushOrder(); state.reorder = !state.reorder; renderList(); return; }
     const b = e.target.closest("[data-mv]"); if (!b) return;
     e.stopPropagation();
     const [tag, d] = b.dataset.mv.split(":"), list = orderedMinistries(state.gov.ministries).map(m => m.tag), i = list.indexOf(tag), j = i + (+d);
     if (i < 0 || j < 0 || j >= list.length) return;
     [list[i], list[j]] = [list[j], list[i]];
-    await saveMins(doc => { list.forEach((t, k) => { let m = (doc.ministries || []).find(x => x.tag === t);
-      if (!m) { const g = state.gov.ministries.find(x => x.tag === t) || {}; m = { tag: t, name: g.name || t, deps: depsText(g.deps) }; doc.ministries = (doc.ministries || []).concat([m]); }
-      m.order = k; }); });
-    renderList();
+    state.orderDraft = list; renderList();
+    const st = document.getElementById("order-status"); if (st) st.textContent = "";
+    clearTimeout(state.orderTimer); state.orderTimer = setTimeout(flushOrder, 1500);
   }, true);
   document.getElementById("add-ministry").addEventListener("click", () => { mins.form = !mins.form; renderMinForm(); });
   document.getElementById("min-form").addEventListener("input", e => {
@@ -2269,7 +2297,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
