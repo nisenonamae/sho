@@ -74,6 +74,14 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace{display:flex;gap:.6rem;align-items:baseline;padding:.35rem 0;border-bottom:1px dashed var(--rule);flex-wrap:wrap}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
+.mtabs{display:flex;gap:0;border-bottom:1px solid var(--rule);margin:.6rem 0 .9rem}
+.mtabs button{flex:0 0 auto;border:none;background:none;padding:.45rem .9rem;font:inherit;font-size:.9rem;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.mtabs button[aria-selected="true"]{color:var(--ink);font-weight:700;border-bottom-color:var(--mc,var(--ink))}
+.nowline{display:flex;flex-wrap:wrap;gap:.4rem;margin:.35rem 0 0}
+.nowline a{font-size:.78rem;text-decoration:none;border-radius:10px;padding:.05rem .55rem;border:1px solid var(--rule);color:var(--ink);background:#fff}
+.nowline .nl-s{border-color:var(--stage)}.nowline .nl-w{border-color:var(--wave)}
+.linkbtn{border:none;background:none;color:var(--sub);font:inherit;font-size:.8rem;cursor:pointer;padding:0 0 0 .5rem}
+.docs h4{display:flex;align-items:baseline}
 .agrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:.5rem}
 .abox{border:1px solid var(--rule);border-radius:4px;background:#fff;padding:.45rem .6rem;cursor:pointer}
 .abox .al{font-size:.75rem;color:var(--sub);letter-spacing:.06em}
@@ -283,7 +291,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-06 r14";
+const APP_VERSION = "2026-10-06 r15";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -577,6 +585,8 @@ function renderAll(box){
 function renderDetail(){
   const box = document.getElementById("detail");
   const m = currentMinistry();
+  const sb = document.querySelector(".syncbar"), mf = document.getElementById("min-form");
+  if (sb) sb.hidden = !!m; if (mf) mf.hidden = !!m;
   box.hidden = !m;
   if (!m) { box.innerHTML = ""; return; }
   if (m === ALL) { renderStaff(box); return; }
@@ -589,9 +599,16 @@ function renderDetail(){
   const seed = purpose == null && m.purpose && m.purpose.text ? m.purpose.text : null;
   const ptext = purpose != null ? purpose : (seed || "");
   box.style.setProperty("--mc", colorOf(m.tag));
-  box.innerHTML = '<button type="button" class="back" data-back>‹ 省の一覧</button>' +
+  // 地図・首脳・この省について の3つのタブ。選んだタブだけを見せる
+  const tab = state.mtab || "地図";
+  const nowS = nowOf(pages().filter(x => x.parent === "m:" + m.tag && x.kind === "STAGE").sort(byLabel));
+  const nowW = nowOf(pages().filter(x => x.parent === "m:" + m.tag && x.kind === "WAVE").sort(byLabel));
+  const head = '<button type="button" class="back" data-back>‹ 省の一覧</button>' +
     '<div class="mh"><h2>' + esc(m.name) + "</h2>" + (p ? '<span>国力 <b>' + Number(p.power).toFixed(1) + "</b>　支配 " + Math.round(p.dominance) + "　領土 " + p.territory + "</span>" : "") + "</div>" +
-    '<div class="purpose-box"><h3>目的</h3>' +
+    ((nowS || nowW) ? '<div class="nowline">' + (nowS ? '<a href="#" data-goto-page="' + nowS.id + '" class="nl-s">いまここ ' + esc(nowS.label) + (nowS.title ? " " + esc(nowS.title) : "") + "</a>" : "") +
+      (nowW ? '<a href="#" data-goto-page="' + nowW.id + '" class="nl-w">いまここ ' + esc(nowW.label) + (nowW.title ? " " + esc(nowW.title) : "") + "</a>" : "") + "</div>" : "") +
+    '<div class="mtabs" role="tablist">' + ["地図", "首脳", "この省について"].map(t => '<button type="button" role="tab" data-mtab="' + t + '" aria-selected="' + (t === tab) + '">' + t + "</button>").join("") + "</div>";
+  const about = '<div class="purpose-box"><h3>目的</h3>' +
       (state.editPurpose
         ? '<textarea id="pp-text" placeholder="この省は何のためにあるか">' + esc(ptext) + '</textarea><div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center">' +
           '<button type="button" class="btn sm" data-pp-save>保存する</button><button type="button" class="btn ghost sm" data-pp-cancel>やめる</button><span class="status" id="pp-status"></span></div>'
@@ -610,11 +627,11 @@ function renderDetail(){
       (rev.length ? '<p style="font-size:.82rem;color:var(--sub);margin:.4rem 0 0">この省に依存している:' + rev.map(([n, v]) => esc(n) + " " + v).join("、") + "</p>" : "") + "</div>" +
     '<div class="sec tide"><h3>時勢</h3>合計 <b>' + (m.tide.total > 0 ? "+" : "") + m.tide.total + "</b>" +
       (m.tide.recent.length ? "<ul>" + m.tide.recent.map(t => "<li>" + esc(t.date) + " " + esc(t.title) + "(" + (t.delta > 0 ? "+" : "") + esc(t.delta) + ")</li>").join("") + "</ul>" : "") +
-      "</div>" +
-    
-    '<div class="sec"><h3>地図</h3>' + pageTreeHtml(m.tag) + "</div>" +
-
-    '<div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(m) + "</div>";
+      "</div>";
+  box.innerHTML = head +
+    '<div class="mpane" data-pane="地図"' + (tab === "地図" ? "" : " hidden") + ">" + pageTreeHtml(m.tag) + "</div>" +
+    '<div class="mpane" data-pane="首脳"' + (tab === "首脳" ? "" : " hidden") + '><div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(m) + "</div></div>" +
+    '<div class="mpane" data-pane="この省について"' + (tab === "この省について" ? "" : " hidden") + ">" + about + "</div>";
 }
 function renderOrders(){
   const box = document.getElementById("orders");
@@ -1482,6 +1499,7 @@ async function saveMins(mutate){
 
 /* ───────── ページ(入れ子のページ・STAGE・WAVE・表・アプリの部品) ───────── */
 const PAGES = "roadmap/gov/pages.json";
+try { state.mtab = localStorage.getItem("sho-mtab") || "地図"; } catch (err) {}
 const pg = { doc: { version: 1, pages: [] }, sha: null, open: null, edit: false, taskForm: false, condForm: false, tableEdit: null };
 const PST = ["未着手", "進行中", "クリア", "中止"];
 const RANK_ST = { "要再設定": 0, "新規": 1, "進行中": 2, "定着": 3, "熟達": 4, "殿堂入り": 5 };
@@ -1622,8 +1640,9 @@ function pageTreeHtml(tag){
   const docs = pages().filter(p => p.parent === "m:" + tag && p.kind === "page");
   const box = boxPages().filter(p => (String(p.parent).startsWith("m:") ? p.parent.slice(2) : (function(){ let c = p, g = 0; while (c && g++ < 50) { if (String(c.parent).startsWith("m:")) return c.parent.slice(2); c = pg.doc.pages.find(y => y.id === c.parent); } return null; })()) === tag);
   return '<div class="roads">' + roadHtml(tag, "STAGE") + roadHtml(tag, "WAVE") + "</div>" +
-    '<div class="docs"><h4>資料</h4>' + (docs.length ? docs.map(p => '<a href="#" data-goto-page="' + p.id + '" class="doc">' + esc(p.title || "(無題)") + "</a>").join("") : '<span class="empty">まだありません。</span>') +
-    '<button type="button" class="btn ghost sm" data-page-new="page" data-page-parent="m:' + esc(tag) + '">資料のページを足す</button></div>' +
+    '<div class="docs"><h4>資料' + (docs.length ? "" : '<button type="button" class="linkbtn" data-page-new="page" data-page-parent="m:' + esc(tag) + '">+ 足す</button>') + "</h4>" +
+      docs.map(p => '<a href="#" data-goto-page="' + p.id + '" class="doc">' + esc(p.title || "(無題)") + "</a>").join("") +
+      (docs.length ? '<button type="button" class="linkbtn" data-page-new="page" data-page-parent="m:' + esc(tag) + '">+ 資料を足す</button>' : "") + "</div>" +
     (box.length ? '<details class="fold movebox"><summary>引っ越し箱(Notionから写したもの)' + box.length + "件</summary>" +
       '<p style="font-size:.8rem;color:var(--sub)">読んで、使うものは「STAGEとして使う」などで新しく作り、要らないものは消してください。</p>' +
       box.filter(p => p.kind !== "page" || (p.body || "").trim() || Object.keys(p.tables || {}).length)
@@ -1770,6 +1789,12 @@ function bindMins(){
 
 function bindPages(){
   const box = document.getElementById("detail");
+  box.addEventListener("click", e => {
+    const t = e.target.closest("[data-mtab]"); if (!t) return;
+    state.mtab = t.dataset.mtab; try { localStorage.setItem("sho-mtab", t.dataset.mtab); } catch (err) {}
+    box.querySelectorAll("[data-mtab]").forEach(x => x.setAttribute("aria-selected", String(x === t)));
+    box.querySelectorAll(".mpane").forEach(p => { p.hidden = p.dataset.pane !== t.dataset.mtab; });
+  });
   const msg = (t, err) => { const el = document.getElementById("pg-msg"); if (el) { el.textContent = t; el.classList.toggle("err", !!err); } };
   const rerender = () => renderDetail();
   box.addEventListener("click", async e => {
