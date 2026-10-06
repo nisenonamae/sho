@@ -74,6 +74,27 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace{display:flex;gap:.6rem;align-items:baseline;padding:.35rem 0;border-bottom:1px dashed var(--rule);flex-wrap:wrap}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
+.roads{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem}
+.road h4{margin:0 0 .4rem;font-size:.85rem;letter-spacing:.06em}
+.road-STAGE h4{color:var(--stage)}.road-WAVE h4{color:var(--wave)}
+.rcard{position:relative;border:1px solid var(--rule);border-left:4px solid var(--rule);border-radius:4px;background:#fff;padding:.45rem .6rem;margin:0 0 .45rem}
+.road-STAGE .r-now{border-left-color:var(--stage);box-shadow:0 1px 6px rgba(0,0,0,.08)}.road-WAVE .r-now{border-left-color:var(--wave);box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.rcard.r-クリア{opacity:.7}.rcard.r-中止{opacity:.45}
+.rc-main{display:flex;align-items:baseline;gap:.45rem;text-decoration:none;color:var(--ink)}
+.rc-ico{width:1rem;text-align:center;color:var(--sub)}.r-now .rc-ico{color:var(--ink)}.r-クリア .rc-ico{color:#3D8A5A}
+.rc-lab{font-weight:700;white-space:nowrap}.rc-tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rc-now{font-size:.7rem;color:#fff;background:var(--ink);border-radius:3px;padding:0 .35rem;white-space:nowrap}
+.rc-meta{display:flex;gap:.7rem;font-size:.76rem;color:var(--sub);margin:.15rem 0 0 1.45rem}
+.rc-subs{display:flex;flex-wrap:wrap;gap:.25rem;margin:.35rem 0 0 1.45rem}
+.rc-sub{font-size:.75rem;border:1px solid var(--rule);border-radius:10px;padding:0 .5rem;text-decoration:none;color:var(--ink)}
+.rc-sub.s-クリア{background:#E2EFE6;border-color:#3D8A5A}.rc-sub.s-進行中{border-color:var(--ink);font-weight:700}
+.rc-add{width:100%;border:1px dashed var(--rule);background:transparent;border-radius:4px;padding:.4rem;color:var(--sub);cursor:pointer;font:inherit;font-size:.84rem}
+.docs{margin-top:1rem}.docs h4{margin:0 0 .3rem;font-size:.85rem;color:var(--sub)}
+.doc,.boxitem{display:block;padding:.3rem 0;border-bottom:1px dashed var(--rule);text-decoration:none;color:var(--ink)}
+.movebox{margin-top:1rem}
+.stchips{display:flex;gap:.3rem;margin:-.2rem 0 .6rem}
+.stchips button{border:1px solid var(--rule);background:#fff;border-radius:12px;padding:.1rem .6rem;font:inherit;font-size:.78rem;cursor:pointer;color:var(--sub)}
+.stchips button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
 .crumb{font-size:.8rem;color:var(--sub);margin:.2rem 0 .6rem}
 .crumb a{color:var(--sub)}
 .pg-head{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.3rem 0 .6rem}
@@ -257,7 +278,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-06 r12";
+const APP_VERSION = "2026-10-06 r13";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -554,6 +575,7 @@ function renderDetail(){
   box.hidden = !m;
   if (!m) { box.innerHTML = ""; return; }
   if (m === ALL) { renderStaff(box); return; }
+  if (pg.box && pg.boxTag === m.tag) { const bp = pg.doc.pages.find(x => x.id === pg.box && !x.deleted); if (bp) { renderBox(box, bp); return; } pg.box = null; }
   if (pg.open && pageById(pg.open) && rootTag(pageById(pg.open)) === m.tag) { renderPage(box, pageById(pg.open)); return; }
   const p = powerOf(m.tag);
   const deps = Object.entries(m.deps || {});
@@ -584,13 +606,9 @@ function renderDetail(){
     '<div class="sec tide"><h3>時勢</h3>合計 <b>' + (m.tide.total > 0 ? "+" : "") + m.tide.total + "</b>" +
       (m.tide.recent.length ? "<ul>" + m.tide.recent.map(t => "<li>" + esc(t.date) + " " + esc(t.title) + "(" + (t.delta > 0 ? "+" : "") + esc(t.delta) + ")</li>").join("") + "</ul>" : "") +
       "</div>" +
-    (m.plan ? '<div class="links"><a class="plan-link" href="' + esc(m.plan.url) + '" target="_blank" rel="noopener">Notionの計画を開く(STAGE・WAVEを足すところ)</a></div>' +
-      '<p style="font-size:.78rem;color:var(--sub);margin:-.2rem 0 .4rem">足したら、一覧の上の「Notionと同期」を押すと1分ほどでここに出ます。</p>'
-      : '<p style="font-size:.82rem;color:var(--sub)">この省の計画のページは、Notionの省一覧のこの省のページの下に「計画:' + esc(m.name) + '」として作ると、次の同期から開けるようになります。</p>') +
-    '<div class="sec"><h3>STAGE・WAVE・ページ</h3>' + pageTreeHtml(m.tag) + "</div>" +
-    ((m.stages.length || m.waves.length) ? '<details class="fold"><summary>Notionにあるもの(引っ越し前)</summary>' +
-      '<div class="sec"><h3><i style="background:var(--stage)"></i>STAGE</h3>' + treeHtml(m, "STAGE") + "</div>" +
-      '<div class="sec"><h3><i style="background:var(--wave)"></i>WAVE</h3>' + treeHtml(m, "WAVE") + "</div></details>" : "") +
+    
+    '<div class="sec"><h3>地図</h3>' + pageTreeHtml(m.tag) + "</div>" +
+
     '<div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(m) + "</div>";
 }
 function renderOrders(){
@@ -1475,8 +1493,9 @@ async function savePages(mutate){
   }
   return false;
 }
-const pages = () => pg.doc.pages.filter(p => !p.deleted);
-const pageById = id => pg.doc.pages.find(p => p.id === id);
+const pages = () => pg.doc.pages.filter(p => !p.deleted && !p.imported);       // 地図に出るもの(アプリで作ったもの)
+const boxPages = () => pg.doc.pages.filter(p => !p.deleted && p.imported);     // 引っ越し箱(Notionから写したもの)
+const pageById = id => pg.doc.pages.find(p => p.id === id && !p.deleted);
 const childrenOf = pid => pages().filter(p => p.parent === pid).sort((a, b) => (a.order || 0) - (b.order || 0) || String(a.label || a.title).localeCompare(String(b.label || b.title), "ja", { numeric: true }));
 function rootTag(p){ let c = p, g = 0; while (c && g++ < 50) { if (String(c.parent).startsWith("m:")) return c.parent.slice(2); c = pageById(c.parent); } return null; }
 function trail(p){ const out = []; let c = p, g = 0; while (c && g++ < 50) { out.unshift(c); c = pageById(c.parent); } return out; }
@@ -1484,7 +1503,8 @@ function trail(p){ const out = []; let c = p, g = 0; while (c && g++ < 50) { out
 function nextLabel(kind, parentId, tag){
   const parent = pageById(parentId);
   const all = pages().filter(p => rootTag(p) === tag && p.kind === kind).map(p => p.label);
-  const base = parent && parent.kind === "STAGE" ? parent.label.replace(/^STAGE/, "") : "";
+  // 同じ系統の下に足すときだけ枝番にする(STAGEの下のSTAGE、WAVEの下のWAVE)
+  const base = parent && parent.kind === kind ? parent.label.replace(new RegExp("^" + kind), "") : "";
   const used = all.filter(l => base ? l.startsWith(kind + base + "-") && l.split("-").length === base.split("-").length + 1 : !l.includes("-"))
     .map(l => +l.split("-").pop().replace(/^\D+/, "")).filter(n => !isNaN(n));
   const n = (used.length ? Math.max(...used) : 0) + 1;
@@ -1566,15 +1586,59 @@ function tableHtml(p, tid){
       '<input data-tcol-opts="' + tid + '" placeholder="選択肢(読点で区切る)"><button type="button" class="btn ghost sm" data-tcol-add="' + tid + '">列を足す</button></div>' : "") + "</div>";
 }
 
+
+// いまの段:最初の「進行中」、なければ最初の「未着手」
+function nowOf(list){ return list.find(p => p.status === "進行中") || list.find(p => (p.status || "未着手") === "未着手") || null; }
+function labelNum(l){ return String(l || "").replace(/^\D+/, "").split("-").map(Number); }
+function byLabel(a, b){ const x = labelNum(a.label), y = labelNum(b.label); for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; }
+function remainText(p){
+  const cs = p.clear || [];
+  if (!cs.length) return "クリア条件なし";
+  const left = cs.filter(c => !condMet(c)).length;
+  return left ? "クリア条件 あと" + left + "つ" : "クリア条件を満たした";
+}
+function roadHtml(tag, kind){
+  const tops = pages().filter(p => p.parent === "m:" + tag && p.kind === kind).sort(byLabel);
+  const now = nowOf(tops);
+  const card = p => {
+    const st = p.status || "未着手", ts = tasksFor(tag, p.label), firm = ts.filter(t => (RANK_ST[t.status] ?? 0) >= 3).length;
+    const subs = childrenOf(p.id).filter(c => c.kind === kind).sort(byLabel);
+    const icon = st === "クリア" ? "✓" : st === "中止" ? "×" : p === now ? "●" : "○";
+    return '<div class="rcard r-' + (p === now ? "now" : st) + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-ico">' + icon + '</span>' +
+      '<span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || (p.theme || "").split("\\n")[0] || "") + "</span>" +
+      (p === now ? '<span class="rc-now">いまここ</span>' : "") + "</a>" +
+      '<div class="rc-meta"><span>' + esc(st === "クリア" ? "クリア" : remainText(p)) + "</span>" + (ts.length ? "<span>タスク " + ts.length + (firm ? "(定着 " + firm + ")" : "") + "</span>" : "") + "</div>" +
+      (subs.length ? '<div class="rc-subs">' + subs.map(c => '<a href="#" data-goto-page="' + c.id + '" class="rc-sub s-' + esc(c.status || "未着手") + '">' + esc(c.label.replace(/^(STAGE|WAVE)/, "")) + "</a>").join("") + "</div>" : "") + "</div>";
+  };
+  return '<div class="road road-' + kind + '"><h4>' + (kind === "STAGE" ? "領土を広げる(STAGE)" : "支配を深める(WAVE)") + "</h4>" + tops.map(card).join("") +
+    '<button type="button" class="rc-add" data-page-new="' + kind + '" data-page-parent="m:' + esc(tag) + '">+ 次の' + kind + "を足す</button></div>";
+}
 function pageTreeHtml(tag){
-  const node = p => '<li><a href="#" data-goto-page="' + p.id + '" class="pk-' + p.kind + '">' + (p.label ? '<b>' + esc(p.label) + "</b> " : "") + esc(p.title || "(無題)") +
-    (p.kind !== "page" && p.status ? ' <span class="pst st-' + esc(p.status) + '">' + esc(p.status) + "</span>" : "") + "</a>" +
-    (childrenOf(p.id).length ? "<ul>" + childrenOf(p.id).map(node).join("") + "</ul>" : "") + "</li>";
-  const tops = childrenOf("m:" + tag);
-  return '<div class="ptree">' + (tops.length ? "<ul>" + tops.map(node).join("") + "</ul>" : '<div class="empty">まだありません。</div>') +
-    '<div class="pt-new"><button type="button" class="btn sm" data-page-new="STAGE" data-page-parent="m:' + esc(tag) + '">STAGEを足す</button>' +
-    '<button type="button" class="btn ghost sm" data-page-new="WAVE" data-page-parent="m:' + esc(tag) + '">WAVEを足す</button>' +
-    '<button type="button" class="btn ghost sm" data-page-new="page" data-page-parent="m:' + esc(tag) + '">ページを足す</button></div></div>';
+  const docs = pages().filter(p => p.parent === "m:" + tag && p.kind === "page");
+  const box = boxPages().filter(p => (String(p.parent).startsWith("m:") ? p.parent.slice(2) : (function(){ let c = p, g = 0; while (c && g++ < 50) { if (String(c.parent).startsWith("m:")) return c.parent.slice(2); c = pg.doc.pages.find(y => y.id === c.parent); } return null; })()) === tag);
+  return '<div class="roads">' + roadHtml(tag, "STAGE") + roadHtml(tag, "WAVE") + "</div>" +
+    '<div class="docs"><h4>資料</h4>' + (docs.length ? docs.map(p => '<a href="#" data-goto-page="' + p.id + '" class="doc">' + esc(p.title || "(無題)") + "</a>").join("") : '<span class="empty">まだありません。</span>') +
+    '<button type="button" class="btn ghost sm" data-page-new="page" data-page-parent="m:' + esc(tag) + '">資料のページを足す</button></div>' +
+    (box.length ? '<details class="fold movebox"><summary>引っ越し箱(Notionから写したもの)' + box.length + "件</summary>" +
+      '<p style="font-size:.8rem;color:var(--sub)">読んで、使うものは「STAGEとして使う」などで新しく作り、要らないものは消してください。</p>' +
+      box.filter(p => p.kind !== "page" || (p.body || "").trim() || Object.keys(p.tables || {}).length)
+        .map(p => '<a href="#" class="boxitem" data-box-open="' + p.id + '">' + (p.label ? "<b>" + esc(p.label) + "</b> " : "") + esc(p.title || "") + "</a>").join("") +
+      '<div style="margin-top:.6rem"><button type="button" class="btn ghost sm" data-box-clear="' + esc(tag) + '" style="border-color:var(--shu);color:var(--shu)">引っ越し箱を空にする</button></div></details>' : "");
+}
+// 引っ越し箱の1件:軽い読み物として
+function renderBox(box, p){
+  const opts = pages().filter(x => x.kind !== "page" && rootTag(x) === pg.boxTag).sort(byLabel);
+  box.innerHTML = '<button type="button" class="back" data-box-back>‹ 戻る</button>' +
+    '<div class="crumb">引っ越し箱</div><div class="pg-head"><span class="pk pk-' + p.kind + '">' + esc(p.label || "ページ") + "</span><h2>" + esc(p.title || "") + "</h2></div>" +
+    (p.theme ? '<div class="pf"><span>主題</span><p>' + esc(p.theme) + "</p></div>" : "") + (p.content ? '<div class="pf"><span>タスク内容</span><p>' + esc(p.content) + "</p></div>" : "") +
+    ((p.clear || []).length ? '<div class="pf"><span>クリア条件</span><p>' + esc(p.clear.map(c => c.text).join("\\n")) + "</p></div>" : "") +
+    '<div class="pbody">' + renderPageBody(p) + "</div>" +
+    '<div class="sec"><h3>使う</h3><div class="cform"><label style="font-size:.82rem">置く場所 <select id="box-parent"><option value="root">省の直下</option>' +
+      opts.map(x => '<option value="' + x.id + '">' + esc(x.label + " " + (x.title || "")) + " の下</option>").join("") + "</select></label>" +
+    '<button type="button" class="btn sm" data-box-use="STAGE">STAGEとして使う</button><button type="button" class="btn sm" data-box-use="WAVE">WAVEとして使う</button>' +
+    '<button type="button" class="btn ghost sm" data-box-use="page">資料として使う</button></div>' +
+    '<p style="font-size:.78rem;color:var(--sub)">主題・タスク内容・クリア条件(と表)を写した新しいカードができます。本文は持っていかないので、必要なところだけ書き直してください。</p>' +
+    '<button type="button" class="btn ghost sm" data-box-del style="border-color:var(--shu);color:var(--shu)">箱から消す</button></div><span class="status" id="pg-msg"></span>';
 }
 
 function renderPage(box, p){
@@ -1591,8 +1655,8 @@ function renderPage(box, p){
       '<button type="button" class="btn ghost sm" data-page-addtable>表を足す</button><button type="button" class="btn ghost sm" data-page-addapp>アプリを置く</button></div></div>';
   } else {
     h += '<div class="pg-head"><span class="pk pk-' + p.kind + '">' + (isSW ? esc(p.label) : "ページ") + "</span><h2>" + esc(p.title || "(無題)") + "</h2>" +
-      (isSW ? '<span class="pst st-' + esc(p.status || "未着手") + '">' + esc(p.status || "未着手") + "</span>" : "") +
-      '<button type="button" class="btn ghost sm" data-page-edit>直す</button></div>';
+      '<button type="button" class="btn ghost sm" data-page-edit>直す</button></div>' +
+      (isSW ? '<div class="stchips">' + PST.map(x => '<button type="button" data-page-status="' + x + '" aria-pressed="' + ((p.status || "未着手") === x) + '">' + x + "</button>").join("") + "</div>" : "");
     if (isSW) h += (p.theme ? '<div class="pf"><span>主題</span><p>' + esc(p.theme) + "</p></div>" : "") + (p.content ? '<div class="pf"><span>タスク内容</span><p>' + esc(p.content) + "</p></div>" : "");
     if (isSW) {
       const cs = p.clear || [], met = cs.filter(condMet).length;
@@ -1610,7 +1674,7 @@ function renderPage(box, p){
     h += '<div class="pbody">' + renderPageBody(p) + "</div>";
     const kids = childrenOf(p.id);
     h += '<div class="sec"><h3>この下のページ ' + kids.length + "</h3>" + (kids.length ? '<div class="ptree"><ul>' + kids.map(k => '<li><a href="#" data-goto-page="' + k.id + '">' + (k.label ? "<b>" + esc(k.label) + "</b> " : "") + esc(k.title || "(無題)") + "</a></li>").join("") + "</ul></div>" : "") +
-      '<div class="pt-new">' + (p.kind === "STAGE" ? '<button type="button" class="btn ghost sm" data-page-new="STAGE" data-page-parent="' + p.id + '">この下にSTAGE</button><button type="button" class="btn ghost sm" data-page-new="WAVE" data-page-parent="' + p.id + '">この下にWAVE</button>' : "") +
+      '<div class="pt-new">' + (p.kind !== "page" ? '<button type="button" class="btn ghost sm" data-page-new="' + p.kind + '" data-page-parent="' + p.id + '">この下に' + p.kind + "</button>" : "") +
       '<button type="button" class="btn ghost sm" data-page-new="page" data-page-parent="' + p.id + '">この下にページ</button></div></div>' +
       '<div class="pg-foot"><span>このページのリンク</span><input readonly value="' + esc(pageUrl(p.id)) + '" onclick="this.select()"><button type="button" class="btn ghost sm" data-page-del style="border-color:var(--shu);color:var(--shu)">このページを消す</button></div>';
   }
@@ -1686,10 +1750,35 @@ function bindPages(){
       const kind = b.dataset.pageNew, parent = b.dataset.pageParent;
       const tag = parent.startsWith("m:") ? parent.slice(2) : rootTag(pageById(parent));
       const id = "pg" + uid(), label = kind === "page" ? "" : nextLabel(kind, parent, tag);
-      await savePages(doc => { doc.pages.push({ id, parent, kind, label, title: kind === "page" ? "新しいページ" : "", theme: "", content: "", clear: [], status: kind === "page" ? "" : "未着手", body: "", tables: {}, created: taskDay(), updated: taskDay() }); });
+      const tmpl = kind === "page" ? "" : "## タスク分析\n### 超分解\n\n### 設備投資\n\n### 首脳サポート\n\n### モチベ\n";
+      await savePages(doc => { doc.pages.push({ id, parent, kind, label, title: kind === "page" ? "新しいページ" : "", theme: "", content: "", clear: [], status: kind === "page" ? "" : "未着手", body: tmpl, tables: {}, created: taskDay(), updated: taskDay() }); });
       pg.edit = true; openPage(id); return;
     }
+    // 引っ越し箱
+    if ((b = q("[data-box-open]"))) { e.preventDefault(); const bp = pg.doc.pages.find(x => x.id === b.dataset.boxOpen); pg.box = bp.id; pg.boxTag = state.open; renderBox(box, bp); window.scrollTo && window.scrollTo(0, 0); return; }
+    if (q("[data-box-back]")) { pg.box = null; renderDetail(); return; }
+    if ((b = q("[data-box-clear]"))) {
+      const tag = b.dataset.boxClear, ids = new Set(boxPages().filter(p => { let c = p, g = 0; while (c && g++ < 50) { if (String(c.parent).startsWith("m:")) return c.parent.slice(2) === tag; c = pg.doc.pages.find(y => y.id === c.parent); } return false; }).map(p => p.id));
+      if (!confirm("引っ越し箱の " + ids.size + " 件を全部消しますか。")) return;
+      await savePages(doc => { doc.pages.forEach(x => { if (ids.has(x.id)) x.deleted = taskDay(); }); }); renderDetail(); return;
+    }
+    if (pg.box && (b = q("[data-box-use]"))) {
+      const src = pg.doc.pages.find(x => x.id === pg.box), kind = b.dataset.boxUse, sel = document.getElementById("box-parent").value;
+      const tag = pg.boxTag, parent = sel === "root" ? "m:" + tag : sel;
+      const id = "pg" + uid(), label = kind === "page" ? "" : nextLabel(kind, parent, tag);
+      const tmpl = kind === "page" ? (src.body || "") : "## タスク分析\n### 超分解\n\n### 設備投資\n\n### 首脳サポート\n\n### モチベ\n";
+      const tbls = JSON.parse(JSON.stringify(src.tables || {}));
+      const tref = kind === "page" ? "" : Object.keys(tbls).map(t => "{{表:" + t + "}}").join("\n");
+      await savePages(doc => {
+        doc.pages.push({ id, parent, kind, label, title: kind === "page" ? (src.title || "資料") : "", theme: src.theme || "", content: src.content || "",
+          clear: (src.clear || []).map(c => Object.assign({}, c, { id: uid() })), status: kind === "page" ? "" : "未着手", body: (tmpl + (tref ? "\n" + tref : "")).trim(), tables: tbls, created: taskDay(), updated: taskDay(), from: src.notion || "" });
+        doc.pages.find(x => x.id === src.id).deleted = taskDay();
+      });
+      pg.box = null; openPage(id); pg.edit = true; renderDetail(); return;
+    }
+    if (pg.box && q("[data-box-del]")) { const id = pg.box; await savePages(doc => { doc.pages.find(x => x.id === id).deleted = taskDay(); }); pg.box = null; renderDetail(); return; }
     const p = pg.open && pageById(pg.open);
+    if (p && (b = q("[data-page-status]"))) { const v = b.dataset.pageStatus; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.status = v; if (v === "クリア") x.clearedAt = taskDay(); }); renderDetail(); return; }
     if (q("[data-page-back]")) { pg.open = null; pg.edit = false; history.replaceState && history.replaceState(null, "", location.pathname); rerender(); return; }
     if (!p) return;
     if (q("[data-page-edit]")) { pg.edit = true; rerender(); return; }
@@ -1897,6 +1986,9 @@ function bind(){
   }));
   document.getElementById("list").addEventListener("click", e => {
     const b = e.target.closest("[data-open]"); if (!b) return;
+    // 一覧から省を押したら、開いていたページは閉じて、その省の地図を出す
+    pg.open = null; pg.box = null; pg.edit = false;
+    if (history.replaceState && /^#page=/.test(location.hash)) history.replaceState(null, "", location.pathname);
     state.open = b.dataset.open; render(); window.scrollTo(0, 0);
   });
   const onCheck = async e => {
