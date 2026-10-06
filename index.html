@@ -74,6 +74,15 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace{display:flex;gap:.6rem;align-items:baseline;padding:.35rem 0;border-bottom:1px dashed var(--rule);flex-wrap:wrap}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
+[hidden]{display:none !important}
+.pline{display:flex;align-items:baseline;gap:.6rem;padding:.45rem 0;border-bottom:1px dashed var(--rule);font-size:.9rem}
+.pl-h{font-weight:700;min-width:5.5rem}.pl-e{color:var(--sub);font-size:.84rem}
+.sec h3 small{font-weight:400;color:var(--sub);font-size:.78rem;margin-left:.5rem}
+.achips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.35rem}
+.achip{border:1px dashed var(--rule);background:transparent;border-radius:12px;padding:.1rem .65rem;font:inherit;font-size:.8rem;color:var(--sub);cursor:pointer}
+.linkbtn.big{font-size:1.1rem;color:var(--sub);padding:0}
+.pg-more{margin-top:1.2rem;border-top:1px solid var(--rule);padding-top:.4rem}
+.pg-more summary{cursor:pointer;color:var(--sub);font-size:.85rem}
 .mtabs{display:flex;gap:0;border-bottom:1px solid var(--rule);margin:.6rem 0 .9rem}
 .mtabs button{flex:0 0 auto;border:none;background:none;padding:.45rem .9rem;font:inherit;font-size:.9rem;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
 .mtabs button[aria-selected="true"]{color:var(--ink);font-weight:700;border-bottom-color:var(--mc,var(--ink))}
@@ -142,6 +151,7 @@ a.pk-STAGE b{color:var(--stage)}a.pk-WAVE b{color:var(--wave)}
 .pg-foot{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-top:1.2rem;font-size:.8rem;color:var(--sub)}
 .pg-foot input{flex:1;min-width:10rem;font-size:.78rem}
 .syncbar{display:flex;gap:.6rem;align-items:center;margin:0 0 .8rem;flex-wrap:wrap}
+.syncbar[hidden],#min-form[hidden]{display:none}
 /* 一覧 */
 .mlist{list-style:none;margin:0;padding:0}
 .mlist button{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.2rem 1rem;width:100%;text-align:left;border:none;background:none;
@@ -291,7 +301,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-06 r15";
+const APP_VERSION = "2026-10-06 r16";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1701,30 +1711,41 @@ function renderPage(box, p){
       '<div class="row-btns"><button type="button" class="btn" data-page-save>保存</button><button type="button" class="btn ghost" data-page-cancel>やめる</button>' +
       '<button type="button" class="btn ghost sm" data-page-addtable>表を足す</button><button type="button" class="btn ghost sm" data-page-addapp>アプリを置く</button></div></div>';
   } else {
-    h += '<div class="pg-head"><span class="pk pk-' + p.kind + '">' + (isSW ? esc(p.label) : "ページ") + "</span><h2>" + esc(p.title || "(無題)") + "</h2>" +
+    const kids = childrenOf(p.id);
+    const line = (label, inner) => '<div class="pline"><span class="pl-h">' + label + "</span>" + inner + "</div>";
+    h += '<div class="pg-head"><span class="pk pk-' + p.kind + '">' + (isSW ? esc(p.label) : "ページ") + "</span>" +
+      (p.title ? "<h2>" + esc(p.title) + "</h2>" : '<h2><button type="button" class="linkbtn big" data-page-edit>名前を付ける</button></h2>') +
       '<button type="button" class="btn ghost sm" data-page-edit>直す</button></div>' +
       (isSW ? '<div class="stchips">' + PST.map(x => '<button type="button" data-page-status="' + x + '" aria-pressed="' + ((p.status || "未着手") === x) + '">' + x + "</button>").join("") + "</div>" : "");
-    if (isSW) h += (p.theme ? '<div class="pf"><span>主題</span><p>' + esc(p.theme) + "</p></div>" : "") + (p.content ? '<div class="pf"><span>タスク内容</span><p>' + esc(p.content) + "</p></div>" : "");
     if (isSW) {
+      h += (p.theme ? '<div class="pf"><span>主題</span><p>' + esc(p.theme) + "</p></div>" : "") + (p.content ? '<div class="pf"><span>タスク内容</span><p>' + esc(p.content) + "</p></div>" : "");
+      if (!p.theme && !p.content) h += line("主題", '<button type="button" class="linkbtn" data-page-edit>+ 書く</button>');
+      // クリア条件
       const cs = p.clear || [], met = cs.filter(condMet).length;
-      h += '<div class="sec"><h3>クリア条件 ' + (cs.length ? met + " / " + cs.length : "") + "</h3>" +
-        (cs.length ? '<div class="cbar"><i style="width:' + (cs.length ? met / cs.length * 100 : 0) + '%"></i></div>' : "") +
+      if (!cs.length && !pg.condForm) h += line("クリア条件", '<span class="pl-e">まだありません</span><button type="button" class="linkbtn" data-cond-new>+ 足す</button>');
+      else h += '<div class="sec"><h3>クリア条件<small>' + (cs.length ? (met === cs.length ? "満たした" : "あと" + (cs.length - met) + "つ") : "") + "</small></h3>" +
         cs.map(c => '<div class="cond' + (condMet(c) ? " met" : "") + '">' + (c.type === "manual" ? '<input type="checkbox" data-cond-check="' + c.id + '"' + (c.done ? " checked" : "") + ">" : (condMet(c) ? "✓" : "○")) +
           '<span>' + esc(condText(c)) + ' <small>' + esc(condNow(c)) + '</small></span><button type="button" class="del" data-cond-del="' + c.id + '">外す</button></div>').join("") +
-        (pg.condForm ? condFormHtml(p) : '<button type="button" class="btn ghost sm" data-cond-new>条件を足す</button>') +
+        (pg.condForm ? condFormHtml(p) : '<button type="button" class="linkbtn" data-cond-new>+ 条件を足す</button>') +
         (cs.length && met === cs.length && p.status !== "クリア" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-page-clear>クリアにする</button></div>' : "") + "</div>";
+      // タスク
       const ts = tasksFor(tag, p.label);
-      h += '<div class="sec"><h3>この' + p.kind + "のタスク " + ts.length + "</h3>" + (ts.length ? '<div class="tasks">' + ts.map(t => '<div class="tk' + (t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
-          "</span><span>" + esc(t.status) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span></div>").join("") + "</div>" : '<div class="empty">まだありません。</div>') +
-        (pg.taskForm ? taskFormHtml(p) : '<button type="button" class="btn sm" data-task-new>この' + p.kind + "からタスクを作る</button>") + "</div>";
+      if (!ts.length && !pg.taskForm) h += line("タスク", '<span class="pl-e">まだありません</span><button type="button" class="linkbtn" data-task-new>+ この' + p.kind + "からタスクを作る</button>");
+      else h += '<div class="sec"><h3>タスク<small>' + (ts.length ? ts.length + "つ" : "") + "</small></h3>" + (ts.length ? '<div class="tasks">' + ts.map(t => '<div class="tk' + (t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
+          "</span><span>" + esc(t.status) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span></div>").join("") + "</div>" : "") +
+        (pg.taskForm ? taskFormHtml(p) : '<button type="button" class="linkbtn" data-task-new>+ この' + p.kind + "からタスクを作る</button>") + "</div>";
+      // タスク分析:書いた項目は箱、まだの項目は小さな札
+      const an = p.analysis || {}, done = ANALYSIS.filter(([k]) => an[k]), todo = ANALYSIS.filter(([k]) => !an[k]);
+      h += '<div class="sec"><h3>タスク分析</h3>' + (done.length ? '<div class="agrid">' + done.map(([k, l]) => '<div class="abox" data-an-edit="' + k + '"><span class="al">' + l + "</span><p>" + esc(an[k]) + "</p></div>").join("") + "</div>" : "") +
+        (todo.length ? '<div class="achips">' + todo.map(([k, l, q]) => '<button type="button" class="achip" data-an-edit="' + k + '" title="' + q + '">+ ' + l + "</button>").join("") + "</div>" : "") + "</div>";
     }
-    if (isSW) h += analysisHtml(p);
-    h += (String(p.body || "").trim() ? '<div class="pbody">' + renderPageBody(p) + "</div>" : "");
-    const kids = childrenOf(p.id);
-    h += '<div class="sec"><h3>この下のページ ' + kids.length + "</h3>" + (kids.length ? '<div class="ptree"><ul>' + kids.map(k => '<li><a href="#" data-goto-page="' + k.id + '">' + (k.label ? "<b>" + esc(k.label) + "</b> " : "") + esc(k.title || "(無題)") + "</a></li>").join("") + "</ul></div>" : "") +
-      '<div class="pt-new">' + (p.kind !== "page" ? '<button type="button" class="btn ghost sm" data-page-new="' + p.kind + '" data-page-parent="' + p.id + '">この下に' + p.kind + "</button>" : "") +
-      '<button type="button" class="btn ghost sm" data-page-new="page" data-page-parent="' + p.id + '">この下にページ</button></div></div>' +
-      '<div class="pg-foot"><span>このページのリンク</span><input readonly value="' + esc(pageUrl(p.id)) + '" onclick="this.select()"><button type="button" class="btn ghost sm" data-page-del style="border-color:var(--shu);color:var(--shu)">このページを消す</button></div>';
+    if (String(p.body || "").trim()) h += '<div class="pbody">' + renderPageBody(p) + "</div>";
+    else if (!isSW) h += line("本文", '<button type="button" class="linkbtn" data-page-edit>+ 書く</button>');
+    if (kids.length) h += '<div class="sec"><h3>この下のページ</h3><div class="ptree"><ul>' + kids.map(k => '<li><a href="#" data-goto-page="' + k.id + '">' + (k.label ? "<b>" + esc(k.label) + "</b> " : "") + esc(k.title || "(無題)") + "</a></li>").join("") + "</ul></div></div>";
+    // その他:この下に足す・リンク・消す
+    h += '<details class="pg-more"><summary>その他</summary><div class="pt-new">' + (p.kind !== "page" ? '<button type="button" class="btn ghost sm" data-page-new="' + p.kind + '" data-page-parent="' + p.id + '">この下に' + p.kind + "を足す</button>" : "") +
+      '<button type="button" class="btn ghost sm" data-page-new="page" data-page-parent="' + p.id + '">この下にページを足す</button></div>' +
+      '<div class="pg-foot"><span>このページのリンク</span><input readonly value="' + esc(pageUrl(p.id)) + '" onclick="this.select()"><button type="button" class="btn ghost sm" data-page-del style="border-color:var(--shu);color:var(--shu)">このページを消す</button></div></details>';
   }
   h += '<span class="status" id="pg-msg"></span>';
   box.innerHTML = h;
