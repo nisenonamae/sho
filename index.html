@@ -75,6 +75,17 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(12rem,1fr));gap:.5rem}
+.dcard{display:flex;flex-direction:column;gap:.15rem;border:1px solid var(--rule);border-radius:5px;padding:.5rem .65rem;text-decoration:none;color:var(--ink);background:#FDFCF9}
+.dcard:hover{border-color:var(--ink)}.dcard b{font-size:.92rem}
+.dsnip{font-size:.8rem;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dmeta{font-size:.72rem;color:var(--sub)}
+.purpose-text{margin:0;white-space:pre-wrap;font-size:1rem;line-height:1.8}
+.dep.rev{background:#F3F0E8}
+.tide-sum{display:flex;align-items:baseline;gap:.6rem;margin-bottom:.4rem}.tide-sum b{font-size:1.4rem}.tide-sum span{font-size:.78rem;color:var(--sub)}
+.tide-sum b.up,.tv.up{color:#3D8A5A}.tide-sum b.down,.tv.down{color:var(--shu)}
+.tide-row{display:grid;grid-template-columns:3rem 1fr auto;gap:.5rem;padding:.25rem 0;border-top:1px dashed var(--rule);font-size:.86rem}
+.tide-row .td{color:var(--sub)}
 .panel{border:1px solid var(--rule);border-radius:6px;background:#fff;margin:.7rem 0;overflow:hidden}
 .panel-h{display:flex;justify-content:space-between;align-items:center;padding:.4rem .75rem;border-bottom:1px solid var(--rule);background:#FAF8F3;font-weight:700;font-size:.86rem;letter-spacing:.04em}
 .ph-r{display:flex;gap:.6rem;align-items:center;font-weight:400}.ph-n{font-size:.78rem;color:var(--sub)}
@@ -310,7 +321,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-06 r17";
+const APP_VERSION = "2026-10-06 r18";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -628,26 +639,26 @@ function renderDetail(){
     ((nowS || nowW) ? '<div class="nowline">' + (nowS ? '<a href="#" data-goto-page="' + nowS.id + '" class="nl-s">いまここ ' + esc(nowS.label) + (nowS.title ? " " + esc(nowS.title) : "") + "</a>" : "") +
       (nowW ? '<a href="#" data-goto-page="' + nowW.id + '" class="nl-w">いまここ ' + esc(nowW.label) + (nowW.title ? " " + esc(nowW.title) : "") + "</a>" : "") + "</div>" : "") +
     '<div class="mtabs" role="tablist">' + ["地図", "首脳", "この省について"].map(t => '<button type="button" role="tab" data-mtab="' + t + '" aria-selected="' + (t === tab) + '">' + t + "</button>").join("") + "</div>";
-  const about = '<div class="purpose-box"><h3>目的</h3>' +
-      (state.editPurpose
-        ? '<textarea id="pp-text" placeholder="この省は何のためにあるか">' + esc(ptext) + '</textarea><div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center">' +
-          '<button type="button" class="btn sm" data-pp-save>保存する</button><button type="button" class="btn ghost sm" data-pp-cancel>やめる</button><span class="status" id="pp-status"></span></div>'
-        : (ptext ? "<p>" + esc(ptext) + "</p>" : '<p style="color:var(--sub)">まだ書いていません。</p>') +
-          (seed ? '<div class="seed">Notionの目的のページから読み込んだ文章です。保存すると、以後はこのアプリのものになります。</div>' : "") +
-          '<div style="margin-top:.4rem"><button type="button" class="btn ghost sm" data-pp-edit>' + (ptext ? "直す" : "書く") + "</button></div>") +
-    "</div>" +
-    ((m.goal || m.deadline) ? '<dl class="kv">' + (m.goal ? "<dt>到達点</dt><dd>" + esc(m.goal) + "</dd>" : "") +
-      (m.deadline ? "<dt>期限</dt><dd>" + esc(m.deadline) + (m.progress != null ? "(進捗 " + Math.round(m.progress * 100) + "%)" : "") + "</dd>" : "") + "</dl>" : "") +
-    '<div class="sec"><h3>依存度</h3>' + (deps.length ? '<div class="deps">' + deps.map(([k, v]) => '<span class="dep' + (v < 0 ? " neg" : "") + '">' + esc(k) + " " + v + "</span>").join("") + "</div>" : '<div class="empty">依存先はありません。</div>') +
-      (mins.edit === m.tag
-        ? '<div class="cform"><input id="me-name" value="' + esc(m.name) + '" placeholder="名前"><input id="me-deps" value="' + esc(depsText(m.deps)) + '" placeholder="依存先(例:受験:2, 家族:1)" style="flex:1">' +
-          '<button type="button" class="btn sm" data-min-save="' + esc(m.tag) + '">保存</button><button type="button" class="btn ghost sm" data-min-cancel>やめる</button>' +
-          '<span style="font-size:.76rem;color:var(--sub);flex-basis:100%">所属タグ「' + esc(m.tag) + '」は、タスクや国力の記録と結びついているので変えられません。</span></div>'
-        : '<div class="nrow"><button type="button" class="btn ghost sm" data-min-edit="' + esc(m.tag) + '">名前・依存先を直す</button></div>') +
-      (rev.length ? '<p style="font-size:.82rem;color:var(--sub);margin:.4rem 0 0">この省に依存している:' + rev.map(([n, v]) => esc(n) + " " + v).join("、") + "</p>" : "") + "</div>" +
-    '<div class="sec tide"><h3>時勢</h3>合計 <b>' + (m.tide.total > 0 ? "+" : "") + m.tide.total + "</b>" +
-      (m.tide.recent.length ? "<ul>" + m.tide.recent.map(t => "<li>" + esc(t.date) + " " + esc(t.title) + "(" + (t.delta > 0 ? "+" : "") + esc(t.delta) + ")</li>").join("") + "</ul>" : "") +
-      "</div>";
+  const purposeBody = state.editPurpose
+    ? '<textarea id="pp-text" placeholder="この省は何のためにあるか">' + esc(ptext) + '</textarea><div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center">' +
+      '<button type="button" class="btn sm" data-pp-save>保存する</button><button type="button" class="btn ghost sm" data-pp-cancel>やめる</button><span class="status" id="pp-status"></span></div>'
+    : (ptext ? '<p class="purpose-text">' + esc(ptext) + "</p>" : emptyHtml("まだ書いていません。この省は何のためにあるか。")) +
+      (seed ? '<div class="seed">Notionの目的のページから読み込んだ文章です。保存すると、以後はこのアプリのものになります。</div>' : "") +
+      ((m.goal || m.deadline) ? '<div class="frow"><span class="fl">到達点</span><p>' + esc(m.goal || "—") + '</p></div><div class="frow"><span class="fl">期限</span><p>' + esc(m.deadline || "—") +
+        (m.progress != null && m.deadline ? "(進捗 " + Math.round(m.progress * 100) + "%)" : "") + "</p></div>" : "");
+  const depBody = mins.edit === m.tag
+    ? '<div class="cform"><input id="me-name" value="' + esc(m.name) + '" placeholder="名前"><input id="me-deps" value="' + esc(depsText(m.deps)) + '" placeholder="依存先(例:受験:2, 家族:1)" style="flex:1">' +
+      '<button type="button" class="btn sm" data-min-save="' + esc(m.tag) + '">保存</button><button type="button" class="btn ghost sm" data-min-cancel>やめる</button>' +
+      '<span style="font-size:.76rem;color:var(--sub);flex-basis:100%">所属タグ「' + esc(m.tag) + '」は、タスクや国力の記録と結びついているので変えられません。</span></div>'
+    : '<div class="frow"><span class="fl">依存先</span><div>' + (deps.length ? '<div class="deps">' + deps.map(([k, v]) => '<span class="dep' + (v < 0 ? " neg" : "") + '">' + esc(k) + " " + v + "</span>").join("") + "</div>" : '<span class="panel-e">ありません</span>') + "</div></div>" +
+      '<div class="frow"><span class="fl">依存されている</span><div>' + (rev.length ? '<div class="deps">' + rev.map(([n, v]) => '<span class="dep rev">' + esc(n) + " " + v + "</span>").join("") + "</div>" : '<span class="panel-e">ありません</span>') + "</div></div>" +
+      '<div class="frow"><span class="fl">所属タグ</span><p>' + esc(m.tag) + "</p></div>";
+  const tideBody = '<div class="tide-sum"><b class="' + (m.tide.total > 0 ? "up" : m.tide.total < 0 ? "down" : "") + '">' + (m.tide.total > 0 ? "+" : "") + m.tide.total + '</b><span>いまの時勢の合計(重要度に効く)</span></div>' +
+    (m.tide.recent.length ? '<div class="tide-list">' + m.tide.recent.map(t => '<div class="tide-row"><span class="td">' + esc(String(t.date).slice(5).replace("-", "/")) + '</span><span class="tt">' + esc(t.title) + '</span><span class="tv ' + (t.delta > 0 ? "up" : "down") + '">' + (t.delta > 0 ? "+" : "") + esc(t.delta) + "</span></div>").join("") + "</div>"
+      : emptyHtml("最近の出来事はありません。")) + '<div class="panel-e" style="margin-top:.4rem;font-size:.76rem">時勢はClaudeに頼んで記録します。</div>';
+  const about = panelHtml("目的", state.editPurpose ? "" : '<button type="button" class="linkbtn" data-pp-edit>' + (ptext ? "直す" : "+ 書く") + "</button>", purposeBody, "purpose-box") +
+    panelHtml("依存度", mins.edit === m.tag ? "" : '<button type="button" class="linkbtn" data-min-edit="' + esc(m.tag) + '">名前・依存先を直す</button>', depBody) +
+    panelHtml("時勢", "", tideBody);
   const delMin = '<div class="danger-zone"><button type="button" class="btn ghost sm" data-min-del="' + esc(m.tag) + '">この省を消す</button>' +
     '<span>省の一覧・国力の計算から外れます。結びついたタスクの記録は残ります。</span></div>';
   box.innerHTML = head +
@@ -1667,13 +1678,21 @@ function roadHtml(tag, kind){
   return '<div class="road road-' + kind + '"><h4>' + (kind === "STAGE" ? "領土を広げる(STAGE)" : "支配を深める(WAVE)") + "</h4>" + tops.map(card).join("") +
     '<button type="button" class="rc-add" data-page-new="' + kind + '" data-page-parent="m:' + esc(tag) + '">+ 次の' + kind + "を足す</button></div>";
 }
+const panelHtml = (title, right, body, cls) => '<section class="panel' + (cls ? " " + cls : "") + '"><div class="panel-h"><span>' + title + '</span><span class="ph-r">' + (right || "") + '</span></div><div class="panel-b">' + body + "</div></section>";
+const emptyHtml = t => '<div class="panel-e">' + t + "</div>";
+// 資料のカード:名前・最初の1行・更新日・下のページの数
+function docCard(p){
+  const snip = String(p.body || "").split("\n").map(l => l.replace(/^#+\s*|^\s*[-・]\s*(\[[ x]\]\s*)?/g, "").replace(/\{\{[^}]*\}\}/g, "").trim()).find(Boolean) || "";
+  const n = childrenOf(p.id).length, tb = Object.keys(p.tables || {}).length;
+  return '<a href="#" class="dcard" data-goto-page="' + p.id + '"><b>' + esc(p.title || "(無題)") + "</b>" + (snip ? '<span class="dsnip">' + esc(snip.slice(0, 70)) + "</span>" : "") +
+    '<span class="dmeta">' + (p.updated ? "更新 " + esc(p.updated.slice(5).replace("-", "/")) : "") + (tb ? "・表 " + tb : "") + (n ? "・下に " + n : "") + "</span></a>";
+}
 function pageTreeHtml(tag){
   const docs = pages().filter(p => p.parent === "m:" + tag && p.kind === "page");
   const box = boxPages().filter(p => (String(p.parent).startsWith("m:") ? p.parent.slice(2) : (function(){ let c = p, g = 0; while (c && g++ < 50) { if (String(c.parent).startsWith("m:")) return c.parent.slice(2); c = pg.doc.pages.find(y => y.id === c.parent); } return null; })()) === tag);
   return '<div class="roads">' + roadHtml(tag, "STAGE") + roadHtml(tag, "WAVE") + "</div>" +
-    '<div class="docs"><h4>資料' + (docs.length ? "" : '<button type="button" class="linkbtn" data-page-new="page" data-page-parent="m:' + esc(tag) + '">+ 足す</button>') + "</h4>" +
-      docs.map(p => '<a href="#" data-goto-page="' + p.id + '" class="doc">' + esc(p.title || "(無題)") + "</a>").join("") +
-      (docs.length ? '<button type="button" class="linkbtn" data-page-new="page" data-page-parent="m:' + esc(tag) + '">+ 資料を足す</button>' : "") + "</div>" +
+    panelHtml("資料", '<button type="button" class="linkbtn" data-page-new="page" data-page-parent="m:' + esc(tag) + '">+ 足す</button>',
+      docs.length ? '<div class="dgrid">' + docs.sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(docCard).join("") + "</div>" : emptyHtml("まだありません。調べたこと・表・アプリなど、この省で使うものを置きます。"), "docs") +
     (box.length ? '<details class="fold movebox"><summary>引っ越し箱(Notionから写したもの)' + box.length + "件</summary>" +
       '<p style="font-size:.8rem;color:var(--sub)">読んで、使うものは「STAGEとして使う」などで新しく作り、要らないものは消してください。</p>' +
       box.filter(p => p.kind !== "page" || (p.body || "").trim() || Object.keys(p.tables || {}).length)
@@ -1765,9 +1784,11 @@ function renderPage(box, p){
       h += panel("タスク分析", "", '<div class="agrid">' + ANALYSIS.map(([k, l, q]) => '<div class="abox' + (an[k] ? "" : " empty") + '" data-an-edit="' + k + '"><span class="al">' + l + "</span>" +
         (an[k] ? "<p>" + esc(an[k]) + "</p>" : '<p class="aq">' + q + "</p>") + "</div>").join("") + "</div>");
     }
-    if (String(p.body || "").trim()) h += isSW ? '<section class="panel"><div class="panel-h"><span>メモ</span></div><div class="panel-b pbody">' + renderPageBody(p) + "</div></section>" : '<div class="pbody">' + renderPageBody(p) + "</div>";
-    else if (!isSW) h += '<div class="panel-e" style="margin:.6rem 0">本文はまだありません。<button type="button" class="linkbtn" data-page-edit>+ 書く</button></div>';
-    if (kids.length) h += '<div class="sec"><h3>この下のページ</h3><div class="ptree"><ul>' + kids.map(k => '<li><a href="#" data-goto-page="' + k.id + '">' + (k.label ? "<b>" + esc(k.label) + "</b> " : "") + esc(k.title || "(無題)") + "</a></li>").join("") + "</ul></div></div>";
+    const hasBody = String(p.body || "").trim();
+    if (isSW) { if (hasBody) h += panelHtml("メモ", '<button type="button" class="linkbtn" data-page-edit>直す</button>', '<div class="pbody">' + renderPageBody(p) + "</div>"); }
+    else h += panelHtml("本文", '<button type="button" class="linkbtn" data-page-edit>' + (hasBody ? "直す" : "+ 書く") + "</button>", hasBody ? '<div class="pbody">' + renderPageBody(p) + "</div>" : emptyHtml("まだありません。見出し・箇条書き・表・アプリを置けます。"));
+    if (!isSW || kids.length) h += panelHtml("この下のページ", '<button type="button" class="linkbtn" data-page-new="' + (isSW ? p.kind : "page") + '" data-page-parent="' + p.id + '">+ 足す</button>',
+      kids.length ? '<div class="dgrid">' + kids.map(k => k.kind === "page" ? docCard(k) : '<a href="#" class="dcard" data-goto-page="' + k.id + '"><b>' + esc(k.label) + " " + esc(k.title || "") + '</b><span class="dmeta">' + esc(stOf(k)) + "</span></a>").join("") + "</div>" : emptyHtml("まだありません。"));
     // その他:この下に足す・リンク・消す
     h += '<details class="pg-more"><summary>その他</summary><div class="pt-new">' + (p.kind !== "page" ? '<button type="button" class="btn ghost sm" data-page-new="' + p.kind + '" data-page-parent="' + p.id + '">この下に' + p.kind + "を足す</button>" : "") +
       '<button type="button" class="btn ghost sm" data-page-new="page" data-page-parent="' + p.id + '">この下にページを足す</button></div>' +
