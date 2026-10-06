@@ -83,6 +83,7 @@ textarea{min-height:7rem;line-height:1.6}
 .mh h2{margin:0;font-size:1.4rem;letter-spacing:.1em}
 .links{display:flex;gap:.4rem;flex-wrap:wrap;margin:.6rem 0}
 .links a{display:inline-block;border:1px solid var(--ink);border-radius:3px;padding:.25rem .7rem;text-decoration:none;color:var(--ink);font-size:.86rem}
+.links a.plan-link{border-color:var(--stage);color:var(--stage)}
 .links a.purpose{border-color:var(--shu);color:var(--shu)}
 .sec{margin-top:1.4rem}
 .sec>h3{font-size:.95rem;margin:0 0 .4rem;letter-spacing:.12em;display:flex;align-items:center;gap:.5rem}
@@ -213,7 +214,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-05 r8";
+const APP_VERSION = "2026-10-06 r9";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -425,7 +426,7 @@ function renderList(){
 function treeHtml(m, kind){
   const items = kind === "STAGE" ? m.stages : m.waves;
   const color = kind === "STAGE" ? "var(--stage)" : "var(--wave)";
-  if (!items.length) return '<div class="empty">' + kind + "のページはまだありません。Notionの計画のページの下に作ると、翌朝ここに出ます。</div>";
+  if (!items.length) return '<div class="empty">' + kind + "のページはまだありません。" + (m.plan ? '<a href="' + esc(m.plan.url) + '" target="_blank" rel="noopener">Notionの計画</a>の下に作り、「Notionと同期」を押すとここに出ます。' : "Notionの計画のページの下に作ると、ここに出ます。") + "</div>";
   const tops = items.filter(x => !x.label.includes("-"));
   const kids = top => items.filter(x => x.label.startsWith(top.label + "-") && x.label.split("-").length === 2);
   const loose = items.filter(x => x.label.includes("-") && !tops.some(t => x.label.startsWith(t.label + "-")));
@@ -530,6 +531,9 @@ function renderDetail(){
       (rev.length ? '<p style="font-size:.82rem;color:var(--sub);margin:.4rem 0 0">この省に依存している:' + rev.map(([n, v]) => esc(n) + " " + v).join("、") + "</p>" : "") + "</div>" +
     '<div class="sec tide"><h3>時勢</h3>合計 <b>' + (m.tide.total > 0 ? "+" : "") + m.tide.total + "</b>" +
       (m.tide.recent.length ? "<ul>" + m.tide.recent.map(t => "<li>" + esc(t.date) + " " + esc(t.title) + "(" + (t.delta > 0 ? "+" : "") + esc(t.delta) + ")</li>").join("") + "</ul>" : "") + "</div>" +
+    (m.plan ? '<div class="links"><a class="plan-link" href="' + esc(m.plan.url) + '" target="_blank" rel="noopener">Notionの計画を開く(STAGE・WAVEを足すところ)</a></div>' +
+      '<p style="font-size:.78rem;color:var(--sub);margin:-.2rem 0 .4rem">足したら、一覧の上の「Notionと同期」を押すと1分ほどでここに出ます。</p>'
+      : '<p style="font-size:.82rem;color:var(--sub)">この省の計画のページは、Notionの省一覧のこの省のページの下に「計画:' + esc(m.name) + '」として作ると、次の同期から開けるようになります。</p>') +
     '<div class="sec"><h3><i style="background:var(--stage)"></i>STAGE</h3>' + treeHtml(m, "STAGE") + "</div>" +
     '<div class="sec"><h3><i style="background:var(--wave)"></i>WAVE</h3>' + treeHtml(m, "WAVE") + "</div>" +
     '<div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(m) + "</div>";
