@@ -68,6 +68,12 @@ textarea{min-height:7rem;line-height:1.6}
 .chip{font-size:.78rem;border-radius:10px;padding:0 .55rem;border:1px solid var(--rule)}
 .chip.focus{border-color:var(--ok);color:var(--ok)}.chip.restrain{border-color:var(--shu);color:var(--shu)}
 .gform{border:1px dashed var(--rule);padding:.6rem;border-radius:4px;margin:.5rem 0;background:#fff}
+.nlink{display:inline-block;border:1px solid var(--rule);border-radius:3px;padding:.2rem .6rem;font-size:.82rem;color:var(--ink);text-decoration:none;background:#fff}
+.nlink::after{content:" ↗";color:var(--sub)}
+.nrow{margin-top:.45rem}
+.nplace{display:flex;gap:.6rem;align-items:baseline;padding:.35rem 0;border-bottom:1px dashed var(--rule);flex-wrap:wrap}
+.nplace span{font-size:.8rem;color:var(--sub)}
+.nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 .syncbar{display:flex;gap:.6rem;align-items:center;margin:0 0 .8rem;flex-wrap:wrap}
 /* 一覧 */
 .mlist{list-style:none;margin:0;padding:0}
@@ -174,7 +180,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
   <section class="view" id="view-list">
     <header class="head"><h1>省</h1><div class="date" id="stamp">—</div></header>
     <div id="notices"></div>
-    <div class="syncbar"><button type="button" class="btn ghost sm" id="sync">Notionと同期</button><span class="status" id="sync-status"></span></div>
+    <div class="syncbar"><button type="button" class="btn ghost sm" id="sync">Notionと同期</button><a class="nlink" id="add-ministry" href="https://app.notion.com/p/211ec28615e5494a97490bfd5f52d135" target="_blank" rel="noopener">省を足す・直す(Notionの省一覧)</a><span class="status" id="sync-status"></span></div>
     <div id="list"></div>
     <div id="detail" hidden></div>
   </section>
@@ -191,7 +197,10 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 
   <section class="view" id="view-settings" hidden>
     <header class="head"><h1>設定</h1><div class="date" id="ver"></div></header>
-    <p class="notice">省の構造(目的・STAGE・WAVE・依存度・時勢)はNotionから毎朝書き出したものを見ています。変えるときはNotionで。内省はこのアプリで書いてGitHubに保存します。</p>
+    <div class="card" style="margin-bottom:1rem"><h3 style="margin:0 0 .3rem">Notionで直すところ</h3>
+      <p style="font-size:.82rem;color:var(--sub);margin:.1rem 0 .5rem">省の構造(STAGE・WAVE・依存度・時勢)はNotionが元です。直したら、省のタブの「Notionと同期」を押すと1分ほどで反映されます。</p>
+      <div id="notion-places"></div>
+    </div>
     <div class="grid2">
       <div class="f"><label for="c-owner">ユーザー名</label><input id="c-owner" autocomplete="off"></div>
       <div class="f"><label for="c-repo">リポジトリ</label><input id="c-repo" autocomplete="off"></div>
@@ -214,7 +223,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-06 r9";
+const APP_VERSION = "2026-10-06 r10";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -527,10 +536,12 @@ function renderDetail(){
     "</div>" +
     ((m.goal || m.deadline) ? '<dl class="kv">' + (m.goal ? "<dt>到達点</dt><dd>" + esc(m.goal) + "</dd>" : "") +
       (m.deadline ? "<dt>期限</dt><dd>" + esc(m.deadline) + (m.progress != null ? "(進捗 " + Math.round(m.progress * 100) + "%)" : "") + "</dd>" : "") + "</dl>" : "") +
-    '<div class="sec"><h3>依存度</h3>' + (deps.length ? '<div class="deps">' + deps.map(([k, v]) => '<span class="dep' + (v < 0 ? " neg" : "") + '">' + esc(k) + " " + v + "</span>").join("") + "</div>" : '<div class="empty">依存先はありません。Notionの省一覧で設定します。</div>') +
+    '<div class="sec"><h3>依存度</h3>' + (deps.length ? '<div class="deps">' + deps.map(([k, v]) => '<span class="dep' + (v < 0 ? " neg" : "") + '">' + esc(k) + " " + v + "</span>").join("") + "</div>" : '<div class="empty">依存先はありません。</div>') +
+      '<div class="nrow">' + (m.url ? '<a class="nlink" href="' + esc(m.url) + '" target="_blank" rel="noopener">この省をNotionで直す(依存先・タグ)</a>' : nlink("ministries", "Notionの省一覧で直す")) + "</div>" +
       (rev.length ? '<p style="font-size:.82rem;color:var(--sub);margin:.4rem 0 0">この省に依存している:' + rev.map(([n, v]) => esc(n) + " " + v).join("、") + "</p>" : "") + "</div>" +
     '<div class="sec tide"><h3>時勢</h3>合計 <b>' + (m.tide.total > 0 ? "+" : "") + m.tide.total + "</b>" +
-      (m.tide.recent.length ? "<ul>" + m.tide.recent.map(t => "<li>" + esc(t.date) + " " + esc(t.title) + "(" + (t.delta > 0 ? "+" : "") + esc(t.delta) + ")</li>").join("") + "</ul>" : "") + "</div>" +
+      (m.tide.recent.length ? "<ul>" + m.tide.recent.map(t => "<li>" + esc(t.date) + " " + esc(t.title) + "(" + (t.delta > 0 ? "+" : "") + esc(t.delta) + ")</li>").join("") + "</ul>" : "") +
+      '<div class="nrow">' + nlink("tide", "時勢を足す(Notion)") + "</div></div>" +
     (m.plan ? '<div class="links"><a class="plan-link" href="' + esc(m.plan.url) + '" target="_blank" rel="noopener">Notionの計画を開く(STAGE・WAVEを足すところ)</a></div>' +
       '<p style="font-size:.78rem;color:var(--sub);margin:-.2rem 0 .4rem">足したら、一覧の上の「Notionと同期」を押すと1分ほどでここに出ます。</p>'
       : '<p style="font-size:.82rem;color:var(--sub)">この省の計画のページは、Notionの省一覧のこの省のページの下に「計画:' + esc(m.name) + '」として作ると、次の同期から開けるようになります。</p>') +
@@ -1362,6 +1373,17 @@ function bindStaff(){
   });
 }
 
+
+// Notionで直すところ。アプリで足りないことをするときに、ここからすぐ開けるように
+const NOTION = {
+  ministries: { name: "省一覧", url: "https://app.notion.com/p/211ec28615e5494a97490bfd5f52d135", why: "省を足す・名前やタグ・依存先を直す" },
+  tide: { name: "時勢", url: "https://app.notion.com/p/5fe7620f45124ce4beb6ff12d9fcf354", why: "出来事を記録して、省の重要度を増減させる" },
+  wealth: { name: "国富", url: "https://app.notion.com/p/02eaf9dee0f94840812bca4777519717", why: "達成して残った成果を記録する" },
+  rules: { name: "レギュレーション", url: "https://app.notion.com/p/60b39e7caee24b9fa8c2ed24742a67a4", why: "国力の計算の変更を記録する" },
+  code: { name: "国家運営規程", url: "https://app.notion.com/p/3d248dd8079581358342cd2412628fe1", why: "体制の運営の決まり(読むもの)" },
+};
+const nlink = (k, label) => '<a class="nlink" href="' + NOTION[k].url + '" target="_blank" rel="noopener">' + esc(label || NOTION[k].name) + "</a>";
+
 /* ───── 保存 ───── */
 async function commitReview(month, mutate){
   const path = P.reviews + "/" + month + ".json";
@@ -1551,6 +1573,8 @@ function bind(){
 function boot(){
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
   bind();
+  document.getElementById("notion-places").innerHTML = Object.keys(NOTION).map(k => '<div class="nplace">' + nlink(k) + "<span>" + esc(NOTION[k].why) + "</span></div>").join("") +
+    '<div class="nplace"><span class="nlike">計画:◯◯省</span><span>STAGE・WAVEを足す(各省のページから開けます)</span></div>';
   document.getElementById("ver").textContent = "版 " + APP_VERSION;
   const c = lsGet(KEY_CONN, null);
   document.getElementById("c-owner").value = c ? c.owner : "nisenonamae";
