@@ -75,6 +75,13 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.gauge{display:inline-flex;align-items:center;gap:.35rem;font-size:.76rem;color:var(--sub)}
+.gauge .gbar{display:inline-block;width:4.5rem;height:7px;border-radius:4px;background:var(--rule);overflow:hidden}
+.gauge .gbar i{display:block;height:100%;background:#2F6E8A;border-radius:4px}
+.gauge.full .gbar i{background:#3D8A5A}.gauge b{color:var(--ink);font-variant-numeric:tabular-nums}
+.gauge.big .gbar{width:8rem;height:9px}.gauge-none{font-size:.76rem;color:var(--sub)}
+.st-gauge{margin-left:auto;align-self:center}
+.u-meta{display:flex;gap:.7rem;align-items:center}
 .gstat{display:flex;gap:.5rem;align-items:center;font-size:.78rem;color:var(--sub);margin:-.2rem 0 .6rem}
 .unit{display:grid;grid-template-columns:auto 1fr auto;gap:.15rem .6rem;align-items:center;padding:.45rem 0;border-bottom:1px dashed var(--rule);text-decoration:none;color:var(--ink)}
 .unit:last-child{border-bottom:none}.u-lab{font-weight:700}.u-tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -332,7 +339,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r25";
+const APP_VERSION = "2026-10-07 r26";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1719,6 +1726,16 @@ function tableHtml(p, tid){
 function nowOf(list){ return list.find(p => stOf(p) === "進行中") || list.find(p => stOf(p) === "作成中") || null; }
 function labelNum(l){ return String(l || "").replace(/^\D+/, "").split("-").map(Number); }
 function byLabel(a, b){ const x = labelNum(a.label), y = labelNum(b.label); for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; }
+// ゲージ:何個中何個(まとまりは中身のクリア、中身はクリア条件)
+function gaugeOf(p){
+  if (isGroup(p)) { const us = childrenOf(p.id).filter(isUnit); return { done: us.filter(u => stOf(u) === "クリア").length, all: us.length, unit: "クリア" }; }
+  const cs = p.clear || []; return { done: cs.filter(condMet).length, all: cs.length, unit: "満たした" };
+}
+function gaugeHtml(p, big){
+  const g = gaugeOf(p);
+  if (!g.all) return '<span class="gauge-none">' + (isGroup(p) ? "中身はまだありません" : "クリア条件なし") + "</span>";
+  return '<span class="gauge' + (big ? " big" : "") + (g.done === g.all ? " full" : "") + '"><span class="gbar"><i style="width:' + (g.done / g.all * 100).toFixed(1) + '%"></i></span><b>' + g.done + "/" + g.all + "</b>" + g.unit + "</span>";
+}
 function remainText(p){
   const cs = p.clear || [];
   if (!cs.length) return "クリア条件なし";
@@ -1735,7 +1752,7 @@ function roadHtml(tag, kind){
     return '<div class="rcard r-' + (p === now ? "now" : st) + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-ico">' + icon + '</span>' +
       '<span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || (p.theme || "").split("\\n")[0] || "") + "</span>" +
       (p === now ? '<span class="rc-now">いまここ</span>' : "") + "</a>" +
-      '<div class="rc-meta"><span>' + esc(st === "クリア" ? "クリア" : (subs.length ? subs.filter(c => stOf(c) === "クリア").length + "つクリア" : "中身はまだありません")) + "</span>" + (ts.length ? "<span>タスク " + ts.length + (firm ? "(定着 " + firm + ")" : "") + "</span>" : "") +
+      '<div class="rc-meta">' + gaugeHtml(p) + (ts.length ? "<span>タスク " + ts.length + (firm ? "(定着 " + firm + ")" : "") + "</span>" : "") +
         (ts.some(t => t.waiting) ? '<span class="rc-wait">待機中 ' + ts.filter(t => t.waiting).length + "</span>" : "") + "</div>" +
       (subs.length ? '<div class="rc-subs">' + subs.map(c => '<a href="#" data-goto-page="' + c.id + '" class="rc-sub s-' + esc(stOf(c)) + '">' + esc(c.label.replace(/^(STAGE|WAVE)/, "")) + "</a>").join("") + "</div>" : "") + "</div>";
   };
@@ -1807,7 +1824,7 @@ function renderPage(box, p){
   let h = '<button type="button" class="back" data-page-back>‹ ' + esc(m ? m.name : "省") + "</button>" +
     '<div class="crumb">' + esc(m ? m.name : "") + tr.map(x => ' › <a href="#" data-goto-page="' + x.id + '">' + esc(x.label || x.title || "(無題)") + "</a>").join("") + "</div>";
   if (pg.edit) {
-    h += '<div class="pg-edit"><div class="grid2"><div class="f"><label>名前</label><input id="pg-title" value="' + esc(p.title) + '"></div>' +
+    h += '<div class="pg-edit"><div class="grid2">' + (isG ? "" : '<div class="f"><label>名前</label><input id="pg-title" value="' + esc(p.title) + '"></div>') +
       (isSW ? '<div class="f"><label>状態</label><select id="pg-status">' + PST.map(x => "<option" + (x === stOf(p) ? " selected" : "") + ">" + x + "</option>").join("") + "</select></div>" : "") + "</div>" +
       (isSW ? '<div class="f"><label>主題</label><textarea id="pg-theme" style="min-height:3rem">' + esc(p.theme || "") + '</textarea></div><div class="f"><label>タスク内容</label><textarea id="pg-content" style="min-height:3rem">' + esc(p.content || "") + "</textarea></div>" : "") +
       (isSW ? '<div class="agrid" style="margin:.4rem 0">' + ANALYSIS.map(([k, l, q]) => '<div class="f"><label>' + l + '</label><textarea id="pg-a-' + k + '" placeholder="' + q + '" style="min-height:3rem">' + esc((p.analysis || {})[k] || "") + "</textarea></div>").join("") + "</div>" : "") +
@@ -1819,18 +1836,18 @@ function renderPage(box, p){
     const kids = childrenOf(p.id);
     const panel = (title, right, body) => '<section class="panel"><div class="panel-h"><span>' + title + "</span><span class=\"ph-r\">" + right + '</span></div><div class="panel-b">' + body + "</div></section>";
     const empty = t => '<div class="panel-e">' + t + "</div>";
-    h += '<div class="pg-head"><span class="pk pk-' + p.kind + '">' + (isSW || isG ? esc(p.label) : "ページ") + "</span>" +
-      (p.title ? "<h2>" + esc(p.title) + "</h2>" : '<h2><button type="button" class="linkbtn big" data-page-edit>名前を付ける</button></h2>') +
+    h += '<div class="pg-head"><span class="pk pk-' + p.kind + '">' + (isSW || isG ? esc(isG ? p.kind : p.label) : "ページ") + "</span>" +
+      (isG ? "<h2>" + esc(p.label) + "</h2>" : p.title ? "<h2>" + esc(p.title) + "</h2>" : '<h2><button type="button" class="linkbtn big" data-page-edit>名前を付ける</button></h2>') +
       '<button type="button" class="btn ghost sm" data-page-edit>直す</button></div>' +
-      (isSW ? '<div class="stchips">' + PST.map(x => '<button type="button" data-page-status="' + x + '" aria-pressed="' + (stOf(p) === x) + '">' + x + "</button>").join("") + "</div>" : "") +
-      (isG ? '<div class="gstat"><span class="pst st-' + esc(stOf(p)) + '">' + esc(stOf(p)) + "</span>中身の状態から自動で決まります</div>" : "");
+      (isSW ? '<div class="stchips">' + PST.map(x => '<button type="button" data-page-status="' + x + '" aria-pressed="' + (stOf(p) === x) + '">' + x + "</button>").join("") + '<span class="st-gauge">' + gaugeHtml(p) + "</span></div>" : "") +
+      (isG ? '<div class="gstat"><span class="pst st-' + esc(stOf(p)) + '">' + esc(stOf(p)) + "</span>" + gaugeHtml(p, true) + "<span>状態は中身から自動で決まります</span></div>" : "");
     if (isG) {
       // まとまり:中身(◯-1、◯-2…)を並べる
       const units = childrenOf(p.id).filter(isUnit).sort(byLabel);
       h += panelHtml("中身", '<button type="button" class="linkbtn" data-page-new="' + p.kind + '" data-page-parent="' + p.id + '">+ ' + esc(p.label) + "-" + (units.length + 1) + "を足す</button>",
         units.length ? units.map(u => { const ts = tasksFor(tag, u.label), w = ts.filter(t => t.waiting).length;
           return '<a href="#" class="unit" data-goto-page="' + u.id + '"><span class="u-lab">' + esc(u.label) + '</span><span class="u-tt">' + esc(u.title || (u.theme || "").split("\n")[0] || "") + "</span>" +
-            '<span class="pst st-' + esc(stOf(u)) + '">' + esc(stOf(u)) + '</span><span class="u-meta">' + esc(stOf(u) === "クリア" ? "クリア" : remainText(u)) + (ts.length ? "・タスク " + ts.length + (w ? "(待機中 " + w + ")" : "") : "") + "</span></a>"; }).join("")
+            '<span class="pst st-' + esc(stOf(u)) + '">' + esc(stOf(u)) + '</span><span class="u-meta">' + gaugeHtml(u) + (ts.length ? "<span>タスク " + ts.length + (w ? "(待機中 " + w + ")" : "") + "</span>" : "") + "</span></a>"; }).join("")
           : emptyHtml("まだありません。"));
     }
     if (isSW) {
@@ -1842,7 +1859,7 @@ function renderPage(box, p){
       // クリア条件
       const cs = p.clear || [], met = cs.filter(condMet).length;
       h += panel("クリア条件", (cs.length ? '<span class="ph-n">' + (met === cs.length ? "満たした" : "あと" + (cs.length - met) + "つ") + "</span>" : "") + (pg.condForm ? "" : '<button type="button" class="linkbtn" data-cond-new>+ 足す</button>'),
-        (cs.length ? (cs.length ? '<div class="cbar"><i style="width:' + met / cs.length * 100 + '%"></i></div>' : "") + cs.map(c => '<div class="cond' + (condMet(c) ? " met" : "") + '">' + (c.type === "manual" ? '<input type="checkbox" data-cond-check="' + c.id + '"' + (c.done ? " checked" : "") + ">" : (condMet(c) ? "✓" : "○")) +
+        (cs.length ? cs.map(c => '<div class="cond' + (condMet(c) ? " met" : "") + '">' + (c.type === "manual" ? '<input type="checkbox" data-cond-check="' + c.id + '"' + (c.done ? " checked" : "") + ">" : (condMet(c) ? "✓" : "○")) +
           '<span>' + esc(condText(c)) + ' <small>' + esc(condNow(c)) + '</small></span><button type="button" class="del" data-cond-del="' + c.id + '">外す</button></div>').join("") : (pg.condForm ? "" : empty("まだありません。何ができたらクリアか、を決めます。"))) +
         (pg.condForm ? condFormHtml(p) : "") +
         (cs.length && met === cs.length && st !== "クリア" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-page-clear>クリアにする</button></div>' : ""));
@@ -2035,7 +2052,7 @@ function bindPages(){
     if (q("[data-page-cancel]")) { pg.edit = false; rerender(); return; }
     if (q("[data-page-save]")) {
       const v = id => (document.getElementById(id) || {}).value;
-      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.title = (v("pg-title") || "").trim(); x.body = v("pg-body") || "";
+      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (document.getElementById("pg-title")) x.title = (v("pg-title") || "").trim(); x.body = v("pg-body") || "";
         if (x.kind !== "page") { x.theme = v("pg-theme") || ""; x.content = v("pg-content") || ""; if (v("pg-status") && v("pg-status") !== stOf(x) && isUnit(x)) { setStatus(x, v("pg-status")); syncGroup(doc, x); }
           x.analysis = {}; ANALYSIS.forEach(([k]) => { const t = (v("pg-a-" + k) || "").trim(); if (t) x.analysis[k] = t; }); } x.updated = taskDay(); });
       pg.edit = false; rerender(); return;
