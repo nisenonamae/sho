@@ -75,6 +75,17 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.tk select.tpart{width:auto;max-width:5.2rem;font-size:.72rem;padding:.05rem .2rem;height:auto;border-radius:3px}
+.tk{align-items:center}
+.cform2{display:block}.cf-types{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin-bottom:.5rem}
+.cf-types button{border:none;background:#fff;padding:.2rem .7rem;font:inherit;font-size:.82rem;cursor:pointer;color:var(--sub)}
+.cf-types button+button{border-left:1px solid var(--rule)}.cf-types button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.cf-sec{margin:.35rem 0}.cf-h{font-size:.76rem;color:var(--sub);margin-bottom:.2rem}
+.cf-list{display:flex;flex-direction:column;gap:.15rem;max-height:13rem;overflow:auto}
+.cfopt{font-size:.86rem;display:flex;gap:.35rem;align-items:center}.cfopt small{color:var(--sub);font-size:.72rem}
+.cf-more summary{font-size:.8rem;color:var(--sub);cursor:pointer;margin:.3rem 0}
+.cf-rule{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;font-size:.86rem}
+.cform2 textarea{width:100%}
 .tfold{margin-top:.8rem}.tfold .tk{display:grid;grid-template-columns:1fr auto auto;gap:.5rem;align-items:center}
 .tide-top{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-bottom:.4rem}
 .tperiod{display:inline-flex;margin-left:auto;border:1px solid var(--rule);border-radius:4px;overflow:hidden}
@@ -390,7 +401,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r39";
+const APP_VERSION = "2026-10-07 r40";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2355,7 +2366,7 @@ function renderPage(box, p){
       const taskRow = t => '<div class="tk' + (t.waiting ? " waiting" : t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
           "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span>" +
           '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button>' +
-          (multi ? '<select data-task-part="' + esc(t.def.id) + '" aria-label="区分"><option value="">区分に入れない</option>' + parts.map((pp, i) => '<option value="' + pp.id + '"' + ((pp.taskIds || []).includes(t.def.id) ? " selected" : "") + ">区分" + (i + 1) + (pp.name ? " " + esc(pp.name) : "") + "</option>").join("") + "</select>" : "") + "</div>";
+          (multi ? '<select class="tpart" data-task-part="' + esc(t.def.id) + '" aria-label="区分" title="入れる区分"><option value="">なし</option>' + parts.map((pp, i) => '<option value="' + pp.id + '" title="' + esc(pp.name || "") + '"' + ((pp.taskIds || []).includes(t.def.id) ? " selected" : "") + ">区分" + (i + 1) + "</option>").join("") + "</select>" : "") + "</div>";
       const gateNote = st === "進行中" ? "" : '<div class="gate-note">' + (st === "作成中" ? "作成中のあいだ、この" + p.kind + "のタスクは行軍表に出ません。「進行中」にすると、その日から行軍表に出ます。" : "「" + st + "」なので、この" + p.kind + "のタスクは行軍表から外れています。") + "</div>";
       if (!multi) {
         const pp = parts[0], cs = pp.clear || [], met = cs.filter(condMet).length;
@@ -2407,13 +2418,27 @@ function renderPage(box, p){
   h += '<span class="status" id="pg-msg"></span>';
   box.innerHTML = h;
 }
+// クリア条件をまとめて足す画面:種類で欄を切り替える。タスクはチェックで複数選べ、手で確かめるものは1行に1つ
 function condFormHtml(p){
-  const names = state.tasks.filter(t => !["アーカイブ", "達成済み"].includes(t.status)).map(t => t.def.name).sort((a, b) => a.localeCompare(b, "ja"));
-  return '<div class="cform"><select id="cf-type"><option value="task">タスクの数字で</option><option value="manual">手で確かめる</option></select>' +
-    '<select id="cf-task">' + names.map(n => "<option>" + esc(n) + "</option>").join("") + "</select>" +
-    '<select id="cf-metric"><option value="status">状況が</option><option value="total">累計が</option><option value="streak">連続が</option></select>' +
-    '<input id="cf-value" placeholder="定着 / 30"><input id="cf-text" placeholder="手で確かめること">' +
-    '<button type="button" class="btn sm" data-cond-add>足す</button><button type="button" class="btn ghost sm" data-cond-cancel>やめる</button></div>';
+  const type = pg.condType || "task", tag = rootTag(p);
+  const live = state.tasks.filter(t => !["アーカイブ", "達成済み"].includes(t.status));
+  // この区分(またはこのSTAGE・WAVE)のタスクを先に
+  const pp = (p.parts || []).find(z => z.id === pg.condForm);
+  const near = live.filter(t => pp && (pp.taskIds || []).length ? (pp.taskIds || []).includes(t.def.id) : (tag && tasksFor(tag, p.label || "").some(x => x.def.id === t.def.id)));
+  const nearIds = new Set(near.map(t => t.def.id)), rest = live.filter(t => !nearIds.has(t.def.id)).sort((x, y) => x.def.name.localeCompare(y.def.name, "ja"));
+  const box = t => '<label class="cfopt"><input type="checkbox" data-cf-task value="' + esc(t.def.name) + '"> ' + esc(t.def.name) + ' <small>' + esc(t.status) + "</small></label>";
+  const metric = pg.condMetric || "status";
+  return '<div class="cform cform2">' +
+    '<div class="cf-types">' + [["task", "タスクの数字で"], ["manual", "手で確かめる"]].map(([k, l]) => '<button type="button" data-cf-type="' + k + '" aria-pressed="' + (k === type) + '">' + l + "</button>").join("") + "</div>" +
+    (type === "task"
+      ? '<div class="cf-sec"><div class="cf-h">タスク(複数選べます)</div>' +
+          (near.length ? '<div class="cf-list">' + near.map(box).join("") + "</div>" : '<div class="panel-e">' + (pp ? "この区分" : "この" + (p.kind || "")) + "のタスクはまだありません。</div>") +
+          (rest.length ? '<details class="cf-more"><summary>ほかのタスク ' + rest.length + '件</summary><div class="cf-list">' + rest.map(box).join("") + "</div></details>" : "") + "</div>" +
+        '<div class="cf-sec cf-rule"><span>選んだタスクが</span><select id="cf-metric"><option value="status"' + (metric === "status" ? " selected" : "") + '>状況が</option><option value="total"' + (metric === "total" ? " selected" : "") + '>累計が</option><option value="streak"' + (metric === "streak" ? " selected" : "") + ">連続が</option></select>" +
+          (metric === "status" ? '<select id="cf-value">' + ["進行中", "定着", "熟達", "殿堂入り"].map(v => "<option" + (v === "定着" ? " selected" : "") + ">" + v + "</option>").join("") + "</select><span>以上</span>"
+            : '<input id="cf-value" type="number" min="1" placeholder="30" style="width:5rem"><span>回以上</span>') + "</div>"
+      : '<div class="cf-sec"><div class="cf-h">手で確かめること(1行に1つ)</div><textarea id="cf-text" style="min-height:4.5rem" placeholder="例:模試で7割&#10;例:単語帳を1周する"></textarea></div>') +
+    '<div class="row-btns"><button type="button" class="btn sm" data-cond-add>足す</button><button type="button" class="btn ghost sm" data-cond-cancel>やめる</button><span class="status" id="cf-msg"></span></div></div>';
 }
 // このWAVEからタスクを作る:続けやすいタスクに整えるための問い
 function taskFormHtml(p){
@@ -2662,7 +2687,7 @@ function bindPages(){
         await saveGov("council", () => { gov.council.candidates = (gov.council.candidates || []).concat([{ id: uid(), title: rv.prevent.split("\n")[0].slice(0, 60), tag: pm, note: p.label + (p.title ? " " + p.title : "") + " の再発防止。原因:" + (rv.cause || ""), created: taskDay(), status: "候補", star: false }]); });
         await savePages(doc => { doc.pages.find(y => y.id === p.id).review.sent = taskDay(); }); rerender(); return; }
     }
-    if ((b = q("[data-cond-new]"))) { pg.condForm = b.dataset.condNew || "main"; rerender(); return; }
+    if ((b = q("[data-cond-new]"))) { pg.condForm = b.dataset.condNew || "main"; pg.condMetric = "status"; rerender(); return; }
     if (q("[data-part-add]")) { const nid = "pt" + uid(); await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const ps = ensureParts(x); ps.push({ id: nid, name: "", color: ps.length % PART_COLORS.length, theme: "", content: "", clear: [], taskIds: [] }); }); pg.partEdit = nid; rerender(); return; }
     if ((b = q("[data-part-edit]"))) { pg.partEdit = b.dataset.partEdit; rerender(); return; }
     if (q("[data-part-cancel]")) { pg.partEdit = null; rerender(); return; }
@@ -2671,13 +2696,23 @@ function bindPages(){
     if ((b = q("[data-part-del]"))) { const pid = b.dataset.partDel; if (!confirm("この区分を消しますか。主題・クリア条件も消えます(タスクは残ります)。")) return;
       await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.parts = ensureParts(x).filter(z => z.id !== pid); }); rerender(); return; }
     if (q("[data-cond-cancel]")) { pg.condForm = false; rerender(); return; }
+    if ((b = q("[data-cf-type]"))) { pg.condType = b.dataset.cfType; rerender(); return; }
     if (q("[data-cond-add]")) {
-      const type = document.getElementById("cf-type").value;
-      const c = type === "manual" ? { id: uid(), type, text: (document.getElementById("cf-text").value || "").trim(), done: false }
-        : { id: uid(), type, task: document.getElementById("cf-task").value, metric: document.getElementById("cf-metric").value, value: (document.getElementById("cf-value").value || "").trim() };
-      if (type === "manual" ? !c.text : (!c.task || !c.value || (c.metric !== "status" && isNaN(+c.value)) || (c.metric === "status" && !(c.value in RANK_ST)))) { msg("条件の中身を入れてください(状況なら 新規・進行中・定着・熟達・殿堂入り、数なら数字)。", true); return; }
+      const type = pg.condType || "task", cm = t => { const el = document.getElementById("cf-msg"); if (el) { el.textContent = t; el.classList.add("err"); } };
+      let conds = [];
+      if (type === "manual") {
+        conds = (document.getElementById("cf-text").value || "").split("\n").map(x => x.trim()).filter(Boolean).map(text => ({ id: uid(), type, text, done: false }));
+        if (!conds.length) return cm("確かめることを1行に1つ書いてください。");
+      } else {
+        const metric = document.getElementById("cf-metric").value, value = String(document.getElementById("cf-value").value || "").trim();
+        const names = Array.from(box.querySelectorAll("[data-cf-task]:checked")).map(x => x.value);
+        if (!names.length) return cm("タスクを1つ以上選んでください。");
+        if (metric !== "status" && !(+value > 0)) return cm("回数を入れてください。");
+        conds = names.map(task => ({ id: uid(), type, task, metric, value }));
+      }
       const pidc = pg.condForm;
-      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (x.parts && x.parts.length) { const pp = x.parts.find(z => z.id === pidc) || x.parts[0]; pp.clear = (pp.clear || []).concat([c]); } else x.clear = (x.clear || []).concat([c]); }); pg.condForm = false; rerender(); return;
+      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (x.parts && x.parts.length) { const pp = x.parts.find(z => z.id === pidc) || x.parts[0]; pp.clear = (pp.clear || []).concat(conds); } else x.clear = (x.clear || []).concat(conds); });
+      pg.condForm = false; rerender(); msg(conds.length + "つの条件を足しました。"); return;
     }
     if ((b = q("[data-cond-del]"))) { const id = b.dataset.condDel; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (x.parts && x.parts.length) x.parts.forEach(pp => pp.clear = (pp.clear || []).filter(c => c.id !== id)); else x.clear = (x.clear || []).filter(c => c.id !== id); }); rerender(); return; }
     // タスクを作る
@@ -2724,6 +2759,8 @@ function bindPages(){
     const p = pg.open && pageById(pg.open); if (!p) return;
     const c = e.target.closest("[data-cond-check]");
     if (c) { const id = c.dataset.condCheck, on = c.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); condLists(x).forEach(l => { const k = l.find(z => z.id === id); if (k) k.done = on; }); }); renderDetail(); return; }
+    if (e.target.id === "cf-metric") { const keep = Array.from(document.querySelectorAll("[data-cf-task]:checked")).map(x => x.value); pg.condMetric = e.target.value; renderDetail();
+      keep.forEach(v => { const el = Array.from(document.querySelectorAll("[data-cf-task]")).find(x => x.value === v); if (el) el.checked = true; }); return; }
     const ac = e.target.closest("[data-act-check]");
     if (ac) { const id = ac.dataset.actCheck, on = ac.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const a = (x.actions || []).find(z => z.id === id); if (a) a.done = on; }); renderDetail(); return; }
     const tp = e.target.closest("[data-task-part]");
