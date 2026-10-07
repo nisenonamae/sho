@@ -410,7 +410,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r46";
+const APP_VERSION = "2026-10-07 r47";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2223,7 +2223,16 @@ function byLabel(a, b){ const x = labelNum(a.label), y = labelNum(b.label); for 
 const PART_COLORS = [["#EEF4FA", "#9DB8D8"], ["#FBF1E4", "#E2B57A"], ["#EDF6EE", "#93C49C"], ["#F7EDF5", "#D49ACB"], ["#FFF8DC", "#E0C463"], ["#EFEFF8", "#A6A6D6"]];
 // 区分:無ければ、今までの主題・タスク内容・クリア条件を1つ目の区分として扱う
 function partsOf(p){ return p.parts && p.parts.length ? p.parts : [{ id: "main", name: "", color: 0, theme: p.theme || "", content: p.content || "", clear: p.clear || [], taskIds: [] }]; }
-function ensureParts(x){ if (!x.parts || !x.parts.length) { x.parts = [{ id: "main", name: "", color: 0, theme: x.theme || "", content: x.content || "", clear: x.clear || [], taskIds: [] }]; x.theme = ""; x.content = ""; x.clear = []; } return x.parts; }
+function ensureParts(x){
+  if (!x.parts || !x.parts.length) {
+    // もとの主題・タスク内容・クリア条件・タスクは、全部区分1に移す
+    const tag = rootTag(x) || (String(x.parent).startsWith("m:") ? x.parent.slice(2) : null);
+    const ids = (typeof tasksFor === "function" && tag) ? tasksFor(tag, x.label, x.id).map(t => t.def.id) : [];
+    x.parts = [{ id: "main", name: "", color: 0, theme: x.theme || "", content: x.content || "", clear: x.clear || [], taskIds: ids }];
+    x.theme = ""; x.content = ""; x.clear = [];
+  }
+  return x.parts;
+}
 const condLists = x => x.parts && x.parts.length ? x.parts.map(pp => pp.clear = pp.clear || []) : [x.clear = x.clear || []];
 function gaugeOf(p){
   if (isGroup(p)) { const us = childrenOf(p.id).filter(isUnit); return { done: us.filter(u => stOf(u) === "クリア").length, all: us.length, unit: "クリア" }; }
@@ -2476,7 +2485,7 @@ function renderPage(box, p){
     h += '<div class="pg-edit"><div class="grid2">' + (isG ? "" : '<div class="f"><label>名前</label><input id="pg-title" value="' + esc(p.title) + '"></div>') +
       (isSW ? '<div class="f"><label>状態</label><select id="pg-status">' + PST.map(x => "<option" + (x === stOf(p) ? " selected" : "") + ">" + x + "</option>").join("") + "</select></div>" : "") + "</div>" +
       (isSW && partsOf(p).length > 1 ? '<p class="panel-e">主題・タスク内容は、区分ごとに直します。</p>' : "") +
-      (isSW && partsOf(p).length <= 1 ? '<div class="f"><label>主題</label><textarea id="pg-theme" style="min-height:3rem">' + esc(p.theme || "") + '</textarea></div><div class="f"><label>タスク内容</label><textarea id="pg-content" style="min-height:3rem">' + esc(p.content || "") + "</textarea></div>" : "") +
+      (isSW && partsOf(p).length <= 1 ? '<div class="f"><label>主題</label><textarea id="pg-theme" style="min-height:3rem">' + esc(partsOf(p)[0].theme || "") + '</textarea></div><div class="f"><label>タスク内容</label><textarea id="pg-content" style="min-height:3rem">' + esc(partsOf(p)[0].content || "") + "</textarea></div>" : "") +
       (isSW ? '<div class="agrid" style="margin:.4rem 0">' + ANALYSIS.map(([k, l, q]) => '<div class="f"><label>' + l + '</label><textarea id="pg-a-' + k + '" placeholder="' + q + '" style="min-height:3rem">' + esc((p.analysis || {})[k] || "") + "</textarea></div>").join("") + "</div>" : "") +
       '<div class="f"><label>' + (isSW || isG ? "メモ(自由に。" : "本文(") + '# 見出し・- 箇条書き・- [ ] チェック・[[ページの名前]]・URL)</label><textarea id="pg-body" style="min-height:12rem">' + esc(p.body || "") + "</textarea></div>" +
       '<div class="row-btns"><button type="button" class="btn" data-page-save>保存</button><button type="button" class="btn ghost" data-page-cancel>やめる</button>' +
