@@ -75,6 +75,21 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.tide-top{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-bottom:.4rem}
+.tperiod{display:inline-flex;margin-left:auto;border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.tperiod button{border:none;background:#fff;padding:.2rem .55rem;font:inherit;font-size:.78rem;cursor:pointer;color:var(--sub)}
+.tperiod button+button{border-left:1px solid var(--rule)}.tperiod button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.tide-m .tm-n{color:var(--mc)}.tmv{font-weight:700;font-variant-numeric:tabular-nums}.tmv.up{color:#B3283C}.tmv.down{color:#3D8A5A}
+.tbar{display:flex;height:9px;border-radius:5px;overflow:hidden;background:var(--rule);margin:.1rem 0 .35rem}.tbar i{display:block;height:100%}
+.t-a{background:#D9534F}.t-p{background:#4A7FC1}.t-r{background:#4FA36B}
+.tev{display:block;font-size:.76rem;color:var(--sub);margin-bottom:.3rem}
+.trow{display:grid;grid-template-columns:3rem 1fr auto auto;gap:.5rem;align-items:center;padding:.3rem 0;border-top:1px dashed var(--rule);font-size:.86rem}
+.trow .tt small{display:block;font-size:.72rem;color:var(--sub)}.trow .td{color:var(--sub)}.t-done{opacity:.5}.t-cancel{color:var(--sub);grid-template-columns:3rem 1fr}
+.tk-p{color:#B3283C}.tk-r{color:#3D8A5A}.tcx{display:flex;gap:.25rem;align-items:center}
+.tide-form .frow{align-items:center}.tchips{display:inline-flex;flex-wrap:wrap;gap:.25rem}
+.tchips button{border:1px solid var(--rule);background:#fff;border-radius:12px;padding:.05rem .55rem;font:inherit;font-size:.8rem;cursor:pointer}
+.tchips button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tmix{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}.tmix input{flex:1;min-width:8rem}.tmix b{font-size:.8rem}
 .lvsw{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin-left:auto}
 .lvsw button{border:none;background:#fff;padding:.25rem .65rem;font:inherit;font-size:.82rem;cursor:pointer;color:var(--sub)}
 .lvsw button+button{border-left:1px solid var(--rule)}.lvsw button[aria-pressed="true"]{background:var(--ink);color:#fff}
@@ -327,7 +342,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
     <header class="head"><h1>省</h1><div class="date" id="stamp">—</div></header>
     <div id="notices"></div>
     <div id="min-form"></div>
-    <div class="syncbar"><button type="button" class="btn ghost sm" id="sync">Notionと同期</button><button type="button" class="btn ghost sm" id="add-ministry">省を足す</button><span class="lvsw" role="tablist"><button type="button" data-lv="一覧">一覧</button><button type="button" data-lv="依存の図">依存の図</button><button type="button" data-lv="重要度">重要度</button></span><span class="status" id="sync-status"></span></div>
+    <div class="syncbar"><button type="button" class="btn ghost sm" id="sync">Notionと同期</button><button type="button" class="btn ghost sm" id="add-ministry">省を足す</button><span class="lvsw" role="tablist"><button type="button" data-lv="一覧">一覧</button><button type="button" data-lv="依存の図">依存の図</button><button type="button" data-lv="重要度">重要度</button><button type="button" data-lv="時勢">時勢</button></span><span class="status" id="sync-status"></span></div>
     <div id="list"></div>
     <div id="detail" hidden></div>
   </section>
@@ -370,7 +385,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r30";
+const APP_VERSION = "2026-10-07 r32";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -512,6 +527,7 @@ async function loadAll(){
     await loadStaff().catch(() => {});
     if (!pgQ.pending.length) await loadPages().catch(() => {});
     await loadMins().catch(() => {});
+    await loadTide().catch(() => {});
     setTimeout(fromHash, 0);      // 「#page=…」のリンクで開かれたら、そのページへ
     renderPlaces();
     computeTasks();
@@ -539,7 +555,7 @@ function computeTasks(){
     const last = rep.days.length ? rep.days[rep.days.length - 1] : null;
     const row = last && last.date === today ? last : null;
     const s = row || rep.next;
-    return { def, lastDone: s.lastDone || null, waiting: E.waitingOn ? E.waitingOn(def, today) : null, status: s.status, gen: row ? row.gen : rep.gen, genTotal: s.genTotal, streak: s.streak, total: s.total,
+    return { def, days: rep.days, lastDone: s.lastDone || null, waiting: E.waitingOn ? E.waitingOn(def, today) : null, status: s.status, gen: row ? row.gen : rep.gen, genTotal: s.genTotal, streak: s.streak, total: s.total,
              target: E.targetAt(def, today), check: row ? row.check : null };
   });
 }
@@ -568,6 +584,124 @@ function render(){
   renderNotice(state.gov ? "" : "まだ書き出しがありません。毎朝の計算(App daily)が一度動くと出ます。");
   renderList(); renderDetail(); renderOrders(); renderGov();
 }
+
+
+/* ───────── 時勢(自分で入力する気持ち。数字は決まりが作る) ─────────
+   プラス:熱量 × 色(焦燥↔純粋)、漠然さ = 何日かけて効くか、しんどさは重要度とは別に記録
+   マイナス:熱量 × 安心の色(手応え↔慣れ)、漠然さ、確かさ
+   打ち消し:前のプラスが薄れた割合。効き終わっても下がらない(減衰なし) */
+const TIDE = "roadmap/gov/tide.json";
+const TIDE_RULES = { days: { "その日だけ": 1, "3日": 3, "1週間": 7, "1か月": 30 }, sure: { "はっきり": 1, "なんとなく": 0.6 }, frac: { "少し": 0.25, "半分": 0.5, "ほとんど": 0.9 } };
+const tide = { doc: { version: 1, entries: [] }, sha: null, form: null, period: "1週間", cancel: null };
+async function loadTide(){ const r = await readJson(TIDE); tide.doc = Object.assign({ version: 1, entries: [] }, r.data || {}); tide.sha = r.sha; }
+async function saveTide(mutate){
+  mutate(tide.doc); renderList();
+  for (let i = 0; i < 3; i++) {
+    try { tide.sha = await writeJson(TIDE, tide.doc, tide.sha); return true; }
+    catch (e) { if ((e.status === 409 || e.status === 422) && i < 2) { await loadTide(); mutate(tide.doc); continue; } renderNotice("時勢を保存できませんでした:" + e.message); return false; }
+  }
+}
+const dayDiff = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
+// 1件の時勢の大きさ(焦燥・純粋・安心に分けて)。打ち消しは元の残りに対する割合
+function tideParts(e){
+  if (e.type === "plus") { const m = (e.mix ?? 5) / 10; return { 焦燥: e.heat * m, 純粋: e.heat * (1 - m), 安心: 0 }; }
+  if (e.type === "minus") return { 焦燥: 0, 純粋: 0, 安心: -e.heat * (TIDE_RULES.sure[e.sure] || 1) };
+  return { 焦燥: 0, 純粋: 0, 安心: 0 };
+}
+function cancelsOf(id){ return tide.doc.entries.filter(x => x.type === "cancel" && x.target === id && !x.deleted).sort((a, b) => a.date < b.date ? -1 : 1); }
+function remainRatio(e, day){ let r = 1; cancelsOf(e.id).forEach(c => { if (!day || c.date <= day) r *= (1 - (TIDE_RULES.frac[c.frac] || 0.5)); }); return r; }
+// その日までに効いた量(漠然さの日数に分けて毎日少しずつ。打ち消しはその日に効く)
+function tideAt(e, day){
+  if (e.deleted || e.type === "cancel" || day < e.date) return { 焦燥: 0, 純粋: 0, 安心: 0 };
+  const D = TIDE_RULES.days[e.vague] || 1, k = Math.min(1, (dayDiff(e.date, day) + 1) / D), r = remainRatio(e, day), p = tideParts(e);
+  return { 焦燥: p.焦燥 * k * r, 純粋: p.純粋 * k * r, 安心: p.安心 * k };
+}
+const sumParts = ps => ps.reduce((a, p) => ({ 焦燥: a.焦燥 + p.焦燥, 純粋: a.純粋 + p.純粋, 安心: a.安心 + p.安心 }), { 焦燥: 0, 純粋: 0, 安心: 0 });
+const net = p => p.焦燥 + p.純粋 + p.安心;
+const TPERIODS = { "1日": 1, "3日": 3, "1週間": 7, "1か月": 30, "3か月": 90 };
+// その省の、期間中のタスクの評価(やる予定だった日の、済んだ割合)
+function evalRate(tag, from, to){
+  const E = window.TaskEngine; let n = 0, ok = 0;
+  state.tasks.filter(t => (t.def.ministries || []).includes(tag)).forEach(t => (t.days || []).forEach(r => { if (r.date >= from && r.date <= to) { n++; if (E.DONE.has(r.check)) ok++; } }));
+  return n ? ok / n : null;
+}
+function tideViewHtml(){
+  const today = taskDay(), P = TPERIODS[tide.period], from = addDays(today, -(P - 1)), prevTo = addDays(from, -1), prevFrom = addDays(from, -P);
+  const ms = liveMinistries(), es = tide.doc.entries.filter(e => !e.deleted);
+  const nm = t => (ms.find(m => m.tag === t) || { name: t }).name;
+  let h = '<div class="tide-top"><button type="button" class="btn sm" data-tide-new="plus">+ プラスを記録</button><button type="button" class="btn ghost sm" data-tide-new="minus">− マイナスを記録</button>' +
+    '<span class="tperiod">' + Object.keys(TPERIODS).map(k => '<button type="button" data-tide-period="' + k + '" aria-pressed="' + (k === tide.period) + '">' + k + "</button>").join("") + "</span></div>";
+  if (tide.form) h += tideFormHtml(tide.form, ms);
+  const rows = ms.map(m => {
+    const mine = es.filter(e => (e.tag || (es.find(x => x.id === e.target) || {}).tag) === m.tag);
+    const now = sumParts(mine.filter(e => e.type !== "cancel").map(e => tideAt(e, today))), then = sumParts(mine.filter(e => e.type !== "cancel").map(e => tideAt(e, prevTo)));
+    const mv = { 焦燥: now.焦燥 - then.焦燥, 純粋: now.純粋 - then.純粋, 安心: now.安心 - then.安心 };
+    const inPeriod = mine.filter(e => e.date >= from && e.date <= today).sort((a, b) => a.date < b.date ? 1 : -1);
+    const burden = mine.filter(e => e.type === "plus").reduce((a, e) => a + (e.burden || 0) * remainRatio(e), 0);
+    return { m, now, mv, inPeriod, burden, ev: evalRate(m.tag, from, today), evPrev: evalRate(m.tag, prevFrom, prevTo) };
+  }).sort((a, b) => Math.abs(net(b.mv)) - Math.abs(net(a.mv)) || Math.abs(net(b.now)) - Math.abs(net(a.now)));
+  const bar = p => { const tot = Math.abs(p.焦燥) + Math.abs(p.純粋) + Math.abs(p.安心) || 1;
+    return '<span class="tbar">' + (p.焦燥 ? '<i class="t-a" style="width:' + (Math.abs(p.焦燥) / tot * 100) + '%"></i>' : "") + (p.純粋 ? '<i class="t-p" style="width:' + (Math.abs(p.純粋) / tot * 100) + '%"></i>' : "") + (p.安心 ? '<i class="t-r" style="width:' + (Math.abs(p.安心) / tot * 100) + '%"></i>' : "") + "</span>"; };
+  const sign = x => (x > 0 ? "+" : "") + x.toFixed(1);
+  h += rows.map(r => {
+    const ev = r.ev == null ? "" : '<span class="tev">タスクの評価 ' + Math.round(r.ev * 100) + "%" + (r.evPrev != null ? (r.ev > r.evPrev + 0.05 ? " ↑" : r.ev < r.evPrev - 0.05 ? " ↓" : " →") + "(前の" + tide.period + " " + Math.round(r.evPrev * 100) + "%)" : "") + "</span>";
+    return '<section class="panel tide-m" style="--mc:' + colorOf(r.m.tag) + '"><div class="panel-h"><span class="tm-n">' + esc(r.m.name) + '</span><span class="ph-r"><span class="tmv ' + (net(r.mv) > 0 ? "up" : net(r.mv) < 0 ? "down" : "") + '">' + tide.period + " " + sign(net(r.mv)) + "</span>" +
+      '<span class="ph-n">今 ' + sign(net(r.now)) + "</span>" + (r.burden ? '<span class="ph-n">しんどさ ' + r.burden.toFixed(1) + "</span>" : "") + "</span></div>" +
+      '<div class="panel-b">' + (net(r.now) || r.mv.焦燥 || r.mv.純粋 || r.mv.安心 ? bar(r.now) : "") + ev +
+      (r.inPeriod.length ? r.inPeriod.map(e => tideRowHtml(e, nm)).join("") : '<div class="panel-e">この期間の記録はありません。</div>') + "</div></section>";
+  }).join("");
+  h += '<p class="panel-e">赤は焦燥、青は純粋なやりたい気持ち、緑は安心。期間の数字は、その期間に効いた分です。積み上がったままの焦りと、タスクの評価を見比べて、薄れていたら打ち消してください。</p>';
+  return h;
+}
+function tideRowHtml(e, nm){
+  if (e.type === "cancel") { const t = tide.doc.entries.find(x => x.id === e.target);
+    return '<div class="trow t-cancel"><span class="td">' + esc(e.date.slice(5).replace("-", "/")) + '</span><span>打ち消し「' + esc(t ? t.note || "(メモなし)" : "?") + "」を" + esc(e.frac) + (e.note ? " — " + esc(e.note) : "") + "</span></div>"; }
+  const r = remainRatio(e), p = tideParts(e), done = e.type === "plus" && r < 0.12;
+  const tag = e.type === "plus" ? '<span class="tk-p">焦燥' + (e.mix ?? 5) + ":純粋" + (10 - (e.mix ?? 5)) + "</span>" : '<span class="tk-r">手応え' + (e.mix ?? 5) + ":慣れ" + (10 - (e.mix ?? 5)) + "・" + esc(e.sure || "はっきり") + "</span>";
+  return '<div class="trow' + (done ? " t-done" : "") + '"><span class="td">' + esc(e.date.slice(5).replace("-", "/")) + '</span><span class="tt">' + (e.type === "plus" ? "▲" : "▼") + " " + esc(e.note || "(メモなし)") +
+    '<small>熱量' + e.heat + "・" + tag + "・" + esc(e.vague) + (e.burden ? "・しんどさ" + e.burden : "") + (e.type === "plus" && r < 1 ? "・残り" + Math.round(r * 100) + "%" : "") + "</small></span>" +
+    (e.type === "plus" && !done ? (tide.cancel === e.id ? '<span class="tcx">' + Object.keys(TIDE_RULES.frac).map(f => '<button type="button" class="btn ghost sm" data-tide-cancel-do="' + e.id + ":" + f + '">' + f + "</button>").join("") + '<button type="button" class="linkbtn" data-tide-cancel-x>やめる</button></span>'
+      : '<button type="button" class="linkbtn" data-tide-cancel="' + e.id + '">打ち消す</button>') : (done ? '<span class="ph-n">解消</span>' : "")) +
+    '<button type="button" class="del" data-tide-del="' + e.id + '" aria-label="記録を消す">×</button></div>';
+}
+function tideFormHtml(type, ms){
+  const plus = type === "plus";
+  const chips = (name, opts, cur) => '<span class="tchips" data-tf="' + name + '">' + opts.map(o => '<button type="button" data-v="' + o + '" aria-pressed="' + (String(o) === String(cur)) + '">' + o + "</button>").join("") + "</span>";
+  const f = tide.draft || {};
+  return '<section class="panel tide-form"><div class="panel-h"><span>' + (plus ? "プラスの時勢(新しく気になってきた)" : "マイナスの時勢(新しく安心してきた)") + '</span><button type="button" class="linkbtn" data-tide-close>やめる</button></div><div class="panel-b">' +
+    '<div class="frow"><span class="fl">分野(省)</span><select id="tf-tag">' + ms.map(m => '<option value="' + esc(m.tag) + '"' + (m.tag === f.tag ? " selected" : "") + ">" + esc(m.name) + "</option>").join("") + "</select></div>" +
+    '<div class="frow"><span class="fl">熱量</span>' + chips("heat", [1, 2, 3, 4, 5], f.heat || 3) + "</div>" +
+    '<div class="frow"><span class="fl">' + (plus ? "色" : "安心の色") + '</span><div class="tmix"><span>' + (plus ? "焦燥" : "手応え") + '</span><input type="range" id="tf-mix" min="0" max="10" step="1" value="' + (f.mix ?? 5) + '"><span>' + (plus ? "純粋" : "慣れ") + '</span><b id="tf-mixv">' + (plus ? "焦燥" : "手応え") + (f.mix ?? 5) + ":" + (plus ? "純粋" : "慣れ") + (10 - (f.mix ?? 5)) + "</b></div></div>" +
+    '<div class="frow"><span class="fl">漠然さ</span>' + chips("vague", Object.keys(TIDE_RULES.days), f.vague || "1週間") + "</div>" +
+    (plus ? '<div class="frow"><span class="fl">しんどさ</span>' + chips("burden", [0, 1, 2, 3, 4, 5], f.burden ?? 0) + '<small class="panel-e">重要度には効かず、別に記録します</small></div>'
+      : '<div class="frow"><span class="fl">確かさ</span>' + chips("sure", Object.keys(TIDE_RULES.sure), f.sure || "はっきり") + "</div>") +
+    '<div class="frow"><span class="fl">メモ</span><input id="tf-note" placeholder="' + (plus ? "例:模試の範囲が広くて不安" : "例:数学がうまくいき始めて焦りが消えてきた") + '" value="' + esc(f.note || "") + '"></div>' +
+    '<div class="row-btns"><button type="button" class="btn" data-tide-save="' + type + '">記録する</button></div></div></section>';
+}
+function bindTide(){
+  const box = document.getElementById("list");
+  box.addEventListener("click", async e => {
+    let b;
+    if ((b = e.target.closest("[data-tide-new]"))) { tide.form = b.dataset.tideNew; tide.draft = {}; renderList(); return; }
+    if (e.target.closest("[data-tide-close]")) { tide.form = null; renderList(); return; }
+    if ((b = e.target.closest("[data-tide-period]"))) { tide.period = b.dataset.tidePeriod; renderList(); return; }
+    if ((b = e.target.closest(".tchips [data-v]"))) { const g = b.closest("[data-tf]").dataset.tf; tide.draft = Object.assign(tide.draft || {}, readTideForm(), { [g]: isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v }); renderList(); return; }
+    if ((b = e.target.closest("[data-tide-save]"))) {
+      const f = Object.assign({ heat: 3, mix: 5, vague: "1週間", burden: 0, sure: "はっきり" }, tide.draft || {}, readTideForm()), type = b.dataset.tideSave;
+      const ent = { id: "td" + uid(), type, date: taskDay(), tag: f.tag, heat: +f.heat, mix: +f.mix, vague: f.vague, note: f.note || "" };
+      if (type === "plus") ent.burden = +f.burden || 0; else ent.sure = f.sure;
+      tide.form = null; tide.draft = {};
+      await saveTide(doc => { doc.entries.push(ent); }); return;
+    }
+    if ((b = e.target.closest("[data-tide-cancel]"))) { tide.cancel = b.dataset.tideCancel; renderList(); return; }
+    if (e.target.closest("[data-tide-cancel-x]")) { tide.cancel = null; renderList(); return; }
+    if ((b = e.target.closest("[data-tide-cancel-do]"))) { const [id, frac] = b.dataset.tideCancelDo.split(":"); tide.cancel = null;
+      await saveTide(doc => { doc.entries.push({ id: "td" + uid(), type: "cancel", date: taskDay(), target: id, frac, note: "" }); }); return; }
+    if ((b = e.target.closest("[data-tide-del]"))) { if (!confirm("この記録を消しますか。")) return; const id = b.dataset.tideDel; await saveTide(doc => { const x = doc.entries.find(z => z.id === id); if (x) x.deleted = taskDay(); }); return; }
+  });
+  box.addEventListener("input", e => { if (e.target.id === "tf-mix") { const plus = tide.form === "plus", v = +e.target.value, l = document.getElementById("tf-mixv"); if (l) l.textContent = (plus ? "焦燥" : "手応え") + v + ":" + (plus ? "純粋" : "慣れ") + (10 - v); } });
+}
+function readTideForm(){ const g = id => document.getElementById(id); return g("tf-tag") ? { tag: g("tf-tag").value, mix: +g("tf-mix").value, note: g("tf-note").value.trim() } : {}; }
 
 /* ───────── 省の一覧の切り替え:一覧・依存の図・重要度 ───────── */
 function liveMinistries(){ return orderedMinistries(((state.gov && state.gov.ministries) || []).slice()); }
@@ -622,7 +756,7 @@ function renderList(){
   document.querySelectorAll(".lvsw [data-lv]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lv === lv)));
   if (lv !== "一覧" && state.gov) {
     const box = document.getElementById("list");
-    box.innerHTML = lv === "依存の図" ? depGraphHtml() : weightChartHtml();
+    box.innerHTML = lv === "依存の図" ? depGraphHtml() : lv === "時勢" ? tideViewHtml() : weightChartHtml();
     return;
   }
   const box = document.getElementById("list");
@@ -1671,8 +1805,53 @@ async function loadPages(){
 // ページの保存:すぐ手元に反映して画面を描けるようにし、GitHubへの書き込みは裏で順番に行う。
 // 別の端末で先に変わっていたら、読み直して、まだ書けていない変更をかけ直す
 const pgQ = { pending: [], busy: false, again: false };
+/* ───────── 計画の動きの記録(重要度の依存を記録から見つけるための材料) ─────────
+   いつ・どの省で・何が動いたかを roadmap/gov/activity/YYYY-MM.json に1件ずつ溜める。
+   同じ日・同じ省・同じ種類・同じ対象は1件にまとめる。保存は裏で行い、失敗しても本来の操作は止めない */
+const ACT_DIR = "roadmap/gov/activity/";
+const actQ = { pending: [], busy: false };
+function logPlan(tags, kind, ref, note){
+  const d = taskDay();
+  (tags && tags.length ? tags : ["所属なし"]).forEach(tag => actQ.pending.push({ date: d, tag, kind, ref: ref || "", note: note || "", app: "省" }));
+  flushAct();
+}
+async function flushAct(){
+  if (actQ.busy || !actQ.pending.length || !state.conn) return;
+  actQ.busy = true;
+  try {
+    while (actQ.pending.length) {
+      const batch = actQ.pending.splice(0), months = {};
+      batch.forEach(e => (months[e.date.slice(0, 7)] = months[e.date.slice(0, 7)] || []).push(e));
+      for (const [m, evs] of Object.entries(months)) {
+        for (let i = 0; i < 3; i++) {
+          try {
+            const r = await readJson(ACT_DIR + m + ".json"), doc = r.data || { version: 1, events: [] };
+            const key = e => e.date + "|" + e.tag + "|" + e.kind + "|" + e.ref;
+            const have = new Set(doc.events.map(key)); let added = 0;
+            evs.forEach(e => { if (!have.has(key(e))) { doc.events.push(e); have.add(key(e)); added++; } });
+            if (!added) break;
+            await writeJson(ACT_DIR + m + ".json", doc, r.sha); break;
+          } catch (err) { if (!(err.status === 409 || err.status === 422)) break; }
+        }
+      }
+    }
+  } catch (err) {} finally { actQ.busy = false; if (actQ.pending.length) flushAct(); }
+}
+
+const PLAN_KINDS = { STAGE: 1, WAVE: 1, ALERT: 1, RAID: 1 };
+function pagesSnap(){ const m = {}; (pg.doc.pages || []).forEach(p => { if (PLAN_KINDS[p.kind] && !p.imported) m[p.id] = JSON.stringify(p); }); return m; }
 function savePages(mutate){
+  const before = pagesSnap();
   if (mutate(pg.doc) === false) return Promise.resolve(false);
+  const after = pagesSnap();
+  Object.keys(after).forEach(id => {
+    if (after[id] === before[id]) return;
+    const p = pg.doc.pages.find(x => x.id === id), tag = rootTag(p) || (String(p.parent).startsWith("m:") ? p.parent.slice(2) : null);
+    if (!tag) return;
+    const was = before[id] ? JSON.parse(before[id]) : null;
+    const kind = !was ? p.kind + "を作った" : p.deleted && !was.deleted ? p.kind + "を消した" : (p.status !== was.status ? p.kind + "の状態を変えた" : p.kind + "を直した");
+    logPlan([tag], kind, p.id, p.label + (p.title ? " " + p.title : ""));
+  });
   pgQ.pending.push(mutate);
   pgQ.done = flushPages();
   return Promise.resolve(true);
@@ -2386,6 +2565,7 @@ function bindPages(){
         for (let i = 0; i < 3; i++) { const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] }; ov.newTasks = (ov.newTasks || []).concat([def]);
           try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); state.overlay = ov; break; } catch (err) { if (err.status !== 409 && err.status !== 422) { msg(err.message, true); return; } } }
         await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const z = (x.actions || []).find(k => k.id === a.id); if (z) z.taskId = tid; });
+        logPlan([rootTag(p)], "タスクを作った", tid, a.text);
         computeTasks(); rerender(); msg("「" + a.text + "」を行軍表に出しました(" + (isRaid(p) ? "侵攻中のあいだ出て、制圧すると外れます" : "収束すると外れます") + ")。"); return;
       }
       if (q("[data-review-save]")) { const cause = document.getElementById("rv-cause").value, prevent = document.getElementById("rv-prevent").value;
@@ -2437,6 +2617,7 @@ function bindPages(){
       }
       const partFor = typeof pg.taskForm === "string" ? pg.taskForm : null;
       if (partFor) await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const pp = ensureParts(x).find(z => z.id === partFor); if (pp) pp.taskIds = (pp.taskIds || []).concat([id]); });
+      logPlan([tag], "タスクを作った", id, name);
       computeTasks(); pg.taskForm = false; rerender(); msg("「" + name + "」を行軍表に入れました。"); return;
     }
     // 表
@@ -2486,7 +2667,10 @@ function fromHash(){ const m = /^#page=(.+)$/.exec(location.hash || ""); if (m &
 /* ───── 保存 ───── */
 async function commitReview(month, mutate){
   const path = P.reviews + "/" + month + ".json";
+  const before = JSON.stringify(state.reviews[month] || {});
   mutate();
+  const bo = JSON.parse(before), af = state.reviews[month] || {};
+  Object.keys(af).forEach(k => { if (JSON.stringify(af[k]) !== JSON.stringify(bo[k]) && af[k] && af[k].tag) logPlan([af[k].tag], "首脳を書いた", k, ""); });
   render();
   for (let i = 0; i < 3; i++) {
     try {
@@ -2615,6 +2799,7 @@ function bind(){
   bindPages();
   bindMins();
   bindViews();
+  bindTide();
   try { state.listView = localStorage.getItem("sho-listview") || "一覧"; } catch (err) {}
   document.getElementById("sync").addEventListener("click", syncNow);
   document.getElementById("detail").addEventListener("click", async e => {
@@ -2692,7 +2877,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
