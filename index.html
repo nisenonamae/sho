@@ -408,7 +408,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r42";
+const APP_VERSION = "2026-10-07 r43";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1665,7 +1665,7 @@ function renderStaff(box){
       '<div class="chips">' + (term.focus || []).map(t => '<span class="chip focus">重点 ' + esc(nameOf(t)) + "</span>").join("") +
       (term.restrain || []).map(t => '<span class="chip restrain">抑制 ' + esc(nameOf(t)) + "</span>").join("") + "</div>" +
       '<div class="sec"><h3>目標</h3>' + (term.goals || []).map(g => { const L = goalLine(term, g), st = taskStatusByName(g.firstStep.name);
-        return '<div class="goal' + (L.behind ? " behind" : "") + '"><b>' + esc(g.text) + '</b><div style="font-size:.8rem;color:var(--sub)">' + esc(nameOf(g.tag)) + "　基準:" + esc(g.criterion) + "　期日 " + esc(g.due) + "</div>" +
+        return '<div class="goal' + (L.behind ? " behind" : "") + '"><b>' + esc(g.text) + '</b><div style="font-size:.8rem;color:var(--sub)">' + esc((g.tags || [g.tag]).map(nameOf).join("・")) + "　基準:" + esc(g.criterion) + "　期日 " + esc(g.due) + "</div>" +
           '<div class="gl"><i style="width:' + (L.frac * 100).toFixed(1) + '%"></i><b style="left:' + (L.efrac * 100).toFixed(1) + '%"></b></div>' +
           '<div style="font-size:.8rem">今 ' + L.actual + " / " + g.target + esc(g.unit || "") + "　(今日の線 " + L.expect.toFixed(1) + ")" + (L.behind ? ' <b style="color:var(--shu)">遅れ</b>' : "") +
           "　最初の一歩「" + esc(g.firstStep.name) + "」" + (st ? "(" + esc(st) + ")" : "") + "</div>" +
@@ -1777,9 +1777,9 @@ function termForm(d, ms){
     '<div class="grid2"><div class="f"><label>目標の値</label><input data-g="target" data-i="' + i + '" type="number" step="any" value="' + esc(x.target) + '"></div>' +
     '<div class="f"><label>単位</label><input data-g="unit" data-i="' + i + '" value="' + esc(x.unit) + '" placeholder="%・回・ページ"></div>' +
     '<div class="f"><label>期日</label><input data-g="due" data-i="' + i + '" type="date" value="' + esc(x.due) + '"></div>' +
-    '<div class="f"><label>担当の省</label><select data-g="tag" data-i="' + i + '"><option value="">選ぶ</option>' + ms.map(m => '<option value="' + esc(m.tag) + '"' + (m.tag === x.tag ? " selected" : "") + ">" + esc(m.name) + "</option>").join("") + "</select></div></div>" +
+    "</div>" + '<div class="f"><label>担当の省(複数選べます)</label><div class="chips">' + ms.map(m => '<label class="chip"><input type="checkbox" data-g-tag="' + i + '" value="' + esc(m.tag) + '"' + ((x.tags || (x.tag ? [x.tag] : [])).includes(m.tag) ? " checked" : "") + "> " + esc(m.name) + "</label>").join("") + "</div></div>" +
     '<div class="grid2"><div class="f"><label>最初の一歩(5分でできること)</label><input data-g="step" data-i="' + i + '" value="' + esc(x.step) + '" placeholder="過去問を1題だけ解く"></div>' +
-    '<div class="f"><label>いつやるか</label><select data-g="slot" data-i="' + i + '">' + ["朝", "昼", "夜"].map(s => "<option" + (s === x.slot ? " selected" : "") + ">" + s + "</option>").join("") + "</select></div></div>" +
+    '<div class="f"><label>最初の一歩をやる時間帯(行軍表のどこに置くか)</label><select data-g="slot" data-i="' + i + '">' + ["朝", "昼", "夜"].map(s => "<option" + (s === x.slot ? " selected" : "") + ">" + s + "</option>").join("") + "</select></div></div>" +
     '<button type="button" class="btn ghost sm" data-g-del="' + i + '">この目標を外す</button></div>').join("");
   return '<div class="sec"><h3>作戦期を立てる</h3>' +
     '<div class="grid2"><div class="f"><label>名前</label><input id="tf-name" value="' + esc(d.name) + '"></div><div class="f"><label>始め</label><input id="tf-start" type="date" value="' + esc(d.start) + '"></div>' +
@@ -1797,6 +1797,7 @@ function readTermForm(d){
   d.focus = Array.from(document.querySelectorAll("[data-pick-focus]:checked")).map(x => x.value);
   d.restrain = Array.from(document.querySelectorAll("[data-pick-restrain]:checked")).map(x => x.value);
   document.querySelectorAll("[data-g]").forEach(el => { const g = d.goals[+el.dataset.i]; if (g) g[el.dataset.g] = el.value.trim ? el.value.trim() : el.value; });
+  d.goals.forEach((g, i) => { const els = document.querySelectorAll('[data-g-tag="' + i + '"]'); if (els.length) { g.tags = Array.from(els).filter(x => x.checked).map(x => x.value); g.tag = g.tags[0] || ""; } });
 }
 // 発令の条件:行動に落ちない目標は発令できない
 function issueProblems(d){
@@ -1808,7 +1809,7 @@ function issueProblems(d){
   (d.goals || []).forEach((g, i) => {
     const miss = [];
     if (!g.text) miss.push("目標"); if (!g.criterion) miss.push("測れる基準"); if (!(+g.target > 0)) miss.push("目標の値");
-    if (!g.due || g.due < d.start || g.due > d.end) miss.push("期日(期間の中)"); if (!g.tag) miss.push("担当の省"); if (!g.step) miss.push("最初の一歩"); if (!g.slot) miss.push("いつやるか");
+    if (!g.due || g.due < d.start || g.due > d.end) miss.push("期日(期間の中)"); if (!(g.tags || (g.tag ? [g.tag] : [])).length) miss.push("担当の省"); if (!g.step) miss.push("最初の一歩"); if (!g.slot) miss.push("最初の一歩をやる時間帯");
     if (miss.length) p.push("目標" + (i + 1) + "の" + miss.join("・"));
   });
   const both = (d.focus || []).filter(t => (d.restrain || []).includes(t));
@@ -1824,7 +1825,7 @@ const CHECK_TASK = "参謀本部の点検";
 async function issueTerm(d){
   const day = taskDay();
   const tasks = [];
-  for (const g of d.goals) tasks.push({ name: g.step, tag: g.tag, slot: g.slot, requirement: "参謀本部の目標:" + g.text, interval: "", kind: "習慣型" });
+  for (const g of d.goals) tasks.push({ name: g.step, tags: g.tags || (g.tag ? [g.tag] : []), slot: g.slot, requirement: "参謀本部の目標:" + g.text, interval: "", kind: "習慣型" });
   tasks.push({ name: CHECK_TASK, tag: null, slot: "夜", requirement: "参謀本部で目標の進み具合を見る", interval: "日", kind: "習慣型" });
   for (let i = 0; i < 3; i++) {
     const r = await readJson("roadmap/tasks/overlay.json");
@@ -1832,7 +1833,7 @@ async function issueTerm(d){
     const have = new Set(ov.newTasks.map(t => t.name).concat(state.tasks.filter(t => !["アーカイブ", "達成済み"].includes(t.status)).map(t => t.def.name)));
     for (const t of tasks) {
       if (have.has(t.name)) continue;
-      ov.newTasks.push({ id: await sha1Id(t.name, day), name: t.name, aliases: [], ministries: t.tag ? [t.tag] : [], waves: [], slot: t.slot, stance: "攻", kind: t.kind,
+      ov.newTasks.push({ id: await sha1Id(t.name, day), name: t.name, aliases: [], ministries: t.tags ? t.tags : (t.tag ? [t.tag] : []), waves: [], slot: t.slot, stance: "攻", kind: t.kind,
         interval: t.interval, weight: null, quota: null, requirement: t.requirement, created: day, initial: { status: "新規" },
         generations: [{ gen: 1, from: day, target: 10 }], events: [], staff: true });
     }
@@ -1846,7 +1847,7 @@ async function issueTerm(d){
     try { await writeJson("roadmap/plan.json", pl, r.sha); break; } catch (e) { if (e.status !== 409 && e.status !== 422) throw e; }
   }
   const term = { id: d.id, name: d.name, start: d.start, end: d.end, slogan: d.slogan, focus: d.focus, restrain: d.restrain, issuedAt: nowIso(), meeting: d.meeting || null,
-    goals: d.goals.map(g => ({ id: g.id, text: g.text, criterion: g.criterion, target: +g.target, unit: g.unit, due: g.due, tag: g.tag, firstStep: { name: g.step, slot: g.slot }, values: [] })) };
+    goals: d.goals.map(g => ({ id: g.id, text: g.text, criterion: g.criterion, target: +g.target, unit: g.unit, due: g.due, tag: (g.tags || [])[0] || g.tag, tags: g.tags || (g.tag ? [g.tag] : []), firstStep: { name: g.step, slot: g.slot }, values: [] })) };
   return saveStaff(doc => { doc.terms.push(term); });
 }
 
@@ -2470,7 +2471,8 @@ function renderPage(box, p){
           '<div class="frow"><span class="fl">主題</span>' + (pp.theme ? '<p>' + esc(pp.theme) + "</p>" : empty("未記入")) + "</div>" +
           '<div class="frow"><span class="fl">タスク内容</span>' + (pp.content ? '<p>' + esc(pp.content) + "</p>" : empty("未記入")) + "</div>");
         h += panel("クリア条件", (cs.length ? gaugeHtml(p) : "") + (pg.condForm ? "" : '<button type="button" class="linkbtn" data-cond-new="' + pp.id + '">+ 足す</button>'), condRows(cs, pp.id) +
-          (cs.length && met === cs.length && st !== "クリア" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-page-clear>クリアにする</button></div>' : ""));
+          (cs.length && met === cs.length && st !== "クリア" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-page-clear>クリアにする</button></div>' : "") +
+          '<p class="panel-e" style="margin:.4rem 0 0;font-size:.74rem">クリアすると、翌朝の計算で国富 +2。まとまり(' + esc(String(p.label).split("-")[0]) + ')の中身が全部クリアになると、さらに +3。</p>');
         h += panel("タスク", (ts.length ? '<span class="ph-n">' + ts.length + "つ</span>" : "") + (pg.taskForm ? "" : '<button type="button" class="linkbtn" data-task-new>+ 作る</button>'),
           gateNote + (ts.length ? '<div class="tasks">' + ts.map(taskRow).join("") + "</div>" : (pg.taskForm ? "" : empty("まだありません。"))) + (pg.taskForm ? taskFormHtml(p) : ""));
       } else {
