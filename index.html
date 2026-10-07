@@ -346,7 +346,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
     <header class="head"><h1>省</h1><div class="date" id="stamp">—</div></header>
     <div id="notices"></div>
     <div id="min-form"></div>
-    <div class="syncbar"><button type="button" class="btn ghost sm" id="sync">Notionと同期</button><button type="button" class="btn ghost sm" id="add-ministry">省を足す</button><span class="lvsw" role="tablist"><button type="button" data-lv="一覧">一覧</button><button type="button" data-lv="依存の図">依存の図</button><button type="button" data-lv="重要度">重要度</button><button type="button" data-lv="時勢">時勢</button></span><span class="status" id="sync-status"></span></div>
+    <div class="syncbar"><button type="button" class="btn ghost sm" id="add-ministry">省を足す</button><span class="lvsw" role="tablist"><button type="button" data-lv="一覧">一覧</button><button type="button" data-lv="依存の図">依存の図</button><button type="button" data-lv="重要度">重要度</button><button type="button" data-lv="時勢">時勢</button></span><span class="status" id="sync-status"></span></div>
     <div id="list"></div>
     <div id="detail" hidden></div>
   </section>
@@ -389,7 +389,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r36";
+const APP_VERSION = "2026-10-07 r37";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -585,7 +585,7 @@ function openOrders(tag){
   return out;
 }
 function render(){
-  document.getElementById("stamp").textContent = state.gov ? ("Notionから " + state.gov.generated_at) : "—";
+  document.getElementById("stamp").textContent = state.gov ? ("毎朝の計算 " + state.gov.generated_at) : "—";
   renderNotice(state.gov ? "" : "まだ書き出しがありません。毎朝の計算(App daily)が一度動くと出ます。");
   renderList(); renderDetail(); renderOrders(); renderGov();
 }
@@ -936,9 +936,19 @@ function renderDetail(){
       '<button type="button" class="btn sm" data-min-save="' + esc(m.tag) + '">保存</button><button type="button" class="btn ghost sm" data-min-cancel>やめる</button></div>'
     : auto ? autoDeps
     : '<p class="panel-e" style="margin:0">記録から見つけた依存は、毎朝の計算が一度動くと出ます(手で書く必要はありません)。</p><div class="frow"><span class="fl">所属タグ</span><p>' + esc(m.tag) + "</p></div>";
-  const tideBody = '<div class="tide-sum"><b class="' + (m.tide.total > 0 ? "up" : m.tide.total < 0 ? "down" : "") + '">' + (m.tide.total > 0 ? "+" : "") + m.tide.total + '</b><span>いまの時勢の合計(重要度に効く)</span></div>' +
-    (m.tide.recent.length ? '<div class="tide-list">' + m.tide.recent.map(t => '<div class="tide-row"><span class="td">' + esc(String(t.date).slice(5).replace("-", "/")) + '</span><span class="tt">' + esc(t.title) + '</span><span class="tv ' + (t.delta > 0 ? "up" : "down") + '">' + (t.delta > 0 ? "+" : "") + esc(t.delta) + "</span></div>").join("") + "</div>"
-      : emptyHtml("最近の出来事はありません。")) + '<div class="panel-e" style="margin-top:.4rem;font-size:.76rem">時勢はClaudeに頼んで記録します。</div>';
+  // 時勢:省アプリで記録している時勢(焦燥・純粋・安心)。最近の記録と、時勢のビューへの入口
+  const tEs = tide.doc.entries.filter(e => !e.deleted && e.type !== "cancel" && e.tag === m.tag);
+  const tNow = sumParts(tEs.map(e => tideAt(e, taskDay()))), tTot = net(tNow);
+  const tBurden = tEs.filter(e => e.type === "plus").reduce((a, e) => a + (e.burden || 0) * remainRatio(e), 0);
+  const tRecent = tide.doc.entries.filter(e => !e.deleted && (e.tag === m.tag || (e.type === "cancel" && (tide.doc.entries.find(x => x.id === e.target) || {}).tag === m.tag)))
+    .sort((a, b) => a.date < b.date ? 1 : -1).slice(0, 5);
+  const nmT = t => ((state.gov.ministries || []).find(x => x.tag === t) || { name: t }).name;
+  const tideBody = '<div class="tide-sum"><b class="' + (tTot > 0 ? "up" : tTot < 0 ? "down" : "") + '">' + (tTot > 0 ? "+" : "") + tTot.toFixed(1) + '</b><span>いまの時勢' + (tBurden ? "・しんどさ " + tBurden.toFixed(1) : "") + "</span></div>" +
+    (tEs.length ? '<span class="tbar">' + (tNow.焦燥 ? '<i class="t-a" style="width:' + (Math.abs(tNow.焦燥) / (Math.abs(tNow.焦燥) + Math.abs(tNow.純粋) + Math.abs(tNow.安心)) * 100) + '%"></i>' : "") +
+      (tNow.純粋 ? '<i class="t-p" style="width:' + (Math.abs(tNow.純粋) / (Math.abs(tNow.焦燥) + Math.abs(tNow.純粋) + Math.abs(tNow.安心)) * 100) + '%"></i>' : "") +
+      (tNow.安心 ? '<i class="t-r" style="width:' + (Math.abs(tNow.安心) / (Math.abs(tNow.焦燥) + Math.abs(tNow.純粋) + Math.abs(tNow.安心)) * 100) + '%"></i>' : "") + "</span>" : "") +
+    (tRecent.length ? tRecent.map(e => tideRowHtml(e, nmT)).join("") : emptyHtml("まだ時勢の記録はありません。")) +
+    '<div class="row-btns" style="margin-top:.4rem"><button type="button" class="linkbtn" data-goto-tide>時勢を記録する・最近の動きを見る</button></div>';
   const about = panelHtml("目的", state.editPurpose ? "" : '<button type="button" class="linkbtn" data-pp-edit>' + (ptext ? "直す" : "+ 書く") + "</button>", purposeBody, "purpose-box") +
     panelHtml("依存度", mins.edit === m.tag ? "" : '<button type="button" class="linkbtn" data-min-edit="' + esc(m.tag) + '">' + "名前を直す" + "</button>", depBody) +
     panelHtml("時勢", "", tideBody);
@@ -2435,6 +2445,7 @@ function bindMins(){
   });
   document.getElementById("detail").addEventListener("click", async e => {
     let b;
+    if (e.target.closest("[data-goto-tide]")) { state.listView = "時勢"; state.open = null; pg.open = null; try { localStorage.setItem("sho-listview", "時勢"); } catch (err) {} render(); window.scrollTo && window.scrollTo(0, 0); return; }
     if ((b = e.target.closest("[data-min-del]"))) {
       const tag = b.dataset.minDel, g = state.gov.ministries.find(x => x.tag === tag);
       if (!confirm("「" + (g ? g.name : tag) + "」を消しますか。省の一覧と国力の計算から外れます(タスクの記録は残ります)。")) return;
@@ -2763,7 +2774,7 @@ async function savePurpose(tag, text){
   return false;
 }
 
-// Notionと同期:GitHubに書き出しだけを今すぐ走らせ、終わったら読み直す
+// (使っていない)前の「Notionと同期」:GitHubに書き出しだけを今すぐ走らせ、終わったら読み直す
 async function syncNow(){
   const st = document.getElementById("sync-status");
   const say = (t, err) => { st.textContent = t; st.classList.toggle("err", !!err); };
@@ -2830,7 +2841,7 @@ function bind(){
   bindViews();
   bindTide();
   try { state.listView = localStorage.getItem("sho-listview") || "一覧"; state.depFilter = localStorage.getItem("sho-depfilter") || "上位3本ずつ"; } catch (err) {}
-  document.getElementById("sync").addEventListener("click", syncNow);
+
   document.getElementById("detail").addEventListener("click", async e => {
     if (e.target.closest("[data-back]")) { state.open = null; state.editPurpose = false; pg.open = null; pg.edit = false; render(); return; }
     if (e.target.closest("[data-sl-edit]")) { state.editSlogan = "edit"; renderDetail(); return; }
