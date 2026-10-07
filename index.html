@@ -75,6 +75,12 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.mtg-steps{display:flex;gap:.3rem;flex-wrap:wrap;margin:.2rem 0 .7rem}.mtg-steps span{font-size:.8rem;border:1px solid var(--rule);border-radius:12px;padding:.1rem .7rem;color:var(--sub);background:#fff}
+.mtg-steps span.on{background:var(--ink);color:#fff;border-color:var(--ink)}.mtg-steps span.done{color:#3D8A5A;border-color:#3D8A5A}
+.mrow{display:flex;justify-content:space-between;gap:.6rem;align-items:baseline;padding:.3rem 0;border-bottom:1px dashed var(--rule);font-size:.86rem}.mrow small{display:block;color:var(--sub);font-size:.74rem}
+.mrow .ok{color:#3D8A5A}.mrow .ng,.mtr .ng{color:var(--shu)}
+.mtbl{overflow-x:auto}.mth,.mtr{display:grid;grid-template-columns:5.5rem repeat(6,4.2rem) auto;gap:.3rem;align-items:center;font-size:.8rem;padding:.25rem 0;border-bottom:1px dashed var(--rule);min-width:36rem}
+.mth{color:var(--sub);font-size:.72rem}.mtg-nav{margin-top:.8rem}
 .tk select.tpart{width:auto;max-width:5.2rem;font-size:.72rem;padding:.05rem .2rem;height:auto;border-radius:3px}
 .tk{align-items:center}
 .cform2{display:block}.cf-types{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin-bottom:.5rem}
@@ -401,7 +407,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r40";
+const APP_VERSION = "2026-10-07 r41";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -544,6 +550,7 @@ async function loadAll(){
     if (!pgQ.pending.length) await loadPages().catch(() => {});
     await loadMins().catch(() => {});
     await loadTide().catch(() => {});
+    try { const dr = JSON.parse(localStorage.getItem(KEY_DRAFT) || "null"); if (dr && !staff.draft && !currentTerm()) staff.draft = dr; } catch (err) {}
     state.depsAuto = ((await readJson("roadmap/gov/deps_auto.json").catch(() => ({}))) || {}).data || null;
     setTimeout(fromHash, 0);      // 「#page=…」のリンクで開かれたら、そのページへ
     renderPlaces();
@@ -1648,6 +1655,7 @@ function renderStaff(box){
     const left = daysBetween(taskDay(), term.end), half = daysBetween(term.start, term.end) / 2, past = daysBetween(term.start, taskDay());
     h += '<div class="slogan"><div class="gen">' + esc(term.name) + "　" + esc(term.start) + "〜" + esc(term.end) + "　残り" + Math.max(0, left) + '日</div><div class="txt">' + esc(term.slogan.text) + "</div>" +
       (term.slogan.note ? "<p>" + esc(term.slogan.note) + "</p>" : "") + "</div>" +
+      meetingRecordHtml(term) +
       '<div class="chips">' + (term.focus || []).map(t => '<span class="chip focus">重点 ' + esc(nameOf(t)) + "</span>").join("") +
       (term.restrain || []).map(t => '<span class="chip restrain">抑制 ' + esc(nameOf(t)) + "</span>").join("") + "</div>" +
       '<div class="sec"><h3>目標</h3>' + (term.goals || []).map(g => { const L = goalLine(term, g), st = taskStatusByName(g.firstStep.name);
@@ -1670,8 +1678,8 @@ function renderStaff(box){
           '<input id="rn-' + esc(g.id) + '" placeholder="理由" style="margin-top:.2rem"></div>').join("") +
           '<button type="button" class="btn sm" data-close-term style="margin-top:.5rem">総括して期を閉じる</button></details></div>';
   } else {
-    h += staff.draft ? termForm(staff.draft, ms) :
-      '<p style="font-size:.88rem;color:var(--sub)">今は作戦期がありません。作戦期を立てて発令すると、目標が行軍表のタスクになり、重点と抑制が国力と毎日の順番に効きます。</p><button type="button" class="btn" data-term-new>作戦期を立てる</button>';
+    h += staff.draft ? meetingHtml(staff.draft, ms) :
+      '<p style="font-size:.88rem;color:var(--sub)">今は作戦期がありません。会議で情勢を見て論点を出し、作戦期を決めて発令すると、目標が行軍表のタスクになり、重点と抑制が国力と毎日の順番に効きます。</p><button type="button" class="btn" data-term-new>作戦期を立てる会議を開く</button>';
   }
   const past = staff.doc.terms.filter(t => t.closedAt).reverse();
   h += foldHtml("これまでの作戦期", past.map(t => '<div class="decree"><div class="dd">' + esc(t.name) + "　" + esc(t.start) + "〜" + esc(t.end) + "</div>" + esc(t.slogan.text) +
@@ -1683,6 +1691,77 @@ function focusPicker(ms, focus, restrain){
   return '<div style="margin:.4rem 0"><div style="font-size:.78rem;color:var(--sub)">重点にする省</div><div class="chips">' + ms.map(m => '<label class="chip"><input type="checkbox" data-pick-focus value="' + esc(m.tag) + '"' + ((focus || []).includes(m.tag) ? " checked" : "") + "> " + esc(m.name) + "</label>").join("") + "</div>" +
     '<div style="font-size:.78rem;color:var(--sub);margin-top:.3rem">抑える省</div><div class="chips">' + ms.map(m => '<label class="chip"><input type="checkbox" data-pick-restrain value="' + esc(m.tag) + '"' + ((restrain || []).includes(m.tag) ? " checked" : "") + "> " + esc(m.name) + "</label>").join("") + "</div></div>";
 }
+
+/* ───────── 作戦期を立てる会議:情勢を見る → 論点 → 決めて発令 ───────── */
+const KEY_DRAFT = "sho-term-draft";
+function saveDraft(){ try { if (staff.draft) localStorage.setItem(KEY_DRAFT, JSON.stringify(staff.draft)); else localStorage.removeItem(KEY_DRAFT); } catch (e) {} }
+function situation(){
+  const ms = (state.gov && state.gov.ministries) || [], prev = staff.doc.terms.filter(t => t.closedAt).slice(-1)[0];
+  const hist = (state.stats && state.stats.power_history) || [], from = prev ? prev.start : addDays(taskDay(), -30);
+  const span = hist.filter(r => r.date >= from), R = r => r.real != null ? r.real : r.power;
+  const power = span.length ? { from: span[0].date, to: span[span.length - 1].date, a: R(span[0]), b: R(span[span.length - 1]) } : null;
+  const rows = ms.map(m => {
+    const p = powerOf(m.tag) || {}, ts = state.tasks.filter(t => (t.def.ministries || []).includes(m.tag) && !["アーカイブ", "達成済み"].includes(t.status));
+    const tEs = tide.doc.entries.filter(e => !e.deleted && e.type !== "cancel" && e.tag === m.tag);
+    return { tag: m.tag, name: m.name, weight: p.weight != null ? +p.weight : null, territory: p.territory, dominance: p.dominance,
+      tide: net(sumParts(tEs.map(e => tideAt(e, taskDay())))), burden: tEs.filter(e => e.type === "plus").reduce((a, e) => a + (e.burden || 0) * remainRatio(e), 0),
+      fallen: ts.filter(t => t.status === "要再設定").length, waiting: ts.filter(t => t.waiting).length, tasks: ts.length };
+  });
+  const alerts = pages().filter(p => p.kind === "ALERT" && ["発生", "対応中"].includes(p.status));
+  const raids = defenseTag() ? raidCandidates() : [];
+  const cands = ((gov.council && gov.council.candidates) || []).filter(c => !c.status || c.status === "候補").slice(0, 6);
+  return { prev, power, rows, alerts, raids, cands };
+}
+function meetingHtml(d, ms){
+  const mt = d.meeting = d.meeting || { step: 1, issues: [], reason: "" };
+  const steps = ["情勢を見る", "論点を出す", "決めて発令"];
+  let h = '<div class="sec"><h3>作戦期を立てる会議</h3><div class="mtg-steps">' + steps.map((l, i) => '<span class="' + (mt.step === i + 1 ? "on" : mt.step > i + 1 ? "done" : "") + '">' + (i + 1) + " " + l + "</span>").join("") + "</div>";
+  const addBtn = text => '<button type="button" class="linkbtn" data-issue-add="' + esc(text) + '">論点にする</button>';
+  if (mt.step === 1) {
+    const S = situation(), f1 = v => v == null ? "—" : Number(v).toFixed(1);
+    h += '<div class="panel"><div class="panel-h"><span>国力</span></div><div class="panel-b">' + (S.power ? "実質国力 <b>" + f1(S.power.a) + "</b> → <b>" + f1(S.power.b) + "</b>(" + esc(S.power.from.slice(5)) + "〜" + esc(S.power.to.slice(5)) + "、" +
+        ((S.power.b - S.power.a) >= 0 ? "+" : "") + f1(S.power.b - S.power.a) + ")" + (S.prev ? "<small>　前の作戦期の始めから</small>" : "<small>　直近30日</small>") : emptyHtml("国力の記録がまだありません。")) + "</div></div>";
+    if (S.prev) h += '<div class="panel"><div class="panel-h"><span>前の作戦期の総括:' + esc(S.prev.name) + '</span></div><div class="panel-b">' + (S.prev.goals || []).map(g =>
+        '<div class="mrow"><span><b class="' + (g.result === "達成" ? "ok" : "ng") + '">' + esc(g.result || "—") + "</b> " + esc(g.text) + (g.resultNote ? '<small>' + esc(g.resultNote) + "</small>" : "") + "</span>" + addBtn("前の作戦期:" + g.text + "は" + (g.result || "") + (g.resultNote ? "(" + g.resultNote + ")" : "")) + "</div>").join("") + "</div></div>";
+    h += '<div class="panel"><div class="panel-h"><span>省ごとの今</span></div><div class="panel-b"><div class="mtbl"><div class="mth"><span>省</span><span>重要度</span><span>領土・支配</span><span>時勢</span><span>しんどさ</span><span>要再設定</span><span>待機中</span><span></span></div>' +
+      S.rows.map(r => '<div class="mtr"><span style="color:' + colorOf(r.tag) + ';font-weight:700">' + esc(r.name) + "</span><span>" + f1(r.weight) + "</span><span>" + (r.territory != null ? esc(r.territory) + "・" + Math.round(r.dominance || 0) : "—") + "</span><span>" +
+        (r.tide ? (r.tide > 0 ? "+" : "") + r.tide.toFixed(1) : "0") + "</span><span>" + (r.burden ? r.burden.toFixed(1) : "—") + '</span><span class="' + (r.fallen ? "ng" : "") + '">' + r.fallen + "/" + r.tasks + "</span><span>" + (r.waiting || "—") + "</span><span>" +
+        addBtn(r.name + ":" + [r.fallen ? "要再設定 " + r.fallen + "/" + r.tasks : "", r.burden ? "しんどさ " + r.burden.toFixed(1) : "", r.tide ? "時勢 " + (r.tide > 0 ? "+" : "") + r.tide.toFixed(1) : "", r.waiting ? "待機中 " + r.waiting : ""].filter(Boolean).join("・")) + "</span></div>").join("") + "</div></div></div>";
+    const worry = S.alerts.map(p => ({ t: p.label + " " + (p.title || "") + "(対応中のALERT)", s: "ALERT" })).concat(S.raids.map(c => ({ t: c.name + ":" + c.why + "(RAIDの候補)", s: "RAID" })))
+      .concat(S.cands.map(c => ({ t: (c.title || c.text || "") + "(議題候補)", s: "議題" })));
+    h += '<div class="panel"><div class="panel-h"><span>気になるもの</span></div><div class="panel-b">' + (worry.length ? worry.map(w => '<div class="mrow"><span>' + esc(w.t) + "</span>" + addBtn(w.t) + "</div>").join("") : emptyHtml("対応中のALERT・RAIDの候補・議題候補はありません。")) + "</div></div>";
+    h += '<p class="panel-e">「論点にする」を押したものは、次の段階の論点に入ります(' + mt.issues.length + "つ)。</p>";
+  } else if (mt.step === 2) {
+    h += mt.issues.map((it, i) => '<div class="panel"><div class="panel-h"><span>論点' + (i + 1) + '</span><button type="button" class="linkbtn" data-issue-del="' + i + '" style="color:var(--shu)">外す</button></div><div class="panel-b">' +
+      '<div class="f"><label>論点</label><input data-issue-text="' + i + '" value="' + esc(it.text) + '"></div><div class="f"><label>どうするか</label><textarea data-issue-thought="' + i + '" style="min-height:3rem" placeholder="この作戦期でどう扱うか">' + esc(it.thought || "") + "</textarea></div></div></div>").join("") +
+      '<button type="button" class="btn ghost sm" data-issue-add="">+ 論点を足す</button>' + (mt.issues.length ? "" : '<p class="panel-e">前の段階の「論点にする」か、ここから足します。</p>');
+  } else {
+    h += '<div class="panel"><div class="panel-h"><span>この作戦期で扱う論点</span></div><div class="panel-b">' + (mt.issues.length ? mt.issues.map((it, i) => '<label class="cfopt"><input type="checkbox" data-issue-pick="' + i + '"' + (it.picked !== false ? " checked" : "") + "> " + esc(it.text) +
+        (it.thought ? "<small>— " + esc(it.thought) + "</small>" : "") + "</label>").join("") : emptyHtml("論点はありません。")) +
+      '<div class="f" style="margin-top:.4rem"><label>決めた理由</label><textarea id="mt-reason" style="min-height:3rem" placeholder="なぜこのスローガン・重点・目標にしたか">' + esc(mt.reason || "") + "</textarea></div></div></div>" + termForm(d, ms);
+  }
+  h += '<div class="row-btns mtg-nav">' + (mt.step > 1 ? '<button type="button" class="btn ghost sm" data-mtg-step="' + (mt.step - 1) + '">‹ 戻る</button>' : "") +
+    (mt.step < 3 ? '<button type="button" class="btn sm" data-mtg-step="' + (mt.step + 1) + '">次へ ›</button>' : "") +
+    '<button type="button" class="btn ghost sm" data-term-cancel style="margin-left:auto">会議をやめる</button></div></div>';
+  return h;
+}
+function readMeeting(d){
+  const mt = d.meeting; if (!mt) return;
+  document.querySelectorAll("[data-issue-text]").forEach(el => { const it = mt.issues[+el.dataset.issueText]; if (it) it.text = el.value; });
+  document.querySelectorAll("[data-issue-thought]").forEach(el => { const it = mt.issues[+el.dataset.issueThought]; if (it) it.thought = el.value; });
+  document.querySelectorAll("[data-issue-pick]").forEach(el => { const it = mt.issues[+el.dataset.issuePick]; if (it) it.picked = el.checked; });
+  const r = document.getElementById("mt-reason"); if (r) mt.reason = r.value;
+  if (document.getElementById("tf-name")) readTermForm(d);
+}
+function meetingRecordHtml(t){
+  const mt = t.meeting; if (!mt) return "";
+  const picked = (mt.issues || []).filter(i => i.picked !== false);
+  return '<details class="fold"><summary>この作戦期を立てた会議の記録</summary>' +
+    (mt.snapshot && mt.snapshot.power ? '<p style="font-size:.84rem">会議のときの実質国力 ' + Number(mt.snapshot.power.b).toFixed(1) + "(" + esc(mt.snapshot.date) + ")</p>" : "") +
+    (picked.length ? "<ul>" + picked.map(i => "<li>" + esc(i.text) + (i.thought ? " — " + esc(i.thought) : "") + "</li>").join("") + "</ul>" : "") +
+    (mt.reason ? '<div class="decree"><div class="dd">決めた理由</div>' + esc(mt.reason) + "</div>" : "") + "</details>";
+}
+
 function termForm(d, ms){
   const g = (d.goals || []).map((x, i) => '<div class="gform"><b>目標' + (i + 1) + "</b>" +
     '<div class="f"><label>目標</label><input data-g="text" data-i="' + i + '" value="' + esc(x.text) + '" placeholder="英検準1級に合格できる力をつける"></div>' +
@@ -1758,7 +1837,7 @@ async function issueTerm(d){
       pl.items.push({ id: uid(), type: "period", lane: "全体", name: d.name, grain: "季", start: d.start, end: d.end, goal: d.slogan.text + " / " + d.goals.map(g => g.text + "(" + g.due + ")").join("・"), staffTerm: d.id });
     try { await writeJson("roadmap/plan.json", pl, r.sha); break; } catch (e) { if (e.status !== 409 && e.status !== 422) throw e; }
   }
-  const term = { id: d.id, name: d.name, start: d.start, end: d.end, slogan: d.slogan, focus: d.focus, restrain: d.restrain, issuedAt: nowIso(),
+  const term = { id: d.id, name: d.name, start: d.start, end: d.end, slogan: d.slogan, focus: d.focus, restrain: d.restrain, issuedAt: nowIso(), meeting: d.meeting || null,
     goals: d.goals.map(g => ({ id: g.id, text: g.text, criterion: g.criterion, target: +g.target, unit: g.unit, due: g.due, tag: g.tag, firstStep: { name: g.step, slot: g.slot }, values: [] })) };
   return saveStaff(doc => { doc.terms.push(term); });
 }
@@ -1772,17 +1851,26 @@ function bindStaff(){
       const d0 = taskDay(), end = new Date(Date.parse(d0 + "T00:00:00Z")); end.setUTCMonth(end.getUTCMonth() + 3);
       const n = staff.doc.terms.length + 1;
       staff.draft = { id: uid(), name: "第" + n + "次作戦期", start: d0, end: addDays(end.toISOString().slice(0, 10), -1), slogan: { text: "", note: "" }, focus: [], restrain: [],
-        goals: [{ id: uid(), text: "", criterion: "", target: "", unit: "", due: "", tag: "", step: "", slot: "朝" }] };
-      return renderDetail();
+        goals: [{ id: uid(), text: "", criterion: "", target: "", unit: "", due: "", tag: "", step: "", slot: "朝" }], meeting: { step: 1, issues: [], reason: "" } };
+      saveDraft(); return renderDetail();
     }
-    if (q("[data-term-cancel]")) { staff.draft = null; return renderDetail(); }
-    if (staff.draft && q("[data-g-add]")) { readTermForm(staff.draft); if (staff.draft.goals.length < MAX_GOALS) staff.draft.goals.push({ id: uid(), text: "", criterion: "", target: "", unit: "", due: "", tag: "", step: "", slot: "朝" }); return renderDetail(); }
+    if (q("[data-term-cancel]")) { if (staff.draft && staff.draft.meeting && staff.draft.meeting.issues.length && !confirm("会議をやめますか。ここまでの論点は消えます。")) return; staff.draft = null; saveDraft(); return renderDetail(); }
+    if (staff.draft && (b = q("[data-mtg-step]"))) {
+      readMeeting(staff.draft); const mt = staff.draft.meeting, to = +b.dataset.mtgStep;
+      if (mt.step === 1 && to === 2) { const S = situation(); mt.snapshot = { date: taskDay(), power: S.power, rows: S.rows.map(r => ({ tag: r.tag, weight: r.weight, tide: +r.tide.toFixed(2), burden: +r.burden.toFixed(2), fallen: r.fallen, waiting: r.waiting })) }; }
+      mt.step = to; saveDraft(); window.scrollTo && window.scrollTo(0, 0); return renderDetail();
+    }
+    if (staff.draft && (b = q("[data-issue-add]"))) { readMeeting(staff.draft); const mt = staff.draft.meeting, t = b.dataset.issueAdd;
+      if (t && mt.issues.some(i => i.text === t)) return sfMsg("その論点はもう入っています。");
+      mt.issues.push({ id: uid(), text: t, thought: "" }); saveDraft(); if (t) sfMsg("論点に入れました(" + mt.issues.length + "つ)。"); return renderDetail(); }
+    if (staff.draft && (b = q("[data-issue-del]"))) { readMeeting(staff.draft); staff.draft.meeting.issues.splice(+b.dataset.issueDel, 1); saveDraft(); return renderDetail(); }
+    if (staff.draft && q("[data-g-add]")) { readMeeting(staff.draft); if (staff.draft.goals.length < MAX_GOALS) staff.draft.goals.push({ id: uid(), text: "", criterion: "", target: "", unit: "", due: "", tag: "", step: "", slot: "朝" }); return renderDetail(); }
     if (staff.draft && (b = q("[data-g-del]"))) { readTermForm(staff.draft); staff.draft.goals.splice(+b.dataset.gDel, 1); return renderDetail(); }
     if (staff.draft && q("[data-term-issue]")) {
-      readTermForm(staff.draft);
+      readMeeting(staff.draft);
       const p = issueProblems(staff.draft);
       if (p.length) return sfMsg("発令できません。足りないもの:" + p.join("、"), true);
-      try { if (await issueTerm(staff.draft)) { staff.draft = null; renderDetail(); sfMsg("発令しました。最初の一歩と毎週の点検が行軍表のタスクになりました。"); } }
+      try { if (await issueTerm(staff.draft)) { staff.draft = null; saveDraft(); renderDetail(); sfMsg("発令しました。会議の記録は作戦期に残りました。最初の一歩と毎週の点検が行軍表のタスクになりました。"); } }
       catch (err) { sfMsg(err.message, true); }
       return;
     }
