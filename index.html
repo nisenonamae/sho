@@ -75,6 +75,22 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.lvsw{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin-left:auto}
+.lvsw button{border:none;background:#fff;padding:.25rem .65rem;font:inherit;font-size:.82rem;cursor:pointer;color:var(--sub)}
+.lvsw button+button{border-left:1px solid var(--rule)}.lvsw button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.graph-wrap{display:grid;grid-template-columns:minmax(0,1fr) 15rem;gap:.8rem;align-items:start}
+@media (max-width:720px){.graph-wrap{grid-template-columns:1fr}}
+.depgraph{width:100%;height:auto;background:#fff;border:1px solid var(--rule);border-radius:6px}
+.edge{stroke:#9A9183;opacity:.85}.edge.neg{stroke:#B3283C;stroke-dasharray:5 4}.edge.dim,.gnode.dim{opacity:.15}
+.gnode{cursor:pointer}.gnode circle{fill:var(--mc);fill-opacity:.18;stroke:var(--mc);stroke-width:2}.gnode.sel circle{fill-opacity:.4;stroke-width:3}
+.gnode text{font-size:12px;fill:var(--ink)}.gnode .gw{font-size:11px;font-weight:700}
+.graph-side{margin:0}
+.wchart{display:flex;flex-direction:column;gap:.3rem}
+.wrow{display:grid;grid-template-columns:6.5rem 1fr 3rem 9rem;gap:.6rem;align-items:center;border:1px solid var(--rule);background:#fff;border-radius:5px;padding:.4rem .6rem;cursor:pointer;font:inherit;text-align:left}
+.wn{font-weight:700;color:var(--mc)}.wbar{height:10px;background:var(--rule);border-radius:5px;overflow:hidden}.wbar i{display:block;height:100%;background:var(--mc)}
+.wv{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}.wsp{display:flex;align-items:center;gap:.3rem}
+.spark{width:120px;height:28px}.spark polyline{fill:none;stroke:#2F6E8A;stroke-width:1.6}.sd{font-size:.74rem;color:var(--sub)}.sd.up{color:#3D8A5A}.sd.down{color:var(--shu)}
+@media (max-width:560px){.wrow{grid-template-columns:5rem 1fr 2.6rem}.wsp{display:none}}
 .rsub{font-size:.76rem;color:var(--sub);letter-spacing:.06em;margin:.1rem 0 .3rem}
 .pk-RAID{background:#4B3F8F}.raid-card{border-left-color:#7A6CC4}.raid-card.closed{opacity:.6;border-left-color:var(--rule)}
 .cands{border:1px dashed #7A6CC4;border-radius:5px;padding:.35rem .55rem;margin:.3rem 0 .45rem;background:#F6F4FC}
@@ -311,7 +327,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
     <header class="head"><h1>省</h1><div class="date" id="stamp">—</div></header>
     <div id="notices"></div>
     <div id="min-form"></div>
-    <div class="syncbar"><button type="button" class="btn ghost sm" id="sync">Notionと同期</button><button type="button" class="btn ghost sm" id="add-ministry">省を足す</button><span class="status" id="sync-status"></span></div>
+    <div class="syncbar"><button type="button" class="btn ghost sm" id="sync">Notionと同期</button><button type="button" class="btn ghost sm" id="add-ministry">省を足す</button><span class="lvsw" role="tablist"><button type="button" data-lv="一覧">一覧</button><button type="button" data-lv="依存の図">依存の図</button><button type="button" data-lv="重要度">重要度</button></span><span class="status" id="sync-status"></span></div>
     <div id="list"></div>
     <div id="detail" hidden></div>
   </section>
@@ -354,7 +370,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r29";
+const APP_VERSION = "2026-10-07 r30";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -536,7 +552,7 @@ function tasksFor(tag, label){
 function renderNotice(msg){ document.getElementById("notices").innerHTML = msg ? '<p class="notice">' + esc(msg) + "</p>" : ""; }
 function powerOf(tag){
   const ml = (state.stats && state.stats.ministry_latest) || [];
-  const m = ml.find(x => x.tag === tag);
+  const m = ml.find(x => x.tag === tag || x.ministry === tag);
   return m ? m : null;
 }
 function openOrders(tag){
@@ -552,7 +568,63 @@ function render(){
   renderNotice(state.gov ? "" : "まだ書き出しがありません。毎朝の計算(App daily)が一度動くと出ます。");
   renderList(); renderDetail(); renderOrders(); renderGov();
 }
+
+/* ───────── 省の一覧の切り替え:一覧・依存の図・重要度 ───────── */
+function liveMinistries(){ return orderedMinistries(((state.gov && state.gov.ministries) || []).slice()); }
+const weightOf = tag => { const p = powerOf(tag); return p && p.weight != null ? +p.weight : null; };
+function depGraphHtml(){
+  const ms = liveMinistries(); if (!ms.length) return '<div class="empty">省がまだありません。</div>';
+  const W = 640, H = 520, cx = W / 2, cy = H / 2 + 6, R = Math.min(W, H) / 2 - 70;
+  const ws = ms.map(m => weightOf(m.tag) || 0), wmax = Math.max(1, ...ws);
+  const pos = {}; ms.forEach((m, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / ms.length; pos[m.tag] = { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a), r: 14 + 18 * ((weightOf(m.tag) || 0) / wmax) }; });
+  const sel = state.graphSel;
+  const edges = [];
+  ms.forEach(m => Object.entries(m.deps || {}).forEach(([k, v]) => { if (pos[k] && k !== m.tag) edges.push({ from: m.tag, to: k, v: +v }); }));
+  const vmax = Math.max(1, ...edges.map(e => Math.abs(e.v)));
+  const edgeSvg = edges.map(e => {
+    const a = pos[e.from], b = pos[e.to], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+    const x1 = a.x + ux * a.r, y1 = a.y + uy * a.r, x2 = b.x - ux * (b.r + 6), y2 = b.y - uy * (b.r + 6);
+    const on = !sel || sel === e.from || sel === e.to;
+    return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" class="edge' + (e.v < 0 ? " neg" : "") + (on ? "" : " dim") + '" stroke-width="' + (1 + 4 * Math.abs(e.v) / vmax).toFixed(1) + '" marker-end="url(#arr' + (e.v < 0 ? "n" : "") + ')"><title>' + esc(e.from + " → " + e.to + " " + e.v) + "</title></line>";
+  }).join("");
+  const nodeSvg = ms.map(m => { const p = pos[m.tag], on = !sel || sel === m.tag || edges.some(e => (e.from === sel && e.to === m.tag) || (e.to === sel && e.from === m.tag));
+    return '<g class="gnode' + (sel === m.tag ? " sel" : "") + (on ? "" : " dim") + '" data-gnode="' + esc(m.tag) + '" style="--mc:' + colorOf(m.tag) + '"><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + p.r.toFixed(1) + '"></circle>' +
+      '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + p.r + 14).toFixed(1) + '" text-anchor="middle">' + esc(m.name) + "</text>" +
+      (weightOf(m.tag) != null ? '<text class="gw" x="' + p.x.toFixed(1) + '" y="' + (p.y + 4).toFixed(1) + '" text-anchor="middle">' + Number(weightOf(m.tag)).toFixed(1) + "</text>" : "") + "</g>"; }).join("");
+  let side = '<div class="empty">省を押すと、その省の依存がここに出ます。矢印は「依存している省 → 依存先」、太さが強さ、赤い点線はマイナスの依存、丸の大きさと数字は重要度です。</div>';
+  if (sel) { const m = ms.find(x => x.tag === sel);
+    if (m) { const out = edges.filter(e => e.from === sel), inn = edges.filter(e => e.to === sel), nm = t => (ms.find(x => x.tag === t) || { name: t }).name;
+      side = "<b>" + esc(m.name) + '</b><div class="frow"><span class="fl">依存先</span><div>' + (out.length ? out.map(e => '<span class="dep' + (e.v < 0 ? " neg" : "") + '">' + esc(nm(e.to)) + " " + e.v + "</span>").join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
+        '<div class="frow"><span class="fl">依存されている</span><div>' + (inn.length ? inn.map(e => '<span class="dep rev">' + esc(nm(e.from)) + " " + e.v + "</span>").join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
+        '<div class="row-btns"><button type="button" class="btn ghost sm" data-open="' + esc(m.tag) + '">この省を開く</button><button type="button" class="linkbtn" data-gsel="">選ぶのをやめる</button></div>'; } }
+  return '<div class="graph-wrap"><svg viewBox="0 0 ' + W + " " + H + '" class="depgraph" role="img" aria-label="省の依存の図"><defs>' +
+    '<marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7A7266"></path></marker>' +
+    '<marker id="arrn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#B3283C"></path></marker></defs>' +
+    edgeSvg + nodeSvg + '</svg><div class="graph-side panel"><div class="panel-b">' + side + "</div></div></div>";
+}
+function weightChartHtml(){
+  const ms = liveMinistries(); if (!ms.length) return '<div class="empty">省がまだありません。</div>';
+  const hist = (state.stats && state.stats.ministry_history) || [];
+  const rows = ms.map(m => ({ m, w: weightOf(m.tag), p: powerOf(m.tag), h: hist.filter(x => x.tag === m.tag && x.weight != null).slice(-30) })).sort((a, b) => (b.w ?? -1) - (a.w ?? -1));
+  const wmax = Math.max(1, ...rows.map(r => r.w || 0));
+  const spark = h => { if (h.length < 2) return '<span class="panel-e">—</span>'; const vs = h.map(x => +x.weight), lo = Math.min(...vs), hi = Math.max(...vs), rg = hi - lo || 1;
+    const pts = vs.map((v, i) => (i / (vs.length - 1) * 120).toFixed(1) + "," + (26 - (v - lo) / rg * 22).toFixed(1)).join(" ");
+    const d = vs[vs.length - 1] - vs[0];
+    return '<svg viewBox="0 0 120 28" class="spark"><polyline points="' + pts + '"></polyline></svg><span class="sd ' + (d > 0 ? "up" : d < 0 ? "down" : "") + '">' + (d > 0 ? "+" : "") + d.toFixed(1) + "</span>"; };
+  return (hist.length ? "" : '<div class="empty" style="margin-bottom:.5rem">重要度の記録は、毎朝の計算(App daily)が動くと出ます。</div>') +
+    '<div class="wchart">' + rows.map(r => '<button type="button" class="wrow" data-open="' + esc(r.m.tag) + '" style="--mc:' + colorOf(r.m.tag) + '"><span class="wn">' + esc(r.m.name) + '</span>' +
+      '<span class="wbar"><i style="width:' + ((r.w || 0) / wmax * 100).toFixed(1) + '%"></i></span><span class="wv">' + (r.w != null ? Number(r.w).toFixed(1) : "—") + '</span><span class="wsp">' + spark(r.h) + "</span></button>").join("") + "</div>" +
+    '<p class="panel-e" style="margin-top:.5rem">棒は今の重要度(依存と時勢から毎朝計算)。右は直近30日の動きと、その間の増減。押すとその省を開きます。</p>';
+}
+
 function renderList(){
+  const lv = state.listView || "一覧";
+  document.querySelectorAll(".lvsw [data-lv]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lv === lv)));
+  if (lv !== "一覧" && state.gov) {
+    const box = document.getElementById("list");
+    box.innerHTML = lv === "依存の図" ? depGraphHtml() : weightChartHtml();
+    return;
+  }
   const box = document.getElementById("list");
   const ms = (state.gov && state.gov.ministries) || [];
   box.hidden = !!state.open;
@@ -2109,6 +2181,13 @@ function renderMinForm(){
     '<input id="mf-deps" placeholder="依存先(例:受験:2, 家族:1)" style="flex:1"><button type="button" class="btn sm" id="mf-add">足す</button><button type="button" class="btn ghost sm" id="mf-cancel">やめる</button>' +
     '<span style="font-size:.76rem;color:var(--sub);flex-basis:100%">所属タグはタスクや国力の記録と結びつく短い名前で、あとから変えられません。国力には翌朝の計算から入ります。</span><span class="status" id="mf-msg"></span></div>' : "";
 }
+function bindViews(){
+  document.querySelector(".lvsw").addEventListener("click", e => { const b = e.target.closest("[data-lv]"); if (!b) return; state.listView = b.dataset.lv; try { localStorage.setItem("sho-listview", state.listView); } catch (err) {} renderList(); });
+  document.getElementById("list").addEventListener("click", e => {
+    const g = e.target.closest("[data-gnode]"); if (g) { state.graphSel = state.graphSel === g.dataset.gnode ? null : g.dataset.gnode; renderList(); return; }
+    const c = e.target.closest("[data-gsel]"); if (c) { state.graphSel = null; renderList(); }
+  });
+}
 function bindMins(){
   // 並べ替え:押したらすぐ入れ替えて描き、保存は裏でまとめて1回(最後に押してから少し待って、または終えるときに)
   const flushOrder = async () => {
@@ -2535,6 +2614,8 @@ function bind(){
   bindStaff();
   bindPages();
   bindMins();
+  bindViews();
+  try { state.listView = localStorage.getItem("sho-listview") || "一覧"; } catch (err) {}
   document.getElementById("sync").addEventListener("click", syncNow);
   document.getElementById("detail").addEventListener("click", async e => {
     if (e.target.closest("[data-back]")) { state.open = null; state.editPurpose = false; pg.open = null; pg.edit = false; render(); return; }
