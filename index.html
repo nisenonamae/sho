@@ -389,7 +389,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r34";
+const APP_VERSION = "2026-10-07 r35";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -716,10 +716,9 @@ function depGraphHtml(){
   const W = 640, H = 520, cx = W / 2, cy = H / 2 + 6, R = Math.min(W, H) / 2 - 70;
   const ws = ms.map(m => weightOf(m.tag) || 0), wmax = Math.max(1, ...ws);
   const pos = {}; ms.forEach((m, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / ms.length; pos[m.tag] = { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a), r: 14 + 18 * ((weightOf(m.tag) || 0) / wmax) }; });
-  const sel = state.graphSel, auto = state.depsAuto, mode = auto && state.depMode !== "手" ? "自動" : "手";
+  const sel = state.graphSel, auto = state.depsAuto, mode = "自動";
   const edges = [];
-  if (mode === "自動") auto.pairs.forEach(p => { if (pos[p.from] && pos[p.to] && Math.abs(p.value) >= 0.03) edges.push({ from: p.from, to: p.to, v: p.value, sure: p.sure, days: p.days }); });
-  else ms.forEach(m => Object.entries(m.deps || {}).forEach(([k, v]) => { if (pos[k] && k !== m.tag) edges.push({ from: m.tag, to: k, v: +v, sure: true }); }));
+  (auto ? auto.pairs : []).forEach(p => { if (pos[p.from] && pos[p.to] && Math.abs(p.value) >= 0.03) edges.push({ from: p.from, to: p.to, v: p.value, sure: p.sure, days: p.days }); });
   const vmax = mode === "自動" ? 0.3 : Math.max(1, ...edges.map(e => Math.abs(e.v)));
   const edgeSvg = edges.map(e => {
     const a = pos[e.from], b = pos[e.to], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
@@ -731,20 +730,18 @@ function depGraphHtml(){
     return '<g class="gnode' + (sel === m.tag ? " sel" : "") + (on ? "" : " dim") + '" data-gnode="' + esc(m.tag) + '" style="--mc:' + colorOf(m.tag) + '"><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + p.r.toFixed(1) + '"></circle>' +
       '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + p.r + 14).toFixed(1) + '" text-anchor="middle">' + esc(m.name) + "</text>" +
       (weightOf(m.tag) != null ? '<text class="gw" x="' + p.x.toFixed(1) + '" y="' + (p.y + 4).toFixed(1) + '" text-anchor="middle">' + Number(weightOf(m.tag)).toFixed(1) + "</text>" : "") + "</g>"; }).join("");
-  let side = mode === "自動"
+  let side = auto
     ? '<div class="empty">記録から見つけた依存です(直近' + auto.window + '日・' + esc(auto.generated) + '計算)。矢印「A → B」は、Aの評価が良い日の翌日にBも良い(BがAに支えられている)こと。太さが強さ、赤い点線は逆の関係、薄い線はまだ偶然の範囲。丸の大きさと数字は重要度。省を押すと詳しく出ます。</div>'
-    : '<div class="empty">手で決めた依存(前の仕組み)です。矢印は「依存している省 → 依存先」、太さが強さ、赤い点線はマイナスの依存、丸の大きさと数字は重要度です。</div>';
+    : '<div class="empty">記録から見つけた依存は、毎朝の計算が一度動くと出ます。</div>';
   if (sel) { const m = ms.find(x => x.tag === sel);
     if (m) { const out = edges.filter(e => e.from === sel), inn = edges.filter(e => e.to === sel), nm = t => (ms.find(x => x.tag === t) || { name: t }).name;
       const fv = v => (v > 0 ? "+" : "") + Number(v).toFixed(2);
       const chip = (n, e) => '<span class="dep' + (e.v < 0 ? " neg" : "") + (e.sure ? "" : " unsure") + '" title="' + (e.sure ? "" : "まだ偶然の範囲") + '">' + esc(n) + " " + fv(e.v) + "</span>";
-      const L1 = mode === "自動" ? "支えている(→)" : "依存先", L2 = mode === "自動" ? "支えられている(←)" : "依存されている";
+      const L1 = "支えている(→)", L2 = "支えられている(←)";
       side = "<b>" + esc(m.name) + '</b><div class="frow"><span class="fl">' + L1 + "</span><div>" + (out.length ? out.sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).map(e => chip(nm(e.to), e)).join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
         '<div class="frow"><span class="fl">' + L2 + "</span><div>" + (inn.length ? inn.sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).map(e => chip(nm(e.from), e)).join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
         '<div class="row-btns"><button type="button" class="btn ghost sm" data-open="' + esc(m.tag) + '">この省を開く</button><button type="button" class="linkbtn" data-gsel="">選ぶのをやめる</button></div>'; } }
-  return (auto ? '<div class="depmode"><button type="button" data-depmode="自動" aria-pressed="' + (mode === "自動") + '">記録から(自動)</button><button type="button" data-depmode="手" aria-pressed="' + (mode === "手") + '">手で決めた(前)</button></div>'
-      : '<div class="empty" style="margin-bottom:.4rem">記録から見つけた依存は、毎朝の計算が一度動くと出ます。今は手で決めた依存(前の仕組み)を出しています。</div>') +
-    '<div class="graph-wrap"><svg viewBox="0 0 ' + W + " " + H + '" class="depgraph" role="img" aria-label="省の依存の図"><defs>' +
+  return '<div class="graph-wrap"><svg viewBox="0 0 ' + W + " " + H + '" class="depgraph" role="img" aria-label="省の依存の図"><defs>' +
     '<marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7A7266"></path></marker>' +
     '<marker id="arrn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#B3283C"></path></marker></defs>' +
     edgeSvg + nodeSvg + '</svg><div class="graph-side panel"><div class="panel-b">' + side + "</div></div></div>";
@@ -925,22 +922,17 @@ function renderDetail(){
       '<div class="frow"><span class="fl">支えている</span><div>' + (giv.length ? giv.map(p => chip(p.to, p)).join("") : '<span class="panel-e">まだ見つかっていません</span>') + "</div></div>" +
       '<div class="frow"><span class="fl">所属タグ</span><p>' + esc(m.tag) + "</p></div>" +
       '<p class="panel-e" style="margin:.3rem 0 0;font-size:.76rem">記録から毎朝自動で計算しています(直近' + auto.window + "日)。薄い札はまだ偶然の範囲。手で書く必要はありません。</p>"; })() : null;
-  const depBody = mins.edit === m.tag && auto
-    ? '<div class="cform"><input id="me-name" value="' + esc(m.name) + '" placeholder="名前" style="flex:1"><input id="me-deps" type="hidden" value="' + esc(depsText(m.deps)) + '">' +
+  // 依存度は記録から計算したものだけ(手で書く欄は無い)。直せるのは名前だけ
+  const depBody = mins.edit === m.tag
+    ? '<div class="cform"><input id="me-name" value="' + esc(m.name) + '" placeholder="名前" style="flex:1"><input id="me-deps" type="hidden" value="">' +
       '<button type="button" class="btn sm" data-min-save="' + esc(m.tag) + '">保存</button><button type="button" class="btn ghost sm" data-min-cancel>やめる</button></div>'
     : auto ? autoDeps
-    : mins.edit === m.tag
-    ? '<div class="cform"><input id="me-name" value="' + esc(m.name) + '" placeholder="名前"><input id="me-deps" value="' + esc(depsText(m.deps)) + '" placeholder="依存先(例:受験:2, 家族:1)" style="flex:1">' +
-      '<button type="button" class="btn sm" data-min-save="' + esc(m.tag) + '">保存</button><button type="button" class="btn ghost sm" data-min-cancel>やめる</button>' +
-      '<span style="font-size:.76rem;color:var(--sub);flex-basis:100%">所属タグ「' + esc(m.tag) + '」は、タスクや国力の記録と結びついているので変えられません。</span></div>'
-    : '<div class="frow"><span class="fl">依存先</span><div>' + (deps.length ? '<div class="deps">' + deps.map(([k, v]) => '<span class="dep' + (v < 0 ? " neg" : "") + '">' + esc(k) + " " + v + "</span>").join("") + "</div>" : '<span class="panel-e">ありません</span>') + "</div></div>" +
-      '<div class="frow"><span class="fl">依存されている</span><div>' + (rev.length ? '<div class="deps">' + rev.map(([n, v]) => '<span class="dep rev">' + esc(n) + " " + v + "</span>").join("") + "</div>" : '<span class="panel-e">ありません</span>') + "</div></div>" +
-      '<div class="frow"><span class="fl">所属タグ</span><p>' + esc(m.tag) + "</p></div>";
+    : '<p class="panel-e" style="margin:0">記録から見つけた依存は、毎朝の計算が一度動くと出ます(手で書く必要はありません)。</p><div class="frow"><span class="fl">所属タグ</span><p>' + esc(m.tag) + "</p></div>";
   const tideBody = '<div class="tide-sum"><b class="' + (m.tide.total > 0 ? "up" : m.tide.total < 0 ? "down" : "") + '">' + (m.tide.total > 0 ? "+" : "") + m.tide.total + '</b><span>いまの時勢の合計(重要度に効く)</span></div>' +
     (m.tide.recent.length ? '<div class="tide-list">' + m.tide.recent.map(t => '<div class="tide-row"><span class="td">' + esc(String(t.date).slice(5).replace("-", "/")) + '</span><span class="tt">' + esc(t.title) + '</span><span class="tv ' + (t.delta > 0 ? "up" : "down") + '">' + (t.delta > 0 ? "+" : "") + esc(t.delta) + "</span></div>").join("") + "</div>"
       : emptyHtml("最近の出来事はありません。")) + '<div class="panel-e" style="margin-top:.4rem;font-size:.76rem">時勢はClaudeに頼んで記録します。</div>';
   const about = panelHtml("目的", state.editPurpose ? "" : '<button type="button" class="linkbtn" data-pp-edit>' + (ptext ? "直す" : "+ 書く") + "</button>", purposeBody, "purpose-box") +
-    panelHtml("依存度", mins.edit === m.tag ? "" : '<button type="button" class="linkbtn" data-min-edit="' + esc(m.tag) + '">' + (auto ? "名前を直す" : "名前・依存先を直す") + "</button>", depBody) +
+    panelHtml("依存度", mins.edit === m.tag ? "" : '<button type="button" class="linkbtn" data-min-edit="' + esc(m.tag) + '">' + "名前を直す" + "</button>", depBody) +
     panelHtml("時勢", "", tideBody);
   const delMin = '<div class="danger-zone"><button type="button" class="btn ghost sm" data-min-del="' + esc(m.tag) + '">この省を消す</button>' +
     '<span>省の一覧・国力の計算から外れます。結びついたタスクの記録は残ります。</span></div>';
@@ -1809,6 +1801,7 @@ async function saveMins(mutate){
   for (let i = 0; i < 3; i++) {
     const doc = mins.doc || { version: 1, ministries: [] };
     if (mutate(doc) === false) return false;
+    (doc.ministries || []).forEach(m => { delete m.deps; });      // 依存は記録から計算するので、手で書いた依存先は持たない
     try { mins.sha = await writeJson(MINS, doc, mins.sha); mins.doc = doc; mergeMins(); return true; }
     catch (e) { if ((e.status === 409 || e.status === 422) && i < 2) { await loadMins(); continue; } renderNotice(e.message); return false; }
   }
@@ -2384,7 +2377,7 @@ async function sha1Hex(sx){ const b = await crypto.subtle.digest("SHA-1", new Te
 function renderMinForm(){
   const box = document.getElementById("min-form"); if (!box) return;
   box.innerHTML = mins.form ? '<div class="cform" style="margin-bottom:.6rem"><input id="mf-name" placeholder="名前(例:経済省)"><input id="mf-tag" placeholder="所属タグ(例:経済)">' +
-    '<input id="mf-deps" placeholder="依存先(例:受験:2, 家族:1)" style="flex:1"><button type="button" class="btn sm" id="mf-add">足す</button><button type="button" class="btn ghost sm" id="mf-cancel">やめる</button>' +
+    '<button type="button" class="btn sm" id="mf-add">足す</button><button type="button" class="btn ghost sm" id="mf-cancel">やめる</button>' +
     '<span style="font-size:.76rem;color:var(--sub);flex-basis:100%">所属タグはタスクや国力の記録と結びつく短い名前で、あとから変えられません。国力には翌朝の計算から入ります。</span><span class="status" id="mf-msg"></span></div>' : "";
 }
 function bindViews(){
@@ -2425,11 +2418,11 @@ function bindMins(){
   document.getElementById("min-form").addEventListener("click", async e => {
     if (e.target.id === "mf-cancel") { mins.form = false; renderMinForm(); return; }
     if (e.target.id !== "mf-add") return;
-    const name = document.getElementById("mf-name").value.trim(), tag = document.getElementById("mf-tag").value.trim(), deps = document.getElementById("mf-deps").value.trim();
+    const name = document.getElementById("mf-name").value.trim(), tag = document.getElementById("mf-tag").value.trim();
     const msg = t => { document.getElementById("mf-msg").textContent = t; document.getElementById("mf-msg").classList.add("err"); };
     if (!name || !tag) return msg("名前と所属タグを入れてください。");
     if (((state.gov && state.gov.ministries) || []).some(m => m.tag === tag)) return msg("その所属タグの省はもうあります。");
-    const ok = await saveMins(doc => { doc.ministries = (doc.ministries || []).concat([{ tag, name, deps, deadline: "", progress: 0, created: taskDay() }]); });
+    const ok = await saveMins(doc => { doc.ministries = (doc.ministries || []).concat([{ tag, name, deadline: "", progress: 0, created: taskDay() }]); });
     if (ok) { mins.form = false; renderMinForm(); render(); }
   });
   document.getElementById("detail").addEventListener("click", async e => {
@@ -2449,7 +2442,7 @@ function bindMins(){
       const tag = b.dataset.minSave, name = document.getElementById("me-name").value.trim() || tag, deps = document.getElementById("me-deps").value.trim();
       const ok = await saveMins(doc => { let m = (doc.ministries || []).find(x => x.tag === tag);
         if (!m) { const g = state.gov.ministries.find(x => x.tag === tag) || {}; m = { tag, progress: g.progress || 0, deadline: g.deadline || "" }; doc.ministries = (doc.ministries || []).concat([m]); }
-        m.name = name; m.deps = deps; });
+        m.name = name; });
       if (ok) { mins.edit = false; renderDetail(); }
     }
   });
