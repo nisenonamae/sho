@@ -75,6 +75,8 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.tparts{display:inline-flex;gap:2px}.tpart-b{border:1px solid var(--rule);background:#fff;border-radius:3px;padding:0 .35rem;font:inherit;font-size:.7rem;cursor:pointer;color:var(--sub);min-width:1.4rem}
+.tpart-b[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
 .tbadge{font-size:.68rem;background:var(--sub);color:#fff;border-radius:9px;padding:0 .4rem;margin-left:.35rem;font-weight:400}.tbadge.emg-b{background:#B3283C}
 .mtg-steps{display:flex;gap:.3rem;flex-wrap:wrap;margin:.2rem 0 .7rem}.mtg-steps span{font-size:.8rem;border:1px solid var(--rule);border-radius:12px;padding:.1rem .7rem;color:var(--sub);background:#fff}
 .mtg-steps span.on{background:var(--ink);color:#fff;border-color:var(--ink)}.mtg-steps span.done{color:#3D8A5A;border-color:#3D8A5A}
@@ -408,7 +410,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r44";
+const APP_VERSION = "2026-10-07 r45";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -586,9 +588,13 @@ function computeTasks(){
 }
 // 省アプリでは、やめたタスク(アーカイブ)は出さない(記録は残っている)
 const HIDDEN_ST = new Set(["アーカイブ"]);
-function tasksFor(tag, label){
-  return state.tasks.filter(t => !HIDDEN_ST.has(t.status) && (t.def.ministries || []).includes(tag) &&
-    (t.def.waves || []).some(w => (w.label || w).replace(/\s+/g, "").toUpperCase() === label.toUpperCase()));
+function tasksFor(tag, label, pid){
+  const L = String(label || "").toUpperCase();
+  return state.tasks.filter(t => !HIDDEN_ST.has(t.status) && (t.def.waves || []).some(w => {
+    const m = /#page=([\w-]+)/.exec((w && w.url) || "");
+    if (m) return pid ? m[1] === pid : false;                     // リンク付きの結びつきは、そのページにだけ
+    return (t.def.ministries || []).includes(tag) && String((w && w.label) || w || "").replace(/\s+/g, "").toUpperCase() === L;
+  }));
 }
 
 /* ───── 描画 ───── */
@@ -865,7 +871,7 @@ function treeHtml(m, kind){
   const kids = top => items.filter(x => x.label.startsWith(top.label + "-") && x.label.split("-").length === 2);
   const loose = items.filter(x => x.label.includes("-") && !tops.some(t => x.label.startsWith(t.label + "-")));
   const node = x => {
-    const ts = tasksFor(m.tag, x.label);
+    const ts = tasksFor(m.tag, x.label, x.id);
     return '<div class="node"><div class="nh"><span><span class="nl">' + esc(x.label) + "</span> " +
       (x.subject ? '<span class="ns">' + esc(x.subject) + "</span>" : "") + '</span><a href="' + esc(x.url) + '" target="_blank" rel="noopener">Notionで開く</a></div>' +
       (ts.length ? '<div class="tasks">' + ts.map(t => {
@@ -2238,7 +2244,7 @@ function roadHtml(tag, kind){
   const tops = pages().filter(p => p.parent === "m:" + tag && p.kind === kind).sort(byLabel);
   const now = nowOf(tops);
   const card = p => {
-    const st = stOf(p), ts = childrenOf(p.id).filter(isUnit).flatMap(c => tasksFor(tag, c.label)).concat(tasksFor(tag, p.label)), firm = ts.filter(t => (RANK_ST[t.status] ?? 0) >= 3).length;
+    const st = stOf(p), ts = childrenOf(p.id).filter(isUnit).flatMap(c => tasksFor(tag, c.label, c.id)).concat(tasksFor(tag, p.label, p.id)), firm = ts.filter(t => (RANK_ST[t.status] ?? 0) >= 3).length;
     const subs = childrenOf(p.id).filter(c => c.kind === kind && isUnit(c)).sort(byLabel);
     const icon = st === "クリア" ? "✓" : st === "中止" ? "×" : p === now ? "●" : "○";
     return '<div class="rcard r-' + (p === now ? "now" : st) + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-ico">' + icon + '</span>' +
@@ -2489,7 +2495,7 @@ function renderPage(box, p){
       // まとまり:中身(◯-1、◯-2…)を並べる
       const units = childrenOf(p.id).filter(isUnit).sort(byLabel);
       h += panelHtml("中身", '<button type="button" class="linkbtn" data-page-new="' + p.kind + '" data-page-parent="' + p.id + '">+ ' + esc(p.label) + "-" + (units.length + 1) + "を足す</button>",
-        units.length ? units.map(u => { const ts = tasksFor(tag, u.label), w = ts.filter(t => t.waiting).length;
+        units.length ? units.map(u => { const ts = tasksFor(tag, u.label, u.id), w = ts.filter(t => t.waiting).length;
           return '<a href="#" class="unit" data-goto-page="' + u.id + '"><span class="u-lab">' + esc(u.label) + '</span><span class="u-tt">' + esc(u.title || (u.theme || "").split("\n")[0] || "") + "</span>" +
             '<span class="pst st-' + esc(stOf(u)) + '">' + esc(stOf(u)) + '</span><span class="u-meta">' + gaugeHtml(u) + (ts.length ? "<span>タスク " + ts.length + (w ? "(待機中 " + w + ")" : "") + "</span>" : "") + "</span></a>"; }).join("")
           : emptyHtml("まだありません。"));
@@ -2498,14 +2504,14 @@ function renderPage(box, p){
       const st = stOf(p);
       // 区分:主題・タスク内容・クリア条件・タスクが違うものを、STAGE1-1 の中で分ける
       const parts = partsOf(p), multi = parts.length > 1;
-      const ts = tasksFor(tag, p.label);
+      const ts = tasksFor(tag, p.label, p.id);
       const condRows = (cs, pid) => (cs.length ? cs.map(c => '<div class="cond' + (condMet(c) ? " met" : "") + '">' + (c.type === "manual" ? '<input type="checkbox" data-cond-check="' + c.id + '"' + (c.done ? " checked" : "") + ">" : (condMet(c) ? "✓" : "○")) +
           '<span>' + esc(condText(c)) + ' <small>' + esc(condNow(c)) + '</small></span><button type="button" class="del" data-cond-del="' + c.id + '">外す</button></div>').join("") : (pg.condForm === pid ? "" : empty("まだありません。何ができたらクリアか、を決めます。"))) +
         (pg.condForm === pid ? condFormHtml(p) : "");
       const taskRow = t => '<div class="tk' + (t.waiting ? " waiting" : t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
           "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span>" +
           '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button>' +
-          (multi ? '<select class="tpart" data-task-part="' + esc(t.def.id) + '" aria-label="区分" title="入れる区分"><option value="">なし</option>' + parts.map((pp, i) => '<option value="' + pp.id + '" title="' + esc(pp.name || "") + '"' + ((pp.taskIds || []).includes(t.def.id) ? " selected" : "") + ">区分" + (i + 1) + "</option>").join("") + "</select>" : "") + "</div>";
+          (multi ? '<span class="tparts" title="入れる区分(いくつでも)">' + parts.map((pp, i) => '<button type="button" class="tpart-b" data-tpart="' + esc(t.def.id) + ":" + pp.id + '" title="' + esc(pp.name || "") + '" aria-pressed="' + ((pp.taskIds || []).includes(t.def.id)) + '">' + (i + 1) + "</button>").join("") + "</span>" : "") + "</div>";
       const gateNote = st === "進行中" ? "" : '<div class="gate-note">' + (st === "作成中" ? "作成中のあいだ、この" + p.kind + "のタスクは行軍表に出ません。「進行中」にすると、その日から行軍表に出ます。" : "「" + st + "」なので、この" + p.kind + "のタスクは行軍表から外れています。") + "</div>";
       if (!multi) {
         const pp = parts[0], cs = pp.clear || [], met = cs.filter(condMet).length;
@@ -2564,7 +2570,7 @@ function condFormHtml(p){
   const live = state.tasks.filter(t => !["アーカイブ", "達成済み"].includes(t.status));
   // この区分(またはこのSTAGE・WAVE)のタスクを先に
   const pp = (p.parts || []).find(z => z.id === pg.condForm);
-  const near = live.filter(t => pp && (pp.taskIds || []).length ? (pp.taskIds || []).includes(t.def.id) : (tag && tasksFor(tag, p.label || "").some(x => x.def.id === t.def.id)));
+  const near = live.filter(t => pp && (pp.taskIds || []).length ? (pp.taskIds || []).includes(t.def.id) : (tag && tasksFor(tag, p.label || "", p.id).some(x => x.def.id === t.def.id)));
   const nearIds = new Set(near.map(t => t.def.id)), rest = live.filter(t => !nearIds.has(t.def.id)).sort((x, y) => x.def.name.localeCompare(y.def.name, "ja"));
   const box = t => '<label class="cfopt"><input type="checkbox" data-cf-task value="' + esc(t.def.name) + '"> ' + esc(t.def.name) + ' <small>' + esc(t.status) + "</small></label>";
   const metric = pg.condMetric || "status";
@@ -2589,6 +2595,7 @@ function taskFormHtml(p){
     '<div class="f"><label>いつ?</label><select id="tf-slot"><option>朝</option><option>昼</option><option>夜</option><option>一日中</option></select></div>' +
     '<div class="f"><label>どこで?</label><input id="tf-place" placeholder="机"></div>' +
     '<div class="f"><label>どのくらいの間隔?</label><input id="tf-interval" placeholder="空欄なら毎日(例:月水金)"></div></div>' +
+    '<div class="f"><label>属する省(このページの省のほかにも選べます)</label><div class="chips">' + ((state.gov && state.gov.ministries) || []).map(m => '<label class="chip"><input type="checkbox" data-tf-min value="' + esc(m.tag) + '"' + (m.tag === rootTag(p) ? " checked disabled" : "") + "> " + esc(m.name) + "</label>").join("") + "</div></div>" +
     '<div class="row-btns"><button type="button" class="btn" data-task-add>行軍表に入れる</button><button type="button" class="btn ghost" data-task-cancel>やめる</button></div></div>';
 }
 async function sha1Hex(sx){ const b = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(sx)); return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, "0")).join(""); }
@@ -2860,6 +2867,10 @@ function bindPages(){
     }
     if ((b = q("[data-cond-del]"))) { const id = b.dataset.condDel; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (x.parts && x.parts.length) x.parts.forEach(pp => pp.clear = (pp.clear || []).filter(c => c.id !== id)); else x.clear = (x.clear || []).filter(c => c.id !== id); }); rerender(); return; }
     // タスクを作る
+    if ((b = q("[data-tpart]"))) { const [tid, pid] = b.dataset.tpart.split(":");
+      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const pp = ensureParts(x).find(z => z.id === pid); if (!pp) return false;
+        pp.taskIds = (pp.taskIds || []).includes(tid) ? pp.taskIds.filter(z => z !== tid) : (pp.taskIds || []).concat([tid]); });
+      renderDetail(); return; }
     if ((b = q("[data-task-new]"))) { pg.taskForm = b.dataset.taskNew || true; rerender(); return; }
     if (q("[data-task-cancel]")) { pg.taskForm = false; rerender(); return; }
     if (q("[data-task-add]")) {
@@ -2867,7 +2878,8 @@ function bindPages(){
       const name = v("tf-name"); if (!name) { msg("タスクの名前を入れてください。", true); return; }
       if (state.tasks.some(t => t.def.name === name)) { msg("同じ名前のタスクがもうあります。", true); return; }
       const tag = rootTag(p), day = taskDay(), id = "t" + (await sha1Hex(name + "|" + day)).slice(0, 10);
-      const def = { id, name, aliases: [], ministries: [tag], waves: [{ label: p.label, url: pageUrl(p.id) }], slot: v("tf-slot") || "一日中", stance: "攻", kind: "習慣型",
+      const mins = [tag].concat(Array.from(document.querySelectorAll("[data-tf-min]:checked")).map(x => x.value).filter(x => x !== tag));
+      const def = { id, name, aliases: [], ministries: mins, waves: [{ label: p.label, url: pageUrl(p.id) }], slot: v("tf-slot") || "一日中", stance: "攻", kind: "習慣型",
         interval: v("tf-interval"), weight: null, quota: null, requirement: v("tf-step") ? "最初の一歩:" + v("tf-step") : "", created: day, initial: { status: "新規" },
         generations: [{ gen: 1, from: day, target: 10 }], events: [] };
       for (let i = 0; i < 3; i++) {
@@ -2884,7 +2896,7 @@ function bindPages(){
       }
       const partFor = typeof pg.taskForm === "string" ? pg.taskForm : null;
       if (partFor) await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const pp = ensureParts(x).find(z => z.id === partFor); if (pp) pp.taskIds = (pp.taskIds || []).concat([id]); });
-      logPlan([tag], "タスクを作った", id, name);
+      logPlan(mins, "タスクを作った", id, name);
       computeTasks(); pg.taskForm = false; rerender(); msg("「" + name + "」を行軍表に入れました。"); return;
     }
     // 表
