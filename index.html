@@ -408,7 +408,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r43";
+const APP_VERSION = "2026-10-07 r44";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1657,11 +1657,15 @@ function renderStaff(box){
       '<div class="f" style="margin-top:.3rem"><label>目標を下げるときの新しい値(下げる場合だけ)</label><input id="em-val-' + esc(e.id) + '" type="number" step="any"></div>' +
       '<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem">' +
       ["立て直す", "目標を下げる", "このまま続ける"].map(k => '<button type="button" class="btn sm" data-em="' + esc(e.id) + '" data-em-k="' + k + '">' + k + "</button>").join("") + "</div></div>"; }).join("");
-  if (term) {
+  if (term && staff.edit && staff.edit.id === term.id) {
+    h += termForm(staff.edit, ms);
+  } else if (term) {
     const left = daysBetween(taskDay(), term.end), half = daysBetween(term.start, term.end) / 2, past = daysBetween(term.start, taskDay());
     h += '<div class="slogan"><div class="gen">' + esc(term.name) + "　" + esc(term.start) + "〜" + esc(term.end) + "　残り" + Math.max(0, left) + '日</div><div class="txt">' + esc(term.slogan.text) + "</div>" +
       (term.slogan.note ? "<p>" + esc(term.slogan.note) + "</p>" : "") + "</div>" +
       meetingRecordHtml(term) +
+      ((term.edits || []).length ? '<details class="fold"><summary>直した記録 ' + term.edits.length + "件</summary>" + term.edits.map(x => '<div class="decree"><div class="dd">' + esc(x.date) + "</div>" + esc(x.what) + (x.why ? "<br><small>理由:" + esc(x.why) + "</small>" : "") + "</div>").join("") + "</details>" : "") +
+      '<div class="row-btns" style="margin:.2rem 0 .6rem"><button type="button" class="btn ghost sm" data-term-edit>作戦期を直す</button></div>' +
       '<div class="chips">' + (term.focus || []).map(t => '<span class="chip focus">重点 ' + esc(nameOf(t)) + "</span>").join("") +
       (term.restrain || []).map(t => '<span class="chip restrain">抑制 ' + esc(nameOf(t)) + "</span>").join("") + "</div>" +
       '<div class="sec"><h3>目標</h3>' + (term.goals || []).map(g => { const L = goalLine(term, g), st = taskStatusByName(g.firstStep.name);
@@ -1771,24 +1775,27 @@ function meetingRecordHtml(t){
 }
 
 function termForm(d, ms){
-  const g = (d.goals || []).map((x, i) => '<div class="gform"><b>目標' + (i + 1) + "</b>" +
+  const edit = !!d.editing;
+  const g = (d.goals || []).map((x, i) => '<div class="gform"><b>目標' + (i + 1) + (edit && x.issued ? '<small style="font-weight:400;color:var(--sub)">(発令済み)</small>' : edit ? '<small style="font-weight:400;color:#3D8A5A">(足す目標)</small>' : "") + "</b>" +
     '<div class="f"><label>目標</label><input data-g="text" data-i="' + i + '" value="' + esc(x.text) + '" placeholder="英検準1級に合格できる力をつける"></div>' +
     '<div class="f"><label>測れる基準</label><input data-g="criterion" data-i="' + i + '" value="' + esc(x.criterion) + '" placeholder="過去問で7割"></div>' +
     '<div class="grid2"><div class="f"><label>目標の値</label><input data-g="target" data-i="' + i + '" type="number" step="any" value="' + esc(x.target) + '"></div>' +
     '<div class="f"><label>単位</label><input data-g="unit" data-i="' + i + '" value="' + esc(x.unit) + '" placeholder="%・回・ページ"></div>' +
     '<div class="f"><label>期日</label><input data-g="due" data-i="' + i + '" type="date" value="' + esc(x.due) + '"></div>' +
     "</div>" + '<div class="f"><label>担当の省(複数選べます)</label><div class="chips">' + ms.map(m => '<label class="chip"><input type="checkbox" data-g-tag="' + i + '" value="' + esc(m.tag) + '"' + ((x.tags || (x.tag ? [x.tag] : [])).includes(m.tag) ? " checked" : "") + "> " + esc(m.name) + "</label>").join("") + "</div></div>" +
-    '<div class="grid2"><div class="f"><label>最初の一歩(5分でできること)</label><input data-g="step" data-i="' + i + '" value="' + esc(x.step) + '" placeholder="過去問を1題だけ解く"></div>' +
-    '<div class="f"><label>最初の一歩をやる時間帯(行軍表のどこに置くか)</label><select data-g="slot" data-i="' + i + '">' + ["朝", "昼", "夜"].map(s => "<option" + (s === x.slot ? " selected" : "") + ">" + s + "</option>").join("") + "</select></div></div>" +
-    '<button type="button" class="btn ghost sm" data-g-del="' + i + '">この目標を外す</button></div>').join("");
-  return '<div class="sec"><h3>作戦期を立てる</h3>' +
-    '<div class="grid2"><div class="f"><label>名前</label><input id="tf-name" value="' + esc(d.name) + '"></div><div class="f"><label>始め</label><input id="tf-start" type="date" value="' + esc(d.start) + '"></div>' +
+    (edit && x.issued ? '<p class="panel-e" style="font-size:.78rem">最初の一歩「' + esc(x.step) + "」(" + esc(x.slot) + ")はもう行軍表のタスクです。直すときは行軍表で。</p>" : '<div class="grid2"><div class="f"><label>最初の一歩(5分でできること)</label><input data-g="step" data-i="' + i + '" value="' + esc(x.step) + '" placeholder="過去問を1題だけ解く"></div>' +
+    '<div class="f"><label>最初の一歩をやる時間帯(行軍表のどこに置くか)</label><select data-g="slot" data-i="' + i + '">' + ["朝", "昼", "夜"].map(s => "<option" + (s === x.slot ? " selected" : "") + ">" + s + "</option>").join("") + "</select></div></div>") +
+    (edit && x.issued && x.hasValues ? '<p class="panel-e" style="font-size:.74rem">記録を付けた目標なので外せません。</p>' : '<button type="button" class="btn ghost sm" data-g-del="' + i + '">この目標を外す</button>') + "</div>").join("");
+  return '<div class="sec"><h3>' + (edit ? "作戦期を直す" : "作戦期を立てる") + "</h3>" +
+    '<div class="grid2"><div class="f"><label>名前</label><input id="tf-name" value="' + esc(d.name) + '"></div><div class="f"><label>始め</label><input id="tf-start" type="date" value="' + esc(d.start) + '"' + (edit ? " disabled" : "") + "></div>" +
     '<div class="f"><label>終わり</label><input id="tf-end" type="date" value="' + esc(d.end) + '"></div></div>' +
     '<div class="f" style="margin-top:.4rem"><label>スローガン</label><input id="tf-slogan" value="' + esc(d.slogan.text) + '"></div>' +
     '<div class="f" style="margin-top:.4rem"><label>スローガンの概要</label><textarea id="tf-note" style="min-height:3rem">' + esc(d.slogan.note) + "</textarea></div>" +
-    focusPicker(ms, d.focus, d.restrain) + g +
+    (edit ? '<p class="panel-e" style="font-size:.8rem">重点と抑制は、作戦期の画面の「重点を変える(期に1回まで)」で変えます。</p>' : focusPicker(ms, d.focus, d.restrain)) + g +
     ((d.goals || []).length < MAX_GOALS ? '<button type="button" class="btn ghost sm" data-g-add>目標を足す(3つまで)</button>' : "") +
-    '<div style="margin-top:.8rem;display:flex;gap:.5rem"><button type="button" class="btn" data-term-issue>発令する</button><button type="button" class="btn ghost" data-term-cancel>やめる</button></div></div>';
+    (edit ? '<div class="f" style="margin-top:.6rem"><label>直す理由</label><input id="tf-why" placeholder="例:目標を足し忘れた"></div>' +
+        '<div style="margin-top:.8rem;display:flex;gap:.5rem"><button type="button" class="btn" data-term-edit-save>直したことを保存</button><button type="button" class="btn ghost" data-term-edit-cancel>やめる</button></div></div>'
+      : '<div style="margin-top:.8rem;display:flex;gap:.5rem"><button type="button" class="btn" data-term-issue>発令する</button><button type="button" class="btn ghost" data-term-cancel>やめる</button></div></div>');
 }
 function readTermForm(d){
   const v = id => (document.getElementById(id) || {}).value;
@@ -1873,8 +1880,43 @@ function bindStaff(){
       if (t && mt.issues.some(i => i.text === t)) return sfMsg("その論点はもう入っています。");
       mt.issues.push({ id: uid(), text: t, thought: "" }); saveDraft(); if (t) sfMsg("論点に入れました(" + mt.issues.length + "つ)。"); return renderDetail(); }
     if (staff.draft && (b = q("[data-issue-del]"))) { readMeeting(staff.draft); staff.draft.meeting.issues.splice(+b.dataset.issueDel, 1); saveDraft(); return renderDetail(); }
+    if (term && q("[data-term-edit]")) {
+      staff.edit = { editing: true, id: term.id, name: term.name, start: term.start, end: term.end, slogan: Object.assign({}, term.slogan), focus: term.focus, restrain: term.restrain,
+        goals: (term.goals || []).map(g => ({ id: g.id, issued: true, hasValues: (g.values || []).length > 0, text: g.text, criterion: g.criterion, target: g.target, unit: g.unit, due: g.due, tag: g.tag, tags: g.tags || (g.tag ? [g.tag] : []),
+          step: (g.firstStep || {}).name || "", slot: (g.firstStep || {}).slot || "朝" })) };
+      return renderDetail();
+    }
+    if (staff.edit && q("[data-term-edit-cancel]")) { staff.edit = null; return renderDetail(); }
+    if (staff.edit && q("[data-g-add]")) { readTermForm(staff.edit); staff.edit.start = term.start; if (staff.edit.goals.length < MAX_GOALS) staff.edit.goals.push({ id: uid(), text: "", criterion: "", target: "", unit: "", due: "", tag: "", tags: [], step: "", slot: "朝" }); return renderDetail(); }
+    if (staff.edit && (b = q("[data-g-del]"))) { readTermForm(staff.edit); staff.edit.start = term.start; const gx = staff.edit.goals[+b.dataset.gDel]; if (gx && gx.hasValues) return; staff.edit.goals.splice(+b.dataset.gDel, 1); return renderDetail(); }
+    if (staff.edit && q("[data-term-edit-save]")) {
+      const ed = staff.edit, why = (document.getElementById("tf-why") || {}).value || "";
+      readTermForm(ed); ed.start = term.start; ed.focus = term.focus; ed.restrain = term.restrain;
+      const p = issueProblems(ed); if (p.length) return sfMsg("保存できません。足りないもの:" + p.join("、"), true);
+      const added = ed.goals.filter(g => !g.issued), removed = term.goals.filter(g => !ed.goals.some(x => x.id === g.id));
+      // 足した目標の最初の一歩を、行軍表のタスクに
+      if (added.length) {
+        const day = taskDay();
+        for (let i = 0; i < 3; i++) {
+          const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] }; ov.newTasks = ov.newTasks || [];
+          const have = new Set(ov.newTasks.map(t => t.name).concat(state.tasks.filter(t => !["アーカイブ", "達成済み"].includes(t.status)).map(t => t.def.name)));
+          for (const g of added) if (!have.has(g.step)) ov.newTasks.push({ id: await sha1Id(g.step, day), name: g.step, aliases: [], ministries: g.tags, waves: [], slot: g.slot, stance: "攻", kind: "習慣型",
+            interval: "", weight: null, quota: null, requirement: "参謀本部の目標:" + g.text, created: day, initial: { status: "新規" }, generations: [{ gen: 1, from: day, target: 10 }], events: [], staff: true });
+          try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); break; } catch (err) { if (err.status !== 409 && err.status !== 422) return sfMsg(err.message, true); }
+        }
+      }
+      const what = [ed.name !== term.name ? "名前" : "", ed.end !== term.end ? "終わりの日(" + term.end + "→" + ed.end + ")" : "", ed.slogan.text !== term.slogan.text || ed.slogan.note !== term.slogan.note ? "スローガン" : "",
+        added.length ? "目標を足した:" + added.map(g => g.text).join("・") : "", removed.length ? "目標を外した:" + removed.map(g => g.text).join("・") : "",
+        ed.goals.filter(g => g.issued).some(g => { const o = term.goals.find(x => x.id === g.id); return o && (o.text !== g.text || o.criterion !== g.criterion || +o.target !== +g.target || o.unit !== g.unit || o.due !== g.due || (o.tags || [o.tag]).join() !== (g.tags || []).join()); }) ? "目標の中身" : ""].filter(Boolean);
+      await saveStaff(doc => { const t = doc.terms.find(x => x.id === term.id);
+        t.name = ed.name; t.end = ed.end; t.slogan = { title: ed.name, text: ed.slogan.text, note: ed.slogan.note };
+        t.goals = ed.goals.map(g => { const o = t.goals.find(x => x.id === g.id) || {};
+          return Object.assign({}, o, { id: g.id, text: g.text, criterion: g.criterion, target: +g.target, unit: g.unit, due: g.due, tag: (g.tags || [])[0] || g.tag, tags: g.tags, firstStep: o.firstStep || { name: g.step, slot: g.slot }, values: o.values || [] }); });
+        t.edits = (t.edits || []).concat([{ date: taskDay(), what: what.join("、") || "変更なし", why: why.trim() }]); });
+      staff.edit = null; sfMsg("作戦期を直しました。" + (added.length ? "足した目標の最初の一歩は行軍表のタスクになりました。" : "")); return renderDetail();
+    }
     if (staff.draft && q("[data-g-add]")) { readMeeting(staff.draft); if (staff.draft.goals.length < MAX_GOALS) staff.draft.goals.push({ id: uid(), text: "", criterion: "", target: "", unit: "", due: "", tag: "", step: "", slot: "朝" }); return renderDetail(); }
-    if (staff.draft && (b = q("[data-g-del]"))) { readTermForm(staff.draft); staff.draft.goals.splice(+b.dataset.gDel, 1); return renderDetail(); }
+    if (staff.draft && !staff.edit && (b = q("[data-g-del]"))) { readTermForm(staff.draft); staff.draft.goals.splice(+b.dataset.gDel, 1); return renderDetail(); }
     if (staff.draft && q("[data-term-issue]")) {
       readMeeting(staff.draft);
       const p = issueProblems(staff.draft);
