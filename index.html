@@ -75,6 +75,21 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.rsub{font-size:.76rem;color:var(--sub);letter-spacing:.06em;margin:.1rem 0 .3rem}
+.pk-RAID{background:#4B3F8F}.raid-card{border-left-color:#7A6CC4}.raid-card.closed{opacity:.6;border-left-color:var(--rule)}
+.cands{border:1px dashed #7A6CC4;border-radius:5px;padding:.35rem .55rem;margin:.3rem 0 .45rem;background:#F6F4FC}
+.cands-h{font-size:.74rem;color:#4B3F8F;font-weight:700;margin-bottom:.15rem}
+.cand{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.2rem 0;font-size:.84rem}
+.cand small{display:block;color:var(--sub);font-size:.72rem}
+.road-ALERT h4{color:#B3283C}.pk-ALERT{background:#B3283C}
+.alert-card{border-left-color:#E2B57A}.alert-card.lv2{border-left-color:#E08A3C}.alert-card.lv3{border-left-color:#B3283C;background:#FFF5F5}.alert-card.closed{opacity:.6;border-left-color:var(--rule);background:#fff}
+.alv{font-size:.7rem;color:#fff;background:#E08A3C;border-radius:3px;padding:0 .35rem}.lv3 .alv{background:#B3283C}.lv1 .alv{background:#C9A227}
+.ast{font-weight:700;color:var(--ink)}.due-over{color:#B3283C;font-weight:700}
+.lvchips .lvb[aria-pressed="true"].lv1{background:#C9A227;border-color:#C9A227}.lvchips .lvb[aria-pressed="true"].lv2{background:#E08A3C;border-color:#E08A3C}.lvchips .lvb[aria-pressed="true"].lv3{background:#B3283C;border-color:#B3283C}
+.part{border:1px solid var(--pb);background:var(--pc);border-radius:6px;margin:.7rem 0;overflow:hidden}
+.part-h{display:flex;align-items:center;gap:.7rem;padding:.4rem .75rem;border-bottom:1px solid var(--pb);font-size:.88rem}
+.part-h .ph-r{margin-left:auto}.part-b{padding:.5rem .75rem;background:rgba(255,255,255,.55)}
+.part .tk select{font-size:.75rem;margin-left:.4rem}.tk select{font-size:.75rem;margin-left:.4rem}
 .gauge{display:inline-flex;align-items:center;gap:.35rem;font-size:.76rem;color:var(--sub)}
 .gauge .gbar{display:inline-block;width:4.5rem;height:7px;border-radius:4px;background:var(--rule);overflow:hidden}
 .gauge .gbar i{display:block;height:100%;background:#2F6E8A;border-radius:4px}
@@ -339,7 +354,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r26";
+const APP_VERSION = "2026-10-07 r29";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -508,7 +523,7 @@ function computeTasks(){
     const last = rep.days.length ? rep.days[rep.days.length - 1] : null;
     const row = last && last.date === today ? last : null;
     const s = row || rep.next;
-    return { def, waiting: E.waitingOn ? E.waitingOn(def, today) : null, status: s.status, gen: row ? row.gen : rep.gen, genTotal: s.genTotal, streak: s.streak, total: s.total,
+    return { def, lastDone: s.lastDone || null, waiting: E.waitingOn ? E.waitingOn(def, today) : null, status: s.status, gen: row ? row.gen : rep.gen, genTotal: s.genTotal, streak: s.streak, total: s.total,
              target: E.targetAt(def, today), check: row ? row.check : null };
   });
 }
@@ -1627,8 +1642,11 @@ function nextLabel(kind, parentId, tag){
   return kind + (base ? base + "-" + n : n);
 }
 // クリア条件の判定
-const isUnit = p => p && p.kind !== "page" && String(p.label || "").includes("-");     // STAGE1-1 など:主題・クリア条件を持つ
-const isGroup = p => p && p.kind !== "page" && !isUnit(p);                             // STAGE1 など:中身のまとまり
+const isSWk = p => p && (p.kind === "STAGE" || p.kind === "WAVE");
+const isUnit = p => isSWk(p) && String(p.label || "").includes("-");     // STAGE1-1 など:主題・クリア条件を持つ
+const isGroup = p => isSWk(p) && !isUnit(p);                             // STAGE1 など:中身のまとまり
+const isAlert = p => p && p.kind === "ALERT";                             // ALERT:防衛省の緊急対応
+const isRaid = p => p && p.kind === "RAID";                               // RAID:防衛省の主体的な侵攻
 // まとまりの状態は中身から決まる:どれかが進行中なら進行中、全部クリアならクリア、全部中止なら中止、それ以外は作成中
 function groupStatusFrom(doc, gid){
   const kids = doc.pages.filter(x => x.parent === gid && !x.deleted && !x.imported && isUnit(x)).map(stOf);
@@ -1727,9 +1745,14 @@ function nowOf(list){ return list.find(p => stOf(p) === "進行中") || list.fin
 function labelNum(l){ return String(l || "").replace(/^\D+/, "").split("-").map(Number); }
 function byLabel(a, b){ const x = labelNum(a.label), y = labelNum(b.label); for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; }
 // ゲージ:何個中何個(まとまりは中身のクリア、中身はクリア条件)
+const PART_COLORS = [["#EEF4FA", "#9DB8D8"], ["#FBF1E4", "#E2B57A"], ["#EDF6EE", "#93C49C"], ["#F7EDF5", "#D49ACB"], ["#FFF8DC", "#E0C463"], ["#EFEFF8", "#A6A6D6"]];
+// 区分:無ければ、今までの主題・タスク内容・クリア条件を1つ目の区分として扱う
+function partsOf(p){ return p.parts && p.parts.length ? p.parts : [{ id: "main", name: "", color: 0, theme: p.theme || "", content: p.content || "", clear: p.clear || [], taskIds: [] }]; }
+function ensureParts(x){ if (!x.parts || !x.parts.length) { x.parts = [{ id: "main", name: "", color: 0, theme: x.theme || "", content: x.content || "", clear: x.clear || [], taskIds: [] }]; x.theme = ""; x.content = ""; x.clear = []; } return x.parts; }
+const condLists = x => x.parts && x.parts.length ? x.parts.map(pp => pp.clear = pp.clear || []) : [x.clear = x.clear || []];
 function gaugeOf(p){
   if (isGroup(p)) { const us = childrenOf(p.id).filter(isUnit); return { done: us.filter(u => stOf(u) === "クリア").length, all: us.length, unit: "クリア" }; }
-  const cs = p.clear || []; return { done: cs.filter(condMet).length, all: cs.length, unit: "満たした" };
+  const cs = partsOf(p).flatMap(pp => pp.clear || []); return { done: cs.filter(condMet).length, all: cs.length, unit: "満たした" };
 }
 function gaugeHtml(p, big){
   const g = gaugeOf(p);
@@ -1737,7 +1760,7 @@ function gaugeHtml(p, big){
   return '<span class="gauge' + (big ? " big" : "") + (g.done === g.all ? " full" : "") + '"><span class="gbar"><i style="width:' + (g.done / g.all * 100).toFixed(1) + '%"></i></span><b>' + g.done + "/" + g.all + "</b>" + g.unit + "</span>";
 }
 function remainText(p){
-  const cs = p.clear || [];
+  const cs = partsOf(p).flatMap(pp => pp.clear || []);
   if (!cs.length) return "クリア条件なし";
   const left = cs.filter(c => !condMet(c)).length;
   return left ? "クリア条件 あと" + left + "つ" : "クリア条件を満たした";
@@ -1771,7 +1794,7 @@ function docCard(p){
 function pageTreeHtml(tag){
   const docs = pages().filter(p => p.parent === "m:" + tag && p.kind === "page");
   const box = boxPages().filter(p => (String(p.parent).startsWith("m:") ? p.parent.slice(2) : (function(){ let c = p, g = 0; while (c && g++ < 50) { if (String(c.parent).startsWith("m:")) return c.parent.slice(2); c = pg.doc.pages.find(y => y.id === c.parent); } return null; })()) === tag);
-  return '<div class="roads">' + roadHtml(tag, "STAGE") + roadHtml(tag, "WAVE") + "</div>" +
+  return '<div class="roads">' + roadHtml(tag, "STAGE") + roadHtml(tag, "WAVE") + (tag === defenseTag() ? alertRoadHtml(tag) : "") + "</div>" +
     panelHtml("資料", '<button type="button" class="linkbtn" data-page-new="page" data-page-parent="m:' + esc(tag) + '">+ 足す</button>',
       docs.length ? '<div class="dgrid">' + docs.sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(docCard).join("") + "</div>" : emptyHtml("まだありません。調べたこと・表・アプリなど、この省で使うものを置きます。"), "docs") +
     (box.length ? '<details class="fold movebox"><summary>引っ越し箱(Notionから写したもの)' + box.length + "件</summary>" +
@@ -1817,16 +1840,162 @@ function analysisHtml(p){
     '<div class="abox' + (a[k] ? "" : " empty") + '" data-an-edit="' + k + '"><span class="al">' + l + "</span>" + (a[k] ? '<p>' + esc(a[k]) + "</p>" : '<p class="aq">' + q + "</p>") + "</div>").join("") + "</div></div>";
 }
 
+
+/* ───────── ALERT(防衛省の緊急対応) ───────── */
+const AST = ["発生", "対応中", "収束", "振り返り済み"];
+const ALV = [[1, "注意"], [2, "警戒"], [3, "非常"]];
+const defenseTag = () => { const ms = (state.gov && state.gov.ministries) || []; const m = ms.find(x => x.tag === "防衛") || ms.find(x => /防衛/.test(x.name)); return m ? m.tag : null; };
+const alertActive = p => ["発生", "対応中"].includes(p.status);
+const daysLeft = p => p.due ? Math.round((Date.parse(p.due) - Date.parse(taskDay())) / 864e5) : null;
+function dueText(p){ const d = daysLeft(p); if (d == null) return "期限なし"; return d < 0 ? "期限切れ " + (-d) + "日" : d === 0 ? "今日が期限" : "残り " + d + "日"; }
+function alertRoadHtml(tag){
+  const all = pages().filter(x => x.parent === "m:" + tag && isAlert(x));
+  const act = all.filter(alertActive).sort((a, b) => (b.level || 1) - (a.level || 1) || String(a.due || "9").localeCompare(String(b.due || "9")));
+  const done = all.filter(x => !alertActive(x)).sort(byLabel).reverse();
+  const card = p => { const acts = p.actions || [], d = acts.filter(a => a.done).length, dl = daysLeft(p);
+    return '<div class="rcard alert-card lv' + (p.level || 1) + (alertActive(p) ? "" : " closed") + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || "") + "</span>" +
+      (alertActive(p) ? '<span class="alv">' + esc((ALV.find(x => x[0] === (p.level || 1)) || ALV[0])[1]) + "</span>" : "") + "</a>" +
+      '<div class="rc-meta"><span class="ast">' + esc(p.status) + "</span>" + (alertActive(p) ? '<span class="' + (dl != null && dl < 0 ? "due-over" : "") + '">' + esc(dueText(p)) + "</span>" : "") +
+      (acts.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (d / acts.length * 100) + '%"></i></span><b>' + d + "/" + acts.length + "</b>対応</span>" : "") + "</div></div>"; };
+  const raids = pages().filter(x => x.parent === "m:" + tag && isRaid(x)), rAct = raids.filter(raidActive).sort(byLabel), rDone = raids.filter(x => !raidActive(x)).sort(byLabel).reverse();
+  const cands = raidCandidates().filter(c => !c.busy).slice(0, 4);
+  return '<div class="road road-ALERT"><h4>緊急対応・侵攻</h4>' +
+    '<div class="rsub">ALERT(緊急)</div>' + (act.length ? act.map(card).join("") : '<div class="empty" style="font-size:.82rem;margin:.1rem 0 .4rem">対応中のものはありません。</div>') +
+    '<button type="button" class="rc-add" data-page-new="ALERT" data-page-parent="m:' + esc(tag) + '">+ ALERTを出す</button>' +
+    '<div class="rsub" style="margin-top:.8rem">RAID(侵攻)</div>' + (rAct.length ? rAct.map(raidCard).join("") : "") +
+    (cands.length ? '<div class="cands"><div class="cands-h">侵攻の候補</div>' + cands.map(c => '<div class="cand"><span><b>' + esc(c.m.name) + '</b><small>要再設定 ' + c.fall + "/" + c.all + (c.idle != null ? "・" + c.idle + "日済ませていない" : "・まだ一度も済ませていない") + '</small></span><button type="button" class="linkbtn" data-raid-new="' + esc(c.m.tag) + '">RAIDを仕掛ける</button></div>').join("") + "</div>" : "") +
+    '<button type="button" class="rc-add" data-raid-new="" >+ RAIDを仕掛ける</button>' +
+    ((done.length || rDone.length) ? '<details class="fold"><summary>終わったもの ' + (done.length + rDone.length) + "件</summary>" + done.map(card).join("") + rDone.map(raidCard).join("") + "</details>" : "") + "</div>";
+}
+function renderAlert(box, p, head){
+  const ms = (state.gov && state.gov.ministries) || [];
+  const panel = (t, r, b) => panelHtml(t, r, b), empty = emptyHtml;
+  let h = head;
+  if (pg.edit) {
+    h += '<div class="pg-edit"><div class="grid2"><div class="f"><label>名前</label><input id="al-title" value="' + esc(p.title || "") + '" placeholder="例:模試前に英語の課題が溜まった"></div>' +
+      '<div class="f"><label>気づいた日</label><input id="al-detected" type="date" value="' + esc(p.detected || "") + '"></div><div class="f"><label>期限(いつまでに収束させるか)</label><input id="al-due" type="date" value="' + esc(p.due || "") + '"></div></div>' +
+      '<div class="f"><label>何が起きたか</label><textarea id="al-happened" style="min-height:3rem">' + esc(p.happened || "") + "</textarea></div>" +
+      '<div class="f"><label>守るもの(止めてはいけない制度・習慣)</label><textarea id="al-protect" style="min-height:2.6rem">' + esc(p.protect || "") + '</textarea></div><div class="chips">' +
+        ms.filter(m => m.tag !== defenseTag()).map(m => '<label class="chip"><input type="checkbox" data-al-pm value="' + esc(m.tag) + '"' + ((p.protectTags || []).includes(m.tag) ? " checked" : "") + "> " + esc(m.name) + "</label>").join("") + "</div>" +
+      '<div class="f"><label>縮退運転(対応のあいだ、ほかの習慣をどこまで縮めて続けるか)</label><textarea id="al-degrade" style="min-height:2.6rem" placeholder="例:Ankiは10枚だけ、筋トレは休む">' + esc(p.degrade || "") + "</textarea></div>" +
+      '<div class="f"><label>メモ</label><textarea id="pg-body" style="min-height:4rem">' + esc(p.body || "") + "</textarea></div>" +
+      '<div class="row-btns"><button type="button" class="btn" data-page-save>保存</button><button type="button" class="btn ghost" data-page-cancel>やめる</button>' +
+      '<button type="button" class="btn ghost sm" data-page-del style="margin-left:auto;border-color:var(--shu);color:var(--shu)">このALERTを消す</button></div></div><span class="status" id="pg-msg"></span>';
+    box.innerHTML = h; return;
+  }
+  const lvName = (ALV.find(x => x[0] === (p.level || 1)) || ALV[0])[1], dl = daysLeft(p);
+  h += '<div class="pg-head"><span class="pk pk-ALERT">' + esc(p.label) + "</span>" + (p.title ? "<h2>" + esc(p.title) + "</h2>" : '<h2><button type="button" class="linkbtn big" data-page-edit>名前を付ける</button></h2>') +
+    '<button type="button" class="btn ghost sm" data-page-edit>直す</button></div>' +
+    '<div class="stchips">' + AST.map(x => '<button type="button" data-alert-status="' + x + '" aria-pressed="' + (p.status === x) + '">' + x + "</button>").join("") + "</div>" +
+    '<div class="stchips lvchips">' + ALV.map(([n, l]) => '<button type="button" data-alert-level="' + n + '" class="lvb lv' + n + '" aria-pressed="' + ((p.level || 1) === n) + '">' + n + " " + l + "</button>").join("") +
+      '<span class="st-gauge ' + (dl != null && dl < 0 && alertActive(p) ? "due-over" : "") + '">' + esc(dueText(p)) + "</span></div>";
+  h += panel("何が起きたか", '<button type="button" class="linkbtn" data-page-edit>直す</button>',
+    (p.happened ? "<p class=\"purpose-text\" style=\"font-size:.95rem\">" + esc(p.happened) + "</p>" : empty("未記入")) +
+    '<div class="frow"><span class="fl">気づいた日</span><p>' + esc(p.detected || "—") + '</p></div><div class="frow"><span class="fl">期限</span><p>' + esc(p.due || "—") + "</p></div>");
+  h += panel("守るもの", "", (p.protect ? "<p style=\"margin:0;white-space:pre-wrap\">" + esc(p.protect) + "</p>" : "") +
+    ((p.protectTags || []).length ? '<div class="deps" style="margin-top:.3rem">' + p.protectTags.map(t => '<span class="dep">' + esc((ms.find(m => m.tag === t) || { name: t }).name) + "</span>").join("") + "</div>" : "") + (!p.protect && !(p.protectTags || []).length ? empty("未記入") : ""));
+  h += panel("縮退運転", "", p.degrade ? "<p style=\"margin:0;white-space:pre-wrap\">" + esc(p.degrade) + "</p>" : empty("未記入。対応のあいだ、ほかの習慣をどこまで縮めるかを決めておきます。"));
+  const acts = p.actions || [], ad = acts.filter(a => a.done).length;
+  h += panel("対応", acts.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (ad / acts.length * 100) + '%"></i></span><b>' + ad + "/" + acts.length + "</b>済み</span>" : "",
+    acts.map(a => '<div class="cond' + (a.done ? " met" : "") + '"><input type="checkbox" data-act-check="' + a.id + '"' + (a.done ? " checked" : "") + "><span>" + esc(a.text) + (a.due ? " <small>" + esc(a.due.slice(5).replace("-", "/")) + "まで</small>" : "") + "</span>" +
+      (a.taskId ? '<small class="ph-n">行軍表に出ています</small>' : '<button type="button" class="linkbtn" data-act-task="' + a.id + '">行軍表に出す</button>') + '<button type="button" class="del" data-act-del="' + a.id + '">外す</button></div>').join("") +
+    '<div class="cform"><input id="act-text" placeholder="期限つきの単発の行動" style="flex:1"><input id="act-due" type="date"><button type="button" class="btn sm" data-act-add>足す</button></div>');
+  const cs = p.clear || [], met = cs.filter(condMet).length;
+  h += panel("収束の条件", (cs.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (met / cs.length * 100) + '%"></i></span><b>' + met + "/" + cs.length + "</b>満たした</span>" : "") + (pg.condForm ? "" : '<button type="button" class="linkbtn" data-cond-new="main">+ 足す</button>'),
+    (cs.length ? cs.map(c => '<div class="cond' + (condMet(c) ? " met" : "") + '">' + (c.type === "manual" ? '<input type="checkbox" data-cond-check="' + c.id + '"' + (c.done ? " checked" : "") + ">" : (condMet(c) ? "✓" : "○")) +
+      "<span>" + esc(condText(c)) + " <small>" + esc(condNow(c)) + '</small></span><button type="button" class="del" data-cond-del="' + c.id + '">外す</button></div>').join("") : (pg.condForm ? "" : empty("何ができたら片付いたと言えるか、を決めます。"))) +
+    (pg.condForm ? condFormHtml(p) : "") + (alertActive(p) ? '<div style="margin-top:.5rem"><button type="button" class="btn' + (cs.length && met === cs.length ? "" : " ghost") + '" data-alert-status="収束">収束にする</button></div>' : ""));
+  if (!alertActive(p)) {
+    const rv = p.review || {};
+    h += panel("振り返り", "", '<div class="f"><label>原因</label><textarea id="rv-cause" style="min-height:3rem">' + esc(rv.cause || "") + '</textarea></div><div class="f"><label>再発防止(次に起きないために)</label><textarea id="rv-prevent" style="min-height:3rem">' + esc(rv.prevent || "") + "</textarea></div>" +
+      '<div class="row-btns"><button type="button" class="btn sm" data-review-save>振り返りを保存</button><button type="button" class="btn ghost sm" data-review-send' + (rv.prevent ? "" : " disabled") + ">再発防止を議題候補に送る</button>" + (rv.sent ? '<span class="ph-n">議題候補に送りました</span>' : "") + "</div>");
+  }
+  if (String(p.body || "").trim()) h += panel("メモ", "", '<div class="pbody">' + renderPageBody(p) + "</div>");
+  h += '<details class="pg-more"><summary>その他</summary><div class="pg-foot"><span>このページのリンク</span><input readonly value="' + esc(pageUrl(p.id)) + '" onclick="this.select()"><button type="button" class="btn ghost sm" data-page-del style="border-color:var(--shu);color:var(--shu)">このALERTを消す</button></div></details>';
+  h += '<span class="status" id="pg-msg"></span>';
+  box.innerHTML = h;
+}
+
+
+/* ───────── RAID(防衛省の主体的な侵攻:止まった省を再始動できる状態に戻す) ───────── */
+const RST = ["計画中", "侵攻中", "制圧", "引き渡し済み"];
+const raidActive = p => ["計画中", "侵攻中"].includes(p.status);
+// 侵攻の候補:要再設定のタスクが多い省・長く何も済ませていない省
+function raidCandidates(){
+  const dt = defenseTag(), ms = ((state.gov && state.gov.ministries) || []).filter(m => m.tag !== dt);
+  const busy = new Set(pages().filter(p => isRaid(p) && raidActive(p)).map(p => p.target));
+  return ms.map(m => {
+    const ts = state.tasks.filter(t => (t.def.ministries || []).includes(m.tag) && !["アーカイブ", "達成済み", "休止中"].includes(t.status));
+    if (!ts.length) return null;
+    const fall = ts.filter(t => t.status === "要再設定").length;
+    const last = ts.map(t => t.lastDone).filter(Boolean).sort().pop() || null;
+    const idle = last ? Math.round((Date.parse(taskDay()) - Date.parse(last)) / 864e5) : null;
+    const score = fall / ts.length + (idle == null ? 1 : Math.min(1, idle / 14));
+    if (!(fall >= 3 || fall / ts.length >= 0.5 || (idle != null && idle >= 7))) return null;
+    return { m, fall, all: ts.length, idle, score, busy: busy.has(m.tag) };
+  }).filter(Boolean).sort((a, b) => b.score - a.score);
+}
+function raidCard(p){
+  const ms = (state.gov && state.gov.ministries) || [], acts = p.actions || [], d = acts.filter(a => a.done).length;
+  return '<div class="rcard raid-card' + (raidActive(p) ? "" : " closed") + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || ((ms.find(m => m.tag === p.target) || {}).name || "") + "の再始動") + "</span></a>" +
+    '<div class="rc-meta"><span class="ast">' + esc(p.status) + "</span>" + (p.target ? "<span>対象 " + esc((ms.find(m => m.tag === p.target) || { name: p.target }).name) + "</span>" : "") +
+    (acts.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (d / acts.length * 100) + '%"></i></span><b>' + d + "/" + acts.length + "</b>作戦</span>" : "") + "</div></div>";
+}
+function renderRaid(box, p, head){
+  const ms = (state.gov && state.gov.ministries) || [], tm = ms.find(m => m.tag === p.target);
+  let h = head;
+  if (pg.edit) {
+    h += '<div class="pg-edit"><div class="grid2"><div class="f"><label>名前</label><input id="rd-title" value="' + esc(p.title || "") + '" placeholder="例:英語省の再始動"></div>' +
+      '<div class="f"><label>対象の省</label><select id="rd-target"><option value="">選ぶ</option>' + ms.filter(m => m.tag !== defenseTag()).map(m => '<option value="' + esc(m.tag) + '"' + (m.tag === p.target ? " selected" : "") + ">" + esc(m.name) + "</option>").join("") + "</select></div>" +
+      '<div class="f"><label>期限(任意)</label><input id="rd-due" type="date" value="' + esc(p.due || "") + '"></div></div>' +
+      '<div class="f"><label>今の状態</label><textarea id="rd-now" style="min-height:3rem" placeholder="例:Ankiが800枚溜まり、2週間何もしていない">' + esc(p.now || "") + "</textarea></div>" +
+      '<div class="f"><label>目標の状態(再始動できる状態)</label><textarea id="rd-goal" style="min-height:3rem" placeholder="例:1日50枚で回り、STAGE2-1を再開できる">' + esc(p.goal || "") + "</textarea></div>" +
+      '<div class="f"><label>メモ</label><textarea id="pg-body" style="min-height:4rem">' + esc(p.body || "") + "</textarea></div>" +
+      '<div class="row-btns"><button type="button" class="btn" data-page-save>保存</button><button type="button" class="btn ghost" data-page-cancel>やめる</button>' +
+      '<button type="button" class="btn ghost sm" data-page-del style="margin-left:auto;border-color:var(--shu);color:var(--shu)">このRAIDを消す</button></div></div><span class="status" id="pg-msg"></span>';
+    box.innerHTML = h; return;
+  }
+  h += '<div class="pg-head"><span class="pk pk-RAID">' + esc(p.label) + "</span>" + (p.title ? "<h2>" + esc(p.title) + "</h2>" : '<h2><button type="button" class="linkbtn big" data-page-edit>名前を付ける</button></h2>') +
+    '<button type="button" class="btn ghost sm" data-page-edit>直す</button></div>' +
+    '<div class="stchips">' + RST.map(x => '<button type="button" data-raid-status="' + x + '" aria-pressed="' + (p.status === x) + '">' + x + "</button>").join("") + (p.due ? '<span class="st-gauge">' + esc(dueText(p)) + "</span>" : "") + "</div>";
+  // 対象の省の今の様子
+  const ts = tm ? state.tasks.filter(t => (t.def.ministries || []).includes(tm.tag) && !["アーカイブ", "達成済み"].includes(t.status)) : [];
+  const fall = ts.filter(t => t.status === "要再設定").length;
+  h += panelHtml("対象の省", "", tm ? '<div class="frow"><span class="fl">省</span><p><b>' + esc(tm.name) + '</b></p></div><div class="frow"><span class="fl">いまの様子</span><p>タスク ' + ts.length + "(要再設定 " + fall + ")</p></div>" : emptyHtml("直すの画面で選びます。"));
+  h += panelHtml("今の状態 → 目標の状態", "", '<div class="frow"><span class="fl">今の状態</span>' + (p.now ? "<p>" + esc(p.now) + "</p>" : emptyHtml("未記入")) + '</div><div class="frow"><span class="fl">目標の状態</span>' + (p.goal ? "<p>" + esc(p.goal) + "</p>" : emptyHtml("未記入")) + "</div>");
+  const acts = p.actions || [], ad = acts.filter(a => a.done).length;
+  h += panelHtml("作戦", acts.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (ad / acts.length * 100) + '%"></i></span><b>' + ad + "/" + acts.length + "</b>済み</span>" : "",
+    acts.map(a => '<div class="cond' + (a.done ? " met" : "") + '"><input type="checkbox" data-act-check="' + a.id + '"' + (a.done ? " checked" : "") + "><span>" + esc(a.text) + (a.due ? " <small>" + esc(a.due.slice(5).replace("-", "/")) + "まで</small>" : "") + "</span>" +
+      (a.taskId ? '<small class="ph-n">行軍表に出ています</small>' : '<button type="button" class="linkbtn" data-act-task="' + a.id + '">行軍表に出す</button>') + '<button type="button" class="del" data-act-del="' + a.id + '">外す</button></div>').join("") +
+    '<div class="cform"><input id="act-text" placeholder="片付けるための行動(例:Ankiの溜まりを1日200枚ずつ)" style="flex:1"><input id="act-due" type="date"><button type="button" class="btn sm" data-act-add>足す</button></div>' +
+    (p.status === "侵攻中" ? '<div style="margin-top:.5rem"><button type="button" class="btn' + (acts.length && ad === acts.length ? "" : " ghost") + '" data-raid-status="制圧">制圧にする</button></div>' : ""));
+  // 引き渡し:対象の省のどのSTAGE・WAVEを再開させるか
+  const units = tm ? pages().filter(x => rootTag(x) === tm.tag && isUnit(x)).sort(byLabel) : [];
+  const ho = p.handover || {};
+  h += panelHtml("引き渡し", "", (tm ? (units.length ? '<p class="panel-e" style="margin-top:0">制圧したら、' + esc(tm.name) + "のどのSTAGE・WAVEを再開させるかを選びます。引き渡すと、選んだものが「進行中」に戻ります。</p>" +
+      '<div class="chips">' + units.map(u => '<label class="chip"><input type="checkbox" data-ho-unit value="' + u.id + '"' + ((ho.units || []).includes(u.id) ? " checked" : "") + (p.status === "引き渡し済み" ? " disabled" : "") + "> " + esc(u.label) + (u.title ? " " + esc(u.title) : "") + "(" + esc(stOf(u)) + ")</label>").join("") + "</div>"
+      : emptyHtml(tm.name + "には、まだSTAGE・WAVEの中身がありません。")) : emptyHtml("対象の省を選ぶと出ます。")) +
+    (p.status === "制圧" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-raid-handover>引き渡す</button></div>' : "") +
+    (p.status === "引き渡し済み" ? '<p class="ph-n">' + esc(ho.date || "") + " に引き渡しました。</p>" : ""));
+  if (String(p.body || "").trim()) h += panelHtml("メモ", "", '<div class="pbody">' + renderPageBody(p) + "</div>");
+  h += '<details class="pg-more"><summary>その他</summary><div class="pg-foot"><span>このページのリンク</span><input readonly value="' + esc(pageUrl(p.id)) + '" onclick="this.select()"><button type="button" class="btn ghost sm" data-page-del style="border-color:var(--shu);color:var(--shu)">このRAIDを消す</button></div></details>';
+  h += '<span class="status" id="pg-msg"></span>';
+  box.innerHTML = h;
+}
+
 function renderPage(box, p){
   if (p.body && EMPTY_TMPL.test(p.body)) p.body = "";
   const tag = rootTag(p), m = state.gov && (state.gov.ministries || []).find(x => x.tag === tag);
   const tr = trail(p), isSW = isUnit(p), isG = isGroup(p);
   let h = '<button type="button" class="back" data-page-back>‹ ' + esc(m ? m.name : "省") + "</button>" +
     '<div class="crumb">' + esc(m ? m.name : "") + tr.map(x => ' › <a href="#" data-goto-page="' + x.id + '">' + esc(x.label || x.title || "(無題)") + "</a>").join("") + "</div>";
+  if (isAlert(p)) { renderAlert(box, p, h); return; }
+  if (isRaid(p)) { renderRaid(box, p, h); return; }
   if (pg.edit) {
     h += '<div class="pg-edit"><div class="grid2">' + (isG ? "" : '<div class="f"><label>名前</label><input id="pg-title" value="' + esc(p.title) + '"></div>') +
       (isSW ? '<div class="f"><label>状態</label><select id="pg-status">' + PST.map(x => "<option" + (x === stOf(p) ? " selected" : "") + ">" + x + "</option>").join("") + "</select></div>" : "") + "</div>" +
-      (isSW ? '<div class="f"><label>主題</label><textarea id="pg-theme" style="min-height:3rem">' + esc(p.theme || "") + '</textarea></div><div class="f"><label>タスク内容</label><textarea id="pg-content" style="min-height:3rem">' + esc(p.content || "") + "</textarea></div>" : "") +
+      (isSW && partsOf(p).length > 1 ? '<p class="panel-e">主題・タスク内容は、区分ごとに直します。</p>' : "") +
+      (isSW && partsOf(p).length <= 1 ? '<div class="f"><label>主題</label><textarea id="pg-theme" style="min-height:3rem">' + esc(p.theme || "") + '</textarea></div><div class="f"><label>タスク内容</label><textarea id="pg-content" style="min-height:3rem">' + esc(p.content || "") + "</textarea></div>" : "") +
       (isSW ? '<div class="agrid" style="margin:.4rem 0">' + ANALYSIS.map(([k, l, q]) => '<div class="f"><label>' + l + '</label><textarea id="pg-a-' + k + '" placeholder="' + q + '" style="min-height:3rem">' + esc((p.analysis || {})[k] || "") + "</textarea></div>").join("") + "</div>" : "") +
       '<div class="f"><label>' + (isSW || isG ? "メモ(自由に。" : "本文(") + '# 見出し・- 箇条書き・- [ ] チェック・[[ページの名前]]・URL)</label><textarea id="pg-body" style="min-height:12rem">' + esc(p.body || "") + "</textarea></div>" +
       '<div class="row-btns"><button type="button" class="btn" data-page-save>保存</button><button type="button" class="btn ghost" data-page-cancel>やめる</button>' +
@@ -1852,24 +2021,46 @@ function renderPage(box, p){
     }
     if (isSW) {
       const st = stOf(p);
-      // 主題
-      h += panel("主題", '<button type="button" class="linkbtn" data-page-edit>' + (p.theme || p.content ? "直す" : "+ 書く") + "</button>",
-        '<div class="frow"><span class="fl">主題</span>' + (p.theme ? '<p>' + esc(p.theme) + "</p>" : empty("未記入")) + "</div>" +
-        '<div class="frow"><span class="fl">タスク内容</span>' + (p.content ? '<p>' + esc(p.content) + "</p>" : empty("未記入")) + "</div>");
-      // クリア条件
-      const cs = p.clear || [], met = cs.filter(condMet).length;
-      h += panel("クリア条件", (cs.length ? '<span class="ph-n">' + (met === cs.length ? "満たした" : "あと" + (cs.length - met) + "つ") + "</span>" : "") + (pg.condForm ? "" : '<button type="button" class="linkbtn" data-cond-new>+ 足す</button>'),
-        (cs.length ? cs.map(c => '<div class="cond' + (condMet(c) ? " met" : "") + '">' + (c.type === "manual" ? '<input type="checkbox" data-cond-check="' + c.id + '"' + (c.done ? " checked" : "") + ">" : (condMet(c) ? "✓" : "○")) +
-          '<span>' + esc(condText(c)) + ' <small>' + esc(condNow(c)) + '</small></span><button type="button" class="del" data-cond-del="' + c.id + '">外す</button></div>').join("") : (pg.condForm ? "" : empty("まだありません。何ができたらクリアか、を決めます。"))) +
-        (pg.condForm ? condFormHtml(p) : "") +
-        (cs.length && met === cs.length && st !== "クリア" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-page-clear>クリアにする</button></div>' : ""));
-      // タスク
+      // 区分:主題・タスク内容・クリア条件・タスクが違うものを、STAGE1-1 の中で分ける
+      const parts = partsOf(p), multi = parts.length > 1;
       const ts = tasksFor(tag, p.label);
+      const condRows = (cs, pid) => (cs.length ? cs.map(c => '<div class="cond' + (condMet(c) ? " met" : "") + '">' + (c.type === "manual" ? '<input type="checkbox" data-cond-check="' + c.id + '"' + (c.done ? " checked" : "") + ">" : (condMet(c) ? "✓" : "○")) +
+          '<span>' + esc(condText(c)) + ' <small>' + esc(condNow(c)) + '</small></span><button type="button" class="del" data-cond-del="' + c.id + '">外す</button></div>').join("") : (pg.condForm === pid ? "" : empty("まだありません。何ができたらクリアか、を決めます。"))) +
+        (pg.condForm === pid ? condFormHtml(p) : "");
+      const taskRow = t => '<div class="tk' + (t.waiting ? " waiting" : t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
+          "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span>" +
+          (multi ? '<select data-task-part="' + esc(t.def.id) + '" aria-label="区分"><option value="">区分に入れない</option>' + parts.map((pp, i) => '<option value="' + pp.id + '"' + ((pp.taskIds || []).includes(t.def.id) ? " selected" : "") + ">区分" + (i + 1) + (pp.name ? " " + esc(pp.name) : "") + "</option>").join("") + "</select>" : "") + "</div>";
       const gateNote = st === "進行中" ? "" : '<div class="gate-note">' + (st === "作成中" ? "作成中のあいだ、この" + p.kind + "のタスクは行軍表に出ません。「進行中」にすると、その日から行軍表に出ます。" : "「" + st + "」なので、この" + p.kind + "のタスクは行軍表から外れています。") + "</div>";
-      h += panel("タスク", (ts.length ? '<span class="ph-n">' + ts.length + "つ</span>" : "") + (pg.taskForm ? "" : '<button type="button" class="linkbtn" data-task-new>+ 作る</button>'),
-        gateNote + (ts.length ? '<div class="tasks">' + ts.map(t => '<div class="tk' + (t.waiting ? " waiting" : t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
-          "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span></div>").join("") + "</div>" : (pg.taskForm ? "" : empty("まだありません。"))) +
-        (pg.taskForm ? taskFormHtml(p) : ""));
+      if (!multi) {
+        const pp = parts[0], cs = pp.clear || [], met = cs.filter(condMet).length;
+        h += panel("主題", '<button type="button" class="linkbtn" data-part-add>+ 区分を足す</button><button type="button" class="linkbtn" data-page-edit>' + (pp.theme || pp.content ? "直す" : "+ 書く") + "</button>",
+          '<div class="frow"><span class="fl">主題</span>' + (pp.theme ? '<p>' + esc(pp.theme) + "</p>" : empty("未記入")) + "</div>" +
+          '<div class="frow"><span class="fl">タスク内容</span>' + (pp.content ? '<p>' + esc(pp.content) + "</p>" : empty("未記入")) + "</div>");
+        h += panel("クリア条件", (cs.length ? gaugeHtml(p) : "") + (pg.condForm ? "" : '<button type="button" class="linkbtn" data-cond-new="' + pp.id + '">+ 足す</button>'), condRows(cs, pp.id) +
+          (cs.length && met === cs.length && st !== "クリア" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-page-clear>クリアにする</button></div>' : ""));
+        h += panel("タスク", (ts.length ? '<span class="ph-n">' + ts.length + "つ</span>" : "") + (pg.taskForm ? "" : '<button type="button" class="linkbtn" data-task-new>+ 作る</button>'),
+          gateNote + (ts.length ? '<div class="tasks">' + ts.map(taskRow).join("") + "</div>" : (pg.taskForm ? "" : empty("まだありません。"))) + (pg.taskForm ? taskFormHtml(p) : ""));
+      } else {
+        h += gateNote;
+        parts.forEach((pp, i) => {
+          const cs = pp.clear || [], mine = ts.filter(t => (pp.taskIds || []).includes(t.def.id)), done = cs.filter(condMet).length;
+          const edit = pg.partEdit === pp.id;
+          h += '<section class="part" style="--pc:' + PART_COLORS[pp.color % PART_COLORS.length][0] + ";--pb:" + PART_COLORS[pp.color % PART_COLORS.length][1] + '">' +
+            '<div class="part-h"><b>区分' + (i + 1) + (pp.name ? " " + esc(pp.name) : "") + "</b>" + (cs.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (done / cs.length * 100) + '%"></i></span><b>' + done + "/" + cs.length + "</b>満たした</span>" : "") +
+            '<span class="ph-r"><button type="button" class="linkbtn" data-part-edit="' + pp.id + '">直す</button><button type="button" class="linkbtn" data-part-del="' + pp.id + '" style="color:var(--shu)">消す</button></span></div>' +
+            (edit ? '<div class="part-b"><div class="f"><label>区分の名前(任意)</label><input id="pe-name" value="' + esc(pp.name || "") + '"></div><div class="f"><label>主題</label><textarea id="pe-theme" style="min-height:3rem">' + esc(pp.theme || "") +
+                '</textarea></div><div class="f"><label>タスク内容</label><textarea id="pe-content" style="min-height:3rem">' + esc(pp.content || "") + '</textarea></div><div class="row-btns"><button type="button" class="btn sm" data-part-save="' + pp.id + '">保存</button><button type="button" class="btn ghost sm" data-part-cancel>やめる</button></div></div>'
+              : '<div class="part-b"><div class="frow"><span class="fl">主題</span>' + (pp.theme ? "<p>" + esc(pp.theme) + "</p>" : empty("未記入")) + '</div><div class="frow"><span class="fl">タスク内容</span>' + (pp.content ? "<p>" + esc(pp.content) + "</p>" : empty("未記入")) + "</div>" +
+                '<div class="frow"><span class="fl">クリア条件</span><div>' + condRows(cs, pp.id) + (pg.condForm === pp.id ? "" : '<button type="button" class="linkbtn" data-cond-new="' + pp.id + '">+ 条件を足す</button>') + "</div></div>" +
+                '<div class="frow"><span class="fl">タスク</span><div>' + (mine.length ? '<div class="tasks">' + mine.map(taskRow).join("") + "</div>" : empty("まだありません。")) +
+                (pg.taskForm === pp.id ? taskFormHtml(p) : '<button type="button" class="linkbtn" data-task-new="' + pp.id + '">+ この区分のタスクを作る</button>') + "</div></div></div>") + "</section>";
+        });
+        const loose = ts.filter(t => !parts.some(pp => (pp.taskIds || []).includes(t.def.id)));
+        h += '<div class="row-btns"><button type="button" class="btn ghost sm" data-part-add>+ 区分を足す</button></div>';
+        if (loose.length) h += panel("区分に入っていないタスク", "", '<div class="tasks">' + loose.map(taskRow).join("") + "</div>");
+        const all = parts.flatMap(pp => pp.clear || []);
+        if (all.length && all.every(condMet) && st !== "クリア") h += '<div style="margin:.5rem 0"><button type="button" class="btn" data-page-clear>クリアにする</button></div>';
+      }
       // タスク分析:4つの枠をいつも並べる
       const an = p.analysis || {};
       h += panel("タスク分析", "", '<div class="agrid">' + ANALYSIS.map(([k, l, q]) => '<div class="abox' + (an[k] ? "" : " empty") + '" data-an-edit="' + k + '"><span class="al">' + l + "</span>" +
@@ -2001,6 +2192,12 @@ function bindPages(){
     if ((b = q("[data-page-new]"))) {
       const kind = b.dataset.pageNew, parent = b.dataset.pageParent;
       const tag = parent.startsWith("m:") ? parent.slice(2) : rootTag(pageById(parent));
+      if (kind === "ALERT") {
+        const aid = "pg" + uid(), al = nextLabel("ALERT", parent, tag);
+        await savePages(doc => { doc.pages.push({ id: aid, parent, kind: "ALERT", label: al, title: "", happened: "", protect: "", protectTags: [], degrade: "", level: 2, detected: taskDay(), due: addDays(taskDay(), 3),
+          actions: [], clear: [], review: {}, status: "発生", statusLog: [{ date: taskDay(), status: "発生" }], body: "", tables: {}, created: taskDay(), updated: taskDay() }); });
+        pg.edit = true; openPage(aid); return;
+      }
       if (kind !== "page" && parent.startsWith("m:")) {
         const gid = "pg" + uid(), glabel = nextLabel(kind, parent, tag), uidv = "pg" + uid();
         await savePages(doc => {
@@ -2043,6 +2240,14 @@ function bindPages(){
       pg.box = null; openPage(id); pg.edit = true; renderDetail(); return;
     }
     if (pg.box && q("[data-box-del]")) { const id = pg.box; await savePages(doc => { doc.pages.find(x => x.id === id).deleted = taskDay(); }); pg.box = null; renderDetail(); return; }
+    if ((b = q("[data-raid-new]"))) {
+      const dtg = defenseTag(); if (!dtg) return;
+      const target = b.dataset.raidNew || "", c = raidCandidates().find(x => x.m.tag === target), rid = "pg" + uid(), rl = nextLabel("RAID", "m:" + dtg, dtg);
+      await savePages(doc => { doc.pages.push({ id: rid, parent: "m:" + dtg, kind: "RAID", label: rl, title: c ? c.m.name + "の再始動" : "", target,
+        now: c ? "要再設定 " + c.fall + "/" + c.all + (c.idle != null ? "、" + c.idle + "日済ませていない" : "") : "", goal: "", actions: [], handover: {}, due: "",
+        status: "計画中", statusLog: [{ date: taskDay(), status: "計画中" }], body: "", tables: {}, created: taskDay(), updated: taskDay() }); });
+      pg.edit = true; openPage(rid); return;
+    }
     const p = pg.open && pageById(pg.open);
     if (p && (b = q("[data-page-status]"))) { const v = b.dataset.pageStatus; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); setStatus(x, v); syncGroup(doc, x); }); computeTasks(); renderDetail(); return; }
     if (q("[data-page-back]")) { pg.open = null; pg.edit = false; history.replaceState && history.replaceState(null, "", location.pathname); rerender(); return; }
@@ -2052,8 +2257,11 @@ function bindPages(){
     if (q("[data-page-cancel]")) { pg.edit = false; rerender(); return; }
     if (q("[data-page-save]")) {
       const v = id => (document.getElementById(id) || {}).value;
-      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (document.getElementById("pg-title")) x.title = (v("pg-title") || "").trim(); x.body = v("pg-body") || "";
-        if (x.kind !== "page") { x.theme = v("pg-theme") || ""; x.content = v("pg-content") || ""; if (v("pg-status") && v("pg-status") !== stOf(x) && isUnit(x)) { setStatus(x, v("pg-status")); syncGroup(doc, x); }
+      const rdF = document.getElementById("rd-title") ? { title: v("rd-title").trim(), target: v("rd-target"), due: v("rd-due"), now: v("rd-now"), goal: v("rd-goal") } : null;
+      const alF = document.getElementById("al-title") ? { title: v("al-title").trim(), detected: v("al-detected"), due: v("al-due"), happened: v("al-happened"), protect: v("al-protect"), degrade: v("al-degrade"),
+        protectTags: Array.from(document.querySelectorAll("[data-al-pm]:checked")).map(z => z.value) } : null;
+      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (alF) Object.assign(x, alF); if (rdF) Object.assign(x, rdF); if (document.getElementById("pg-title")) x.title = (v("pg-title") || "").trim(); x.body = v("pg-body") || "";
+        if (x.kind !== "page") { if (document.getElementById("pg-theme")) { if (x.parts && x.parts.length) { x.parts[0].theme = v("pg-theme") || ""; x.parts[0].content = v("pg-content") || ""; } else { x.theme = v("pg-theme") || ""; x.content = v("pg-content") || ""; } } if (v("pg-status") && v("pg-status") !== stOf(x) && isUnit(x)) { setStatus(x, v("pg-status")); syncGroup(doc, x); }
           x.analysis = {}; ANALYSIS.forEach(([k]) => { const t = (v("pg-a-" + k) || "").trim(); if (t) x.analysis[k] = t; }); } x.updated = taskDay(); });
       pg.edit = false; rerender(); return;
     }
@@ -2075,18 +2283,58 @@ function bindPages(){
     }
     if (q("[data-page-clear]")) { await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); setStatus(x, "クリア"); syncGroup(doc, x); }); computeTasks(); rerender(); return; }
     // クリア条件
-    if (q("[data-cond-new]")) { pg.condForm = true; rerender(); return; }
+    if (p && isRaid(p)) {
+      if ((b = q("[data-raid-status]"))) { const v = b.dataset.raidStatus; await savePages(doc => setStatus(doc.pages.find(y => y.id === p.id), v)); computeTasks(); rerender(); return; }
+      if (q("[data-raid-handover]")) {
+        const ids = Array.from(document.querySelectorAll("[data-ho-unit]:checked")).map(x => x.value);
+        if (!confirm(ids.length ? "選んだ " + ids.length + " 件を進行中に戻して、引き渡しますか。" : "再開させるSTAGE・WAVEを選ばずに引き渡しますか。")) return;
+        await savePages(doc => { ids.forEach(id => { const u = doc.pages.find(y => y.id === id); if (u) { setStatus(u, "進行中"); syncGroup(doc, u); } });
+          const x = doc.pages.find(y => y.id === p.id); x.handover = { units: ids, date: taskDay() }; setStatus(x, "引き渡し済み"); });
+        computeTasks(); rerender(); msg("引き渡しました。選んだSTAGE・WAVEのタスクが行軍表に戻ります。"); return;
+      }
+    }
+    if (p && (isAlert(p) || isRaid(p))) {
+      if (isAlert(p) && (b = q("[data-alert-status]"))) { const v = b.dataset.alertStatus; await savePages(doc => setStatus(doc.pages.find(y => y.id === p.id), v)); computeTasks(); rerender(); return; }
+      if ((b = q("[data-alert-level]"))) { const n = +b.dataset.alertLevel; await savePages(doc => { doc.pages.find(y => y.id === p.id).level = n; }); rerender(); return; }
+      if (q("[data-act-add]")) { const t = (document.getElementById("act-text").value || "").trim(), du = document.getElementById("act-due").value; if (!t) return;
+        await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.actions = (x.actions || []).concat([{ id: uid(), text: t, due: du, done: false }]); }); rerender(); return; }
+      if ((b = q("[data-act-del]"))) { const id = b.dataset.actDel; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.actions = (x.actions || []).filter(a => a.id !== id); }); rerender(); return; }
+      if ((b = q("[data-act-task]"))) {
+        const a = (p.actions || []).find(z => z.id === b.dataset.actTask); if (!a) return;
+        const tag = rootTag(p), day = taskDay(), tid = "t" + (await sha1Hex(a.text + "|" + day)).slice(0, 10);
+        const def = { id: tid, name: a.text, aliases: [], ministries: [tag], waves: [{ label: p.label, url: pageUrl(p.id) }], slot: "一日中", stance: "守", kind: "習慣型", interval: "", weight: null, quota: null,
+          requirement: p.label + (isRaid(p) ? "の作戦" : "の対応") + (a.due ? "(" + a.due.slice(5).replace("-", "/") + "まで)" : ""), created: day, initial: { status: "新規" }, generations: [{ gen: 1, from: day, target: 1 }], events: [] };
+        for (let i = 0; i < 3; i++) { const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] }; ov.newTasks = (ov.newTasks || []).concat([def]);
+          try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); state.overlay = ov; break; } catch (err) { if (err.status !== 409 && err.status !== 422) { msg(err.message, true); return; } } }
+        await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const z = (x.actions || []).find(k => k.id === a.id); if (z) z.taskId = tid; });
+        computeTasks(); rerender(); msg("「" + a.text + "」を行軍表に出しました(" + (isRaid(p) ? "侵攻中のあいだ出て、制圧すると外れます" : "収束すると外れます") + ")。"); return;
+      }
+      if (q("[data-review-save]")) { const cause = document.getElementById("rv-cause").value, prevent = document.getElementById("rv-prevent").value;
+        await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.review = Object.assign({}, x.review || {}, { cause, prevent }); if (x.status === "収束") setStatus(x, "振り返り済み"); }); rerender(); return; }
+      if (q("[data-review-send]")) { const rv = p.review || {}; if (!rv.prevent) return; const pm = (p.protectTags || [])[0] || rootTag(p);
+        await saveGov("council", () => { gov.council.candidates = (gov.council.candidates || []).concat([{ id: uid(), title: rv.prevent.split("\n")[0].slice(0, 60), tag: pm, note: p.label + (p.title ? " " + p.title : "") + " の再発防止。原因:" + (rv.cause || ""), created: taskDay(), status: "候補", star: false }]); });
+        await savePages(doc => { doc.pages.find(y => y.id === p.id).review.sent = taskDay(); }); rerender(); return; }
+    }
+    if ((b = q("[data-cond-new]"))) { pg.condForm = b.dataset.condNew || "main"; rerender(); return; }
+    if (q("[data-part-add]")) { const nid = "pt" + uid(); await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const ps = ensureParts(x); ps.push({ id: nid, name: "", color: ps.length % PART_COLORS.length, theme: "", content: "", clear: [], taskIds: [] }); }); pg.partEdit = nid; rerender(); return; }
+    if ((b = q("[data-part-edit]"))) { pg.partEdit = b.dataset.partEdit; rerender(); return; }
+    if (q("[data-part-cancel]")) { pg.partEdit = null; rerender(); return; }
+    if ((b = q("[data-part-save]"))) { const pid = b.dataset.partSave, nm = document.getElementById("pe-name").value.trim(), th = document.getElementById("pe-theme").value, co = document.getElementById("pe-content").value;
+      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const pp = ensureParts(x).find(z => z.id === pid); if (pp) { pp.name = nm; pp.theme = th; pp.content = co; } }); pg.partEdit = null; rerender(); return; }
+    if ((b = q("[data-part-del]"))) { const pid = b.dataset.partDel; if (!confirm("この区分を消しますか。主題・クリア条件も消えます(タスクは残ります)。")) return;
+      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.parts = ensureParts(x).filter(z => z.id !== pid); }); rerender(); return; }
     if (q("[data-cond-cancel]")) { pg.condForm = false; rerender(); return; }
     if (q("[data-cond-add]")) {
       const type = document.getElementById("cf-type").value;
       const c = type === "manual" ? { id: uid(), type, text: (document.getElementById("cf-text").value || "").trim(), done: false }
         : { id: uid(), type, task: document.getElementById("cf-task").value, metric: document.getElementById("cf-metric").value, value: (document.getElementById("cf-value").value || "").trim() };
       if (type === "manual" ? !c.text : (!c.task || !c.value || (c.metric !== "status" && isNaN(+c.value)) || (c.metric === "status" && !(c.value in RANK_ST)))) { msg("条件の中身を入れてください(状況なら 新規・進行中・定着・熟達・殿堂入り、数なら数字)。", true); return; }
-      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.clear = (x.clear || []).concat([c]); }); pg.condForm = false; rerender(); return;
+      const pidc = pg.condForm;
+      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (x.parts && x.parts.length) { const pp = x.parts.find(z => z.id === pidc) || x.parts[0]; pp.clear = (pp.clear || []).concat([c]); } else x.clear = (x.clear || []).concat([c]); }); pg.condForm = false; rerender(); return;
     }
-    if ((b = q("[data-cond-del]"))) { const id = b.dataset.condDel; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.clear = x.clear.filter(c => c.id !== id); }); rerender(); return; }
+    if ((b = q("[data-cond-del]"))) { const id = b.dataset.condDel; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (x.parts && x.parts.length) x.parts.forEach(pp => pp.clear = (pp.clear || []).filter(c => c.id !== id)); else x.clear = (x.clear || []).filter(c => c.id !== id); }); rerender(); return; }
     // タスクを作る
-    if (q("[data-task-new]")) { pg.taskForm = true; rerender(); return; }
+    if ((b = q("[data-task-new]"))) { pg.taskForm = b.dataset.taskNew || true; rerender(); return; }
     if (q("[data-task-cancel]")) { pg.taskForm = false; rerender(); return; }
     if (q("[data-task-add]")) {
       const v = id => (document.getElementById(id).value || "").trim();
@@ -2108,6 +2356,8 @@ function bindPages(){
         st.tasks[name] = Object.assign({ min: Math.max(1, +v("tf-min") || 15), place: v("tf-place") || "どこでも", organs: ["目", "手"], mode: "", priority: 0, fixed: "", next: "" }, st.tasks[name] || {});
         try { await writeJson("roadmap/settings.json", st, r.sha); break; } catch (err) { if (err.status !== 409 && err.status !== 422) break; }
       }
+      const partFor = typeof pg.taskForm === "string" ? pg.taskForm : null;
+      if (partFor) await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const pp = ensureParts(x).find(z => z.id === partFor); if (pp) pp.taskIds = (pp.taskIds || []).concat([id]); });
       computeTasks(); pg.taskForm = false; rerender(); msg("「" + name + "」を行軍表に入れました。"); return;
     }
     // 表
@@ -2125,7 +2375,11 @@ function bindPages(){
   box.addEventListener("change", async e => {
     const p = pg.open && pageById(pg.open); if (!p) return;
     const c = e.target.closest("[data-cond-check]");
-    if (c) { const id = c.dataset.condCheck, on = c.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const k = x.clear.find(z => z.id === id); k.done = on; }); renderDetail(); return; }
+    if (c) { const id = c.dataset.condCheck, on = c.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); condLists(x).forEach(l => { const k = l.find(z => z.id === id); if (k) k.done = on; }); }); renderDetail(); return; }
+    const ac = e.target.closest("[data-act-check]");
+    if (ac) { const id = ac.dataset.actCheck, on = ac.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const a = (x.actions || []).find(z => z.id === id); if (a) a.done = on; }); renderDetail(); return; }
+    const tp = e.target.closest("[data-task-part]");
+    if (tp) { const tid = tp.dataset.taskPart, pid = tp.value; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); ensureParts(x).forEach(pp => { pp.taskIds = (pp.taskIds || []).filter(z => z !== tid); if (pp.id === pid) pp.taskIds.push(tid); }); }); renderDetail(); return; }
     const pc = e.target.closest("[data-pcl]");
     if (pc) { const i = +pc.dataset.pcl, on = pc.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const ls = x.body.split("\n"); ls[i] = ls[i].replace(/- \[( |x)\]/, on ? "- [x]" : "- [ ]"); x.body = ls.join("\n"); }); return; }
     const tc = e.target.closest("[data-tcell]");
