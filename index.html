@@ -389,7 +389,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r35";
+const APP_VERSION = "2026-10-07 r36";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -719,6 +719,13 @@ function depGraphHtml(){
   const sel = state.graphSel, auto = state.depsAuto, mode = "自動";
   const edges = [];
   (auto ? auto.pairs : []).forEach(p => { if (pos[p.from] && pos[p.to] && Math.abs(p.value) >= 0.03) edges.push({ from: p.from, to: p.to, v: p.value, sure: p.sure, days: p.days }); });
+  // 絞り込み:省ごとに強い上位3本(どちらかの端で3本以内)・はっきりだけ・すべて
+  const flt = state.depFilter || "上位3本ずつ", allN = edges.length;
+  if (flt === "はっきりだけ") { const keep = edges.filter(e => e.sure); edges.length = 0; keep.forEach(e => edges.push(e)); }
+  else if (flt === "上位3本ずつ") {
+    const rank = {}; ms.forEach(m => { rank[m.tag] = edges.filter(e => e.from === m.tag || e.to === m.tag).sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).slice(0, 3); });
+    const keep = edges.filter(e => rank[e.from].includes(e) || rank[e.to].includes(e)); edges.length = 0; keep.forEach(e => edges.push(e));
+  }
   const vmax = mode === "自動" ? 0.3 : Math.max(1, ...edges.map(e => Math.abs(e.v)));
   const edgeSvg = edges.map(e => {
     const a = pos[e.from], b = pos[e.to], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
@@ -741,7 +748,8 @@ function depGraphHtml(){
       side = "<b>" + esc(m.name) + '</b><div class="frow"><span class="fl">' + L1 + "</span><div>" + (out.length ? out.sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).map(e => chip(nm(e.to), e)).join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
         '<div class="frow"><span class="fl">' + L2 + "</span><div>" + (inn.length ? inn.sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).map(e => chip(nm(e.from), e)).join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
         '<div class="row-btns"><button type="button" class="btn ghost sm" data-open="' + esc(m.tag) + '">この省を開く</button><button type="button" class="linkbtn" data-gsel="">選ぶのをやめる</button></div>'; } }
-  return '<div class="graph-wrap"><svg viewBox="0 0 ' + W + " " + H + '" class="depgraph" role="img" aria-label="省の依存の図"><defs>' +
+  return (auto ? '<div class="depmode">' + ["上位3本ずつ", "はっきりだけ", "すべて"].map(k => '<button type="button" data-depfilter="' + k + '" aria-pressed="' + (k === flt) + '">' + k + "</button>").join("") + '</div><span class="panel-e" style="margin-left:.5rem;font-size:.76rem">' + edges.length + " / " + allN + "本</span>" : "") +
+    '<div class="graph-wrap"><svg viewBox="0 0 ' + W + " " + H + '" class="depgraph" role="img" aria-label="省の依存の図"><defs>' +
     '<marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7A7266"></path></marker>' +
     '<marker id="arrn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#B3283C"></path></marker></defs>' +
     edgeSvg + nodeSvg + '</svg><div class="graph-side panel"><div class="panel-b">' + side + "</div></div></div>";
@@ -2385,7 +2393,7 @@ function bindViews(){
   document.getElementById("list").addEventListener("click", e => {
     const g = e.target.closest("[data-gnode]"); if (g) { state.graphSel = state.graphSel === g.dataset.gnode ? null : g.dataset.gnode; renderList(); return; }
     const c = e.target.closest("[data-gsel]"); if (c) { state.graphSel = null; renderList(); return; }
-    const dm = e.target.closest("[data-depmode]"); if (dm) { state.depMode = dm.dataset.depmode; renderList(); }
+    const df = e.target.closest("[data-depfilter]"); if (df) { state.depFilter = df.dataset.depfilter; try { localStorage.setItem("sho-depfilter", state.depFilter); } catch (err) {} renderList(); }
   });
 }
 function bindMins(){
@@ -2821,7 +2829,7 @@ function bind(){
   bindMins();
   bindViews();
   bindTide();
-  try { state.listView = localStorage.getItem("sho-listview") || "一覧"; } catch (err) {}
+  try { state.listView = localStorage.getItem("sho-listview") || "一覧"; state.depFilter = localStorage.getItem("sho-depfilter") || "上位3本ずつ"; } catch (err) {}
   document.getElementById("sync").addEventListener("click", syncNow);
   document.getElementById("detail").addEventListener("click", async e => {
     if (e.target.closest("[data-back]")) { state.open = null; state.editPurpose = false; pg.open = null; pg.edit = false; render(); return; }
