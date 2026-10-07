@@ -410,7 +410,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r45";
+const APP_VERSION = "2026-10-07 r46";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2595,6 +2595,14 @@ function taskFormHtml(p){
     '<div class="f"><label>いつ?</label><select id="tf-slot"><option>朝</option><option>昼</option><option>夜</option><option>一日中</option></select></div>' +
     '<div class="f"><label>どこで?</label><input id="tf-place" placeholder="机"></div>' +
     '<div class="f"><label>どのくらいの間隔?</label><input id="tf-interval" placeholder="空欄なら毎日(例:月水金)"></div></div>' +
+    (() => {
+      // ほかのSTAGE・WAVEにも結びつける:全部の省のSTAGE・WAVEの中身を、省ごとにチェックで
+      const ms = (state.gov && state.gov.ministries) || [];
+      const groups = ms.map(m => ({ m, us: pages().filter(x => isUnit(x) && rootTag(x) === m.tag && x.id !== p.id).sort(byLabel) })).filter(g => g.us.length);
+      return groups.length ? '<details class="cf-more" style="margin:.3rem 0"><summary>ほかのSTAGE・WAVEにも結びつける</summary>' + groups.map(g => '<div class="cf-h" style="margin-top:.3rem">' + esc(g.m.name) + "</div>" +
+        '<div class="cf-list">' + g.us.map(u => '<label class="cfopt"><input type="checkbox" data-tf-wave value="' + esc(u.id) + '" data-tf-wave-tag="' + esc(g.m.tag) + '"> ' + esc(u.label + (u.title ? " " + u.title : "")) + " <small>" + esc(stOf(u)) + "</small></label>").join("") + "</div>").join("") +
+        '<p class="panel-e" style="font-size:.74rem">選んだSTAGE・WAVEの省は、自動で属する省にも入ります。結びついたどれか1つが進行中なら、行軍表に出ます。</p></details>' : "";
+    })() +
     '<div class="f"><label>属する省(このページの省のほかにも選べます)</label><div class="chips">' + ((state.gov && state.gov.ministries) || []).map(m => '<label class="chip"><input type="checkbox" data-tf-min value="' + esc(m.tag) + '"' + (m.tag === rootTag(p) ? " checked disabled" : "") + "> " + esc(m.name) + "</label>").join("") + "</div></div>" +
     '<div class="row-btns"><button type="button" class="btn" data-task-add>行軍表に入れる</button><button type="button" class="btn ghost" data-task-cancel>やめる</button></div></div>';
 }
@@ -2878,8 +2886,9 @@ function bindPages(){
       const name = v("tf-name"); if (!name) { msg("タスクの名前を入れてください。", true); return; }
       if (state.tasks.some(t => t.def.name === name)) { msg("同じ名前のタスクがもうあります。", true); return; }
       const tag = rootTag(p), day = taskDay(), id = "t" + (await sha1Hex(name + "|" + day)).slice(0, 10);
-      const mins = [tag].concat(Array.from(document.querySelectorAll("[data-tf-min]:checked")).map(x => x.value).filter(x => x !== tag));
-      const def = { id, name, aliases: [], ministries: mins, waves: [{ label: p.label, url: pageUrl(p.id) }], slot: v("tf-slot") || "一日中", stance: "攻", kind: "習慣型",
+      const extra = Array.from(document.querySelectorAll("[data-tf-wave]:checked")).map(x => pageById(x.value)).filter(Boolean);
+      const mins = [tag].concat(Array.from(document.querySelectorAll("[data-tf-min]:checked")).map(x => x.value), extra.map(u => rootTag(u))).filter((x, i, a) => x && a.indexOf(x) === i);
+      const def = { id, name, aliases: [], ministries: mins, waves: [{ label: p.label, url: pageUrl(p.id) }].concat(extra.map(u => ({ label: u.label, url: pageUrl(u.id) }))), slot: v("tf-slot") || "一日中", stance: "攻", kind: "習慣型",
         interval: v("tf-interval"), weight: null, quota: null, requirement: v("tf-step") ? "最初の一歩:" + v("tf-step") : "", created: day, initial: { status: "新規" },
         generations: [{ gen: 1, from: day, target: 10 }], events: [] };
       for (let i = 0; i < 3; i++) {
