@@ -96,7 +96,11 @@ textarea{min-height:7rem;line-height:1.6}
 .graph-wrap{display:grid;grid-template-columns:minmax(0,1fr) 15rem;gap:.8rem;align-items:start}
 @media (max-width:720px){.graph-wrap{grid-template-columns:1fr}}
 .depgraph{width:100%;height:auto;background:#fff;border:1px solid var(--rule);border-radius:6px}
-.edge{stroke:#9A9183;opacity:.85}.edge.neg{stroke:#B3283C;stroke-dasharray:5 4}.edge.dim,.gnode.dim{opacity:.15}
+.edge{stroke:#9A9183;opacity:.85}.edge.unsure{opacity:.3;stroke-dasharray:2 3}
+.dep.unsure{opacity:.55;border-style:dashed}
+.depmode{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin-bottom:.5rem}
+.depmode button{border:none;background:#fff;padding:.2rem .6rem;font:inherit;font-size:.8rem;cursor:pointer;color:var(--sub)}
+.depmode button+button{border-left:1px solid var(--rule)}.depmode button[aria-pressed="true"]{background:var(--ink);color:#fff}.edge.neg{stroke:#B3283C;stroke-dasharray:5 4}.edge.dim,.gnode.dim{opacity:.15}
 .gnode{cursor:pointer}.gnode circle{fill:var(--mc);fill-opacity:.18;stroke:var(--mc);stroke-width:2}.gnode.sel circle{fill-opacity:.4;stroke-width:3}
 .gnode text{font-size:12px;fill:var(--ink)}.gnode .gw{font-size:11px;font-weight:700}
 .graph-side{margin:0}
@@ -385,7 +389,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r32";
+const APP_VERSION = "2026-10-07 r34";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -528,6 +532,7 @@ async function loadAll(){
     if (!pgQ.pending.length) await loadPages().catch(() => {});
     await loadMins().catch(() => {});
     await loadTide().catch(() => {});
+    state.depsAuto = ((await readJson("roadmap/gov/deps_auto.json").catch(() => ({}))) || {}).data || null;
     setTimeout(fromHash, 0);      // 「#page=…」のリンクで開かれたら、そのページへ
     renderPlaces();
     computeTasks();
@@ -711,27 +716,35 @@ function depGraphHtml(){
   const W = 640, H = 520, cx = W / 2, cy = H / 2 + 6, R = Math.min(W, H) / 2 - 70;
   const ws = ms.map(m => weightOf(m.tag) || 0), wmax = Math.max(1, ...ws);
   const pos = {}; ms.forEach((m, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / ms.length; pos[m.tag] = { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a), r: 14 + 18 * ((weightOf(m.tag) || 0) / wmax) }; });
-  const sel = state.graphSel;
+  const sel = state.graphSel, auto = state.depsAuto, mode = auto && state.depMode !== "手" ? "自動" : "手";
   const edges = [];
-  ms.forEach(m => Object.entries(m.deps || {}).forEach(([k, v]) => { if (pos[k] && k !== m.tag) edges.push({ from: m.tag, to: k, v: +v }); }));
-  const vmax = Math.max(1, ...edges.map(e => Math.abs(e.v)));
+  if (mode === "自動") auto.pairs.forEach(p => { if (pos[p.from] && pos[p.to] && Math.abs(p.value) >= 0.03) edges.push({ from: p.from, to: p.to, v: p.value, sure: p.sure, days: p.days }); });
+  else ms.forEach(m => Object.entries(m.deps || {}).forEach(([k, v]) => { if (pos[k] && k !== m.tag) edges.push({ from: m.tag, to: k, v: +v, sure: true }); }));
+  const vmax = mode === "自動" ? 0.3 : Math.max(1, ...edges.map(e => Math.abs(e.v)));
   const edgeSvg = edges.map(e => {
     const a = pos[e.from], b = pos[e.to], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
     const x1 = a.x + ux * a.r, y1 = a.y + uy * a.r, x2 = b.x - ux * (b.r + 6), y2 = b.y - uy * (b.r + 6);
     const on = !sel || sel === e.from || sel === e.to;
-    return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" class="edge' + (e.v < 0 ? " neg" : "") + (on ? "" : " dim") + '" stroke-width="' + (1 + 4 * Math.abs(e.v) / vmax).toFixed(1) + '" marker-end="url(#arr' + (e.v < 0 ? "n" : "") + ')"><title>' + esc(e.from + " → " + e.to + " " + e.v) + "</title></line>";
+    return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" class="edge' + (e.v < 0 ? " neg" : "") + (e.sure ? "" : " unsure") + (on ? "" : " dim") + '" stroke-width="' + (1 + 4 * Math.min(1, Math.abs(e.v) / vmax)).toFixed(1) + '" marker-end="url(#arr' + (e.v < 0 ? "n" : "") + ')"><title>' + esc(e.from + " → " + e.to + " " + (e.v > 0 ? "+" : "") + Number(e.v).toFixed(2) + (e.sure ? "" : "(まだ偶然の範囲)")) + "</title></line>";
   }).join("");
   const nodeSvg = ms.map(m => { const p = pos[m.tag], on = !sel || sel === m.tag || edges.some(e => (e.from === sel && e.to === m.tag) || (e.to === sel && e.from === m.tag));
     return '<g class="gnode' + (sel === m.tag ? " sel" : "") + (on ? "" : " dim") + '" data-gnode="' + esc(m.tag) + '" style="--mc:' + colorOf(m.tag) + '"><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + p.r.toFixed(1) + '"></circle>' +
       '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + p.r + 14).toFixed(1) + '" text-anchor="middle">' + esc(m.name) + "</text>" +
       (weightOf(m.tag) != null ? '<text class="gw" x="' + p.x.toFixed(1) + '" y="' + (p.y + 4).toFixed(1) + '" text-anchor="middle">' + Number(weightOf(m.tag)).toFixed(1) + "</text>" : "") + "</g>"; }).join("");
-  let side = '<div class="empty">省を押すと、その省の依存がここに出ます。矢印は「依存している省 → 依存先」、太さが強さ、赤い点線はマイナスの依存、丸の大きさと数字は重要度です。</div>';
+  let side = mode === "自動"
+    ? '<div class="empty">記録から見つけた依存です(直近' + auto.window + '日・' + esc(auto.generated) + '計算)。矢印「A → B」は、Aの評価が良い日の翌日にBも良い(BがAに支えられている)こと。太さが強さ、赤い点線は逆の関係、薄い線はまだ偶然の範囲。丸の大きさと数字は重要度。省を押すと詳しく出ます。</div>'
+    : '<div class="empty">手で決めた依存(前の仕組み)です。矢印は「依存している省 → 依存先」、太さが強さ、赤い点線はマイナスの依存、丸の大きさと数字は重要度です。</div>';
   if (sel) { const m = ms.find(x => x.tag === sel);
     if (m) { const out = edges.filter(e => e.from === sel), inn = edges.filter(e => e.to === sel), nm = t => (ms.find(x => x.tag === t) || { name: t }).name;
-      side = "<b>" + esc(m.name) + '</b><div class="frow"><span class="fl">依存先</span><div>' + (out.length ? out.map(e => '<span class="dep' + (e.v < 0 ? " neg" : "") + '">' + esc(nm(e.to)) + " " + e.v + "</span>").join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
-        '<div class="frow"><span class="fl">依存されている</span><div>' + (inn.length ? inn.map(e => '<span class="dep rev">' + esc(nm(e.from)) + " " + e.v + "</span>").join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
+      const fv = v => (v > 0 ? "+" : "") + Number(v).toFixed(2);
+      const chip = (n, e) => '<span class="dep' + (e.v < 0 ? " neg" : "") + (e.sure ? "" : " unsure") + '" title="' + (e.sure ? "" : "まだ偶然の範囲") + '">' + esc(n) + " " + fv(e.v) + "</span>";
+      const L1 = mode === "自動" ? "支えている(→)" : "依存先", L2 = mode === "自動" ? "支えられている(←)" : "依存されている";
+      side = "<b>" + esc(m.name) + '</b><div class="frow"><span class="fl">' + L1 + "</span><div>" + (out.length ? out.sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).map(e => chip(nm(e.to), e)).join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
+        '<div class="frow"><span class="fl">' + L2 + "</span><div>" + (inn.length ? inn.sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).map(e => chip(nm(e.from), e)).join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
         '<div class="row-btns"><button type="button" class="btn ghost sm" data-open="' + esc(m.tag) + '">この省を開く</button><button type="button" class="linkbtn" data-gsel="">選ぶのをやめる</button></div>'; } }
-  return '<div class="graph-wrap"><svg viewBox="0 0 ' + W + " " + H + '" class="depgraph" role="img" aria-label="省の依存の図"><defs>' +
+  return (auto ? '<div class="depmode"><button type="button" data-depmode="自動" aria-pressed="' + (mode === "自動") + '">記録から(自動)</button><button type="button" data-depmode="手" aria-pressed="' + (mode === "手") + '">手で決めた(前)</button></div>'
+      : '<div class="empty" style="margin-bottom:.4rem">記録から見つけた依存は、毎朝の計算が一度動くと出ます。今は手で決めた依存(前の仕組み)を出しています。</div>') +
+    '<div class="graph-wrap"><svg viewBox="0 0 ' + W + " " + H + '" class="depgraph" role="img" aria-label="省の依存の図"><defs>' +
     '<marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7A7266"></path></marker>' +
     '<marker id="arrn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#B3283C"></path></marker></defs>' +
     edgeSvg + nodeSvg + '</svg><div class="graph-side panel"><div class="panel-b">' + side + "</div></div></div>";
@@ -902,7 +915,21 @@ function renderDetail(){
       (seed ? '<div class="seed">Notionの目的のページから読み込んだ文章です。保存すると、以後はこのアプリのものになります。</div>' : "") +
       ((m.goal || m.deadline) ? '<div class="frow"><span class="fl">到達点</span><p>' + esc(m.goal || "—") + '</p></div><div class="frow"><span class="fl">期限</span><p>' + esc(m.deadline || "—") +
         (m.progress != null && m.deadline ? "(進捗 " + Math.round(m.progress * 100) + "%)" : "") + "</p></div>" : "");
-  const depBody = mins.edit === m.tag
+  // 依存度:記録から計算した依存があれば、それを出す(手で書く必要はない)
+  const auto = state.depsAuto;
+  const autoDeps = auto ? (() => { const nm = t => ((state.gov.ministries || []).find(x => x.tag === t) || { name: t }).name, fv = v => (v > 0 ? "+" : "") + Number(v).toFixed(2);
+    const chip = (t, p) => '<span class="dep' + (p.value < 0 ? " neg" : "") + (p.sure ? "" : " unsure") + '">' + esc(nm(t)) + " " + fv(p.value) + "</span>";
+    const sup = auto.pairs.filter(p => p.to === m.tag && Math.abs(p.value) >= 0.03).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+    const giv = auto.pairs.filter(p => p.from === m.tag && Math.abs(p.value) >= 0.03).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+    return '<div class="frow"><span class="fl">支えられている</span><div>' + (sup.length ? sup.map(p => chip(p.from, p)).join("") : '<span class="panel-e">まだ見つかっていません</span>') + "</div></div>" +
+      '<div class="frow"><span class="fl">支えている</span><div>' + (giv.length ? giv.map(p => chip(p.to, p)).join("") : '<span class="panel-e">まだ見つかっていません</span>') + "</div></div>" +
+      '<div class="frow"><span class="fl">所属タグ</span><p>' + esc(m.tag) + "</p></div>" +
+      '<p class="panel-e" style="margin:.3rem 0 0;font-size:.76rem">記録から毎朝自動で計算しています(直近' + auto.window + "日)。薄い札はまだ偶然の範囲。手で書く必要はありません。</p>"; })() : null;
+  const depBody = mins.edit === m.tag && auto
+    ? '<div class="cform"><input id="me-name" value="' + esc(m.name) + '" placeholder="名前" style="flex:1"><input id="me-deps" type="hidden" value="' + esc(depsText(m.deps)) + '">' +
+      '<button type="button" class="btn sm" data-min-save="' + esc(m.tag) + '">保存</button><button type="button" class="btn ghost sm" data-min-cancel>やめる</button></div>'
+    : auto ? autoDeps
+    : mins.edit === m.tag
     ? '<div class="cform"><input id="me-name" value="' + esc(m.name) + '" placeholder="名前"><input id="me-deps" value="' + esc(depsText(m.deps)) + '" placeholder="依存先(例:受験:2, 家族:1)" style="flex:1">' +
       '<button type="button" class="btn sm" data-min-save="' + esc(m.tag) + '">保存</button><button type="button" class="btn ghost sm" data-min-cancel>やめる</button>' +
       '<span style="font-size:.76rem;color:var(--sub);flex-basis:100%">所属タグ「' + esc(m.tag) + '」は、タスクや国力の記録と結びついているので変えられません。</span></div>'
@@ -913,7 +940,7 @@ function renderDetail(){
     (m.tide.recent.length ? '<div class="tide-list">' + m.tide.recent.map(t => '<div class="tide-row"><span class="td">' + esc(String(t.date).slice(5).replace("-", "/")) + '</span><span class="tt">' + esc(t.title) + '</span><span class="tv ' + (t.delta > 0 ? "up" : "down") + '">' + (t.delta > 0 ? "+" : "") + esc(t.delta) + "</span></div>").join("") + "</div>"
       : emptyHtml("最近の出来事はありません。")) + '<div class="panel-e" style="margin-top:.4rem;font-size:.76rem">時勢はClaudeに頼んで記録します。</div>';
   const about = panelHtml("目的", state.editPurpose ? "" : '<button type="button" class="linkbtn" data-pp-edit>' + (ptext ? "直す" : "+ 書く") + "</button>", purposeBody, "purpose-box") +
-    panelHtml("依存度", mins.edit === m.tag ? "" : '<button type="button" class="linkbtn" data-min-edit="' + esc(m.tag) + '">名前・依存先を直す</button>', depBody) +
+    panelHtml("依存度", mins.edit === m.tag ? "" : '<button type="button" class="linkbtn" data-min-edit="' + esc(m.tag) + '">' + (auto ? "名前を直す" : "名前・依存先を直す") + "</button>", depBody) +
     panelHtml("時勢", "", tideBody);
   const delMin = '<div class="danger-zone"><button type="button" class="btn ghost sm" data-min-del="' + esc(m.tag) + '">この省を消す</button>' +
     '<span>省の一覧・国力の計算から外れます。結びついたタスクの記録は残ります。</span></div>';
@@ -2364,7 +2391,8 @@ function bindViews(){
   document.querySelector(".lvsw").addEventListener("click", e => { const b = e.target.closest("[data-lv]"); if (!b) return; state.listView = b.dataset.lv; try { localStorage.setItem("sho-listview", state.listView); } catch (err) {} renderList(); });
   document.getElementById("list").addEventListener("click", e => {
     const g = e.target.closest("[data-gnode]"); if (g) { state.graphSel = state.graphSel === g.dataset.gnode ? null : g.dataset.gnode; renderList(); return; }
-    const c = e.target.closest("[data-gsel]"); if (c) { state.graphSel = null; renderList(); }
+    const c = e.target.closest("[data-gsel]"); if (c) { state.graphSel = null; renderList(); return; }
+    const dm = e.target.closest("[data-depmode]"); if (dm) { state.depMode = dm.dataset.depmode; renderList(); }
   });
 }
 function bindMins(){
