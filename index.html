@@ -390,7 +390,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r38";
+const APP_VERSION = "2026-10-07 r39";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -565,8 +565,10 @@ function computeTasks(){
              target: E.targetAt(def, today), check: row ? row.check : null };
   });
 }
+// 省アプリでは、やめたタスク(アーカイブ)は出さない(記録は残っている)
+const HIDDEN_ST = new Set(["アーカイブ"]);
 function tasksFor(tag, label){
-  return state.tasks.filter(t => (t.def.ministries || []).includes(tag) &&
+  return state.tasks.filter(t => !HIDDEN_ST.has(t.status) && (t.def.ministries || []).includes(tag) &&
     (t.def.waves || []).some(w => (w.label || w).replace(/\s+/g, "").toUpperCase() === label.toUpperCase()));
 }
 
@@ -729,7 +731,7 @@ function deletedTasks(tag){
 function unlinkedTasks(tag){
   const ps = pages().filter(p => ["STAGE", "WAVE", "ALERT", "RAID"].includes(p.kind));
   const ids = new Set(ps.map(p => p.id)), keys = new Set(ps.map(p => rootTag(p) + "|" + String(p.label).toUpperCase()));
-  return state.tasks.filter(t => (t.def.ministries || []).includes(tag) && !["アーカイブ", "達成済み"].includes(t.status) && !(t.def.waves || []).some(w => {
+  return state.tasks.filter(t => (t.def.ministries || []).includes(tag) && !HIDDEN_ST.has(t.status) && t.status !== "達成済み" && !(t.def.waves || []).some(w => {
     const m = /#page=([\w-]+)/.exec((w && w.url) || ""); if (m && ids.has(m[1])) return true;
     const lab = String((w && w.label) || w || "").replace(/\s+/g, "").toUpperCase();
     return (t.def.ministries || []).some(mi => keys.has(mi + "|" + lab));
