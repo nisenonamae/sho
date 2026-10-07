@@ -75,6 +75,7 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.tbadge{font-size:.68rem;background:var(--sub);color:#fff;border-radius:9px;padding:0 .4rem;margin-left:.35rem;font-weight:400}.tbadge.emg-b{background:#B3283C}
 .mtg-steps{display:flex;gap:.3rem;flex-wrap:wrap;margin:.2rem 0 .7rem}.mtg-steps span{font-size:.8rem;border:1px solid var(--rule);border-radius:12px;padding:.1rem .7rem;color:var(--sub);background:#fff}
 .mtg-steps span.on{background:var(--ink);color:#fff;border-color:var(--ink)}.mtg-steps span.done{color:#3D8A5A;border-color:#3D8A5A}
 .mrow{display:flex;justify-content:space-between;gap:.6rem;align-items:baseline;padding:.3rem 0;border-bottom:1px dashed var(--rule);font-size:.86rem}.mrow small{display:block;color:var(--sub);font-size:.74rem}
@@ -407,7 +408,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r41";
+const APP_VERSION = "2026-10-07 r42";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1639,8 +1640,13 @@ function renderStaff(box){
   const term = currentTerm(), ms = (state.gov && state.gov.ministries) || [];
   const nameOf = tag => (ms.find(m => m.tag === tag) || { name: tag }).name;
   box.style.setProperty("--mc", colorOf(ALL.tag));
-  let h = '<button type="button" class="back" data-back>‹ 省の一覧</button><div class="mh"><h2>参謀本部</h2>' +
-    (term ? "<span>" + esc(term.name) + "</span>" : "") + "</div>";
+  // 作戦期と首脳をタブで分ける
+  const stab = state.stab || "作戦期", nEmg = openEmergencies().length, nOrd = openOrders(ALL.tag).length;
+  const head = '<button type="button" class="back" data-back>‹ 省の一覧</button><div class="mh"><h2>参謀本部</h2>' +
+    (term ? "<span>" + esc(term.name) + "</span>" : "") + "</div>" +
+    '<div class="mtabs" role="tablist">' + [["作戦期", nEmg ? '<span class="tbadge emg-b">緊急 ' + nEmg + "</span>" : ""], ["首脳", nOrd ? '<span class="tbadge">' + nOrd + "</span>" : ""]]
+      .map(([t, bd]) => '<button type="button" role="tab" data-stab="' + t + '" aria-selected="' + (t === stab) + '">' + t + bd + "</button>").join("") + "</div>";
+  let h = "";
   // 緊急会議(決めるまで消えない)
   const emg = openEmergencies();
   h += emg.map(e => { const t = staff.doc.terms.find(x => x.id === e.termId), g = t && (t.goals || []).find(x => x.id === e.goalId);
@@ -1684,8 +1690,10 @@ function renderStaff(box){
   const past = staff.doc.terms.filter(t => t.closedAt).reverse();
   h += foldHtml("これまでの作戦期", past.map(t => '<div class="decree"><div class="dd">' + esc(t.name) + "　" + esc(t.start) + "〜" + esc(t.end) + "</div>" + esc(t.slogan.text) +
     (t.goals || []).map(g => "<br>・" + esc(g.text) + ":" + esc(g.result || "—")).join("") + "</div>").join(""), past.length);
-  h += '<span class="status" id="sf-msg"></span><div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(ALL) + "</div>";
-  box.innerHTML = h;
+  h += '<span class="status" id="sf-msg"></span>';
+  box.innerHTML = head +
+    '<div class="mpane" data-pane="作戦期"' + (stab === "作戦期" ? "" : " hidden") + ">" + h + "</div>" +
+    '<div class="mpane" data-pane="首脳"' + (stab === "首脳" ? "" : " hidden") + '><div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(ALL) + "</div></div>";
 }
 function focusPicker(ms, focus, restrain){
   return '<div style="margin:.4rem 0"><div style="font-size:.78rem;color:var(--sub)">重点にする省</div><div class="chips">' + ms.map(m => '<label class="chip"><input type="checkbox" data-pick-focus value="' + esc(m.tag) + '"' + ((focus || []).includes(m.tag) ? " checked" : "") + "> " + esc(m.name) + "</label>").join("") + "</div>" +
@@ -1957,7 +1965,7 @@ async function saveMins(mutate){
 
 /* ───────── ページ(入れ子のページ・STAGE・WAVE・表・アプリの部品) ───────── */
 const PAGES = "roadmap/gov/pages.json";
-try { state.mtab = localStorage.getItem("sho-mtab") || "地図"; } catch (err) {}
+try { state.mtab = localStorage.getItem("sho-mtab") || "地図"; state.stab = localStorage.getItem("sho-stab") || "作戦期"; } catch (err) {}
 const pg = { doc: { version: 1, pages: [] }, sha: null, open: null, edit: false, taskForm: false, condForm: false, tableEdit: null };
 const PST = ["作成中", "進行中", "クリア", "中止"];
 const stOf = p => (!p.status || p.status === "未着手") ? "作成中" : p.status;      // 前の版の「未着手」は「作成中」として扱う
@@ -2627,6 +2635,10 @@ function renderPlaces(){
 function bindPages(){
   const box = document.getElementById("detail");
   box.addEventListener("click", e => {
+    const st = e.target.closest("[data-stab]");
+    if (st) { state.stab = st.dataset.stab; try { localStorage.setItem("sho-stab", st.dataset.stab); } catch (err) {}
+      box.querySelectorAll("[data-stab]").forEach(x => x.setAttribute("aria-selected", String(x === st)));
+      box.querySelectorAll(".mpane").forEach(p => { p.hidden = p.dataset.pane !== st.dataset.stab; }); return; }
     const t = e.target.closest("[data-mtab]"); if (!t) return;
     state.mtab = t.dataset.mtab; try { localStorage.setItem("sho-mtab", t.dataset.mtab); } catch (err) {}
     box.querySelectorAll("[data-mtab]").forEach(x => x.setAttribute("aria-selected", String(x === t)));
