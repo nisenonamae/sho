@@ -75,6 +75,7 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.linksel{margin-top:.4rem}.linksel select{max-width:100%;font-size:.84rem}.tunl{font-size:.72rem;color:var(--sub)}.tfold select{font-size:.76rem;max-width:11rem}
 .tparts{display:inline-flex;gap:2px}.tpart-b{border:1px solid var(--rule);background:#fff;border-radius:3px;padding:0 .35rem;font:inherit;font-size:.7rem;cursor:pointer;color:var(--sub);min-width:1.4rem}
 .tpart-b[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
 .tbadge{font-size:.68rem;background:var(--sub);color:#fff;border-radius:9px;padding:0 .4rem;margin-left:.35rem;font-weight:400}.tbadge.emg-b{background:#B3283C}
@@ -410,7 +411,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-08 r52";
+const APP_VERSION = "2026-10-08 r53";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -761,6 +762,23 @@ function unlinkedTasks(tag){
     const lab = String((w && w.label) || w || "").replace(/\s+/g, "").toUpperCase();
     return (t.def.ministries || []).some(mi => keys.has(mi + "|" + lab));
   }));
+}
+
+
+// タスクをSTAGE・WAVEのページに結びつける・外す(結びつきは省アプリでだけ変える)
+async function linkTask(id, page, on){
+  const t = state.tasks.find(x => x.def.id === id); if (!t) return false;
+  const cur = (t.def.waves || []).map(w => typeof w === "string" ? { label: w, url: "" } : { label: w.label || "", url: w.url || "" });
+  const isThis = w => { const m = /#page=([\w-]+)/.exec(w.url || ""); return m ? m[1] === page.id : String(w.label).replace(/\s+/g, "").toUpperCase() === String(page.label).toUpperCase() && (t.def.ministries || []).includes(rootTag(page)); };
+  const next = on ? cur.filter(w => !isThis(w)).concat([{ label: page.label, url: pageUrl(page.id) }]) : cur.filter(w => !isThis(w));
+  const tg = rootTag(page), mins = (t.def.ministries || []).includes(tg) || !tg ? null : (t.def.ministries || []).concat([tg]);
+  const ok = await overlayWrite(ov => {
+    const o = ov.tasks[id] = Object.assign({}, ov.tasks[id] || {});
+    o.edits = Object.assign({}, o.edits || {}, { waves: next }, mins ? { ministries: mins } : {});
+    const nt = (ov.newTasks || []).find(x => x.id === id); if (nt) { nt.waves = next; if (mins) nt.ministries = mins; }
+  });
+  if (ok) logPlan([tg], on ? "タスクを結びつけた" : "タスクを外した", id, t.def.name);
+  return ok;
 }
 
 /* ───────── 省の一覧の切り替え:一覧・依存の図・重要度 ───────── */
@@ -2308,8 +2326,11 @@ function pageTreeHtml(tag){
       docs.length ? '<div class="dgrid">' + docs.sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(docCard).join("") + "</div>" : emptyHtml("まだありません。調べたこと・表・アプリなど、この省で使うものを置きます。"), "docs") +
     (() => { const un = unlinkedTasks(tag), gone = deletedTasks(tag);
       return (un.length ? '<details class="fold tfold"><summary>計画に結びついていないタスク ' + un.length + "件</summary>" +
-          '<p class="panel-e">STAGE・WAVEに結びついていないタスクです。計画に結びつけるには、行軍表のタスクの設定でSTAGE・WAVEを選んでください。</p>' +
-          un.map(t => '<div class="tk"><span>' + esc(t.def.name) + "</span><span>" + esc(t.status) + '</span><button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button></div>').join("") + "</details>" : "") +
+          '<p class="panel-e">STAGE・WAVEに結びついていないタスクは、待機中で行軍表に出ません。結びつけると、そのSTAGE・WAVEが進行中のあいだ出ます。</p>' +
+          un.map(t => { const us = pages().filter(x => isUnit(x) && rootTag(x) === tag).sort(byLabel);
+            return '<div class="tk"><span>' + esc(t.def.name) + "</span><span>" + esc(t.status) + "</span>" +
+              (us.length ? '<select data-tlink-pick="' + esc(t.def.id) + '"><option value="">結びつける…</option>' + us.map(u => '<option value="' + esc(u.id) + '">' + esc(u.label + (u.title ? " " + u.title : "") + "(" + stOf(u) + ")") + "</option>").join("") + "</select>" : "") +
+              '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button></div>'; }).join("") + "</details>" : "") +
         (gone.length ? '<details class="fold tfold"><summary>削除したタスク ' + gone.length + "件</summary>" +
           gone.map(d0 => '<div class="tk"><span>' + esc(d0.name) + '</span><button type="button" class="linkbtn" data-trestore="' + esc(d0.id) + '">元に戻す</button></div>').join("") + "</details>" : ""); })() +
     (box.length ? '<details class="fold movebox"><summary>引っ越し箱(Notionから写したもの)' + box.length + "件</summary>" +
@@ -2544,8 +2565,16 @@ function renderPage(box, p){
         (pg.condForm === pid ? condFormHtml(p) : "");
       const taskRow = t => '<div class="tk' + (t.waiting ? " waiting" : t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
           "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span>" +
+          '<button type="button" class="linkbtn tunl" data-tunlink="' + esc(t.def.id) + '" title="このページとの結びつきを外す(ほかに結びつきが無ければ待機中になる)">外す</button>' +
           '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button>' +
           (multi ? '<span class="tparts" title="入れる区分(いくつでも)">' + parts.map((pp, i) => '<button type="button" class="tpart-b" data-tpart="' + esc(t.def.id) + ":" + pp.id + '" title="' + esc(pp.name || "") + '" aria-pressed="' + ((pp.taskIds || []).includes(t.def.id)) + '">' + (i + 1) + "</button>").join("") + "</span>" : "") + "</div>";
+      const linkSel = (() => { const have = new Set(ts.map(t => t.def.id)), tg = rootTag(p);
+        const cand = state.tasks.filter(t => !have.has(t.def.id) && !["アーカイブ", "達成済み"].includes(t.status));
+        const mine = cand.filter(t => (t.def.ministries || []).includes(tg)), other = cand.filter(t => !(t.def.ministries || []).includes(tg));
+        if (!cand.length) return "";
+        const opt = t => '<option value="' + esc(t.def.id) + '">' + esc(t.def.name) + "(" + esc(t.status) + ")</option>";
+        return '<div class="linksel"><select data-tlink-here><option value="">+ すでにあるタスクを結びつける…</option>' + (mine.length ? '<optgroup label="この省のタスク">' + mine.map(opt).join("") + "</optgroup>" : "") +
+          (other.length ? '<optgroup label="ほかの省のタスク(この省にも属するようになります)">' + other.map(opt).join("") + "</optgroup>" : "") + "</select></div>"; })();
       const gateNote = st === "進行中" ? "" : '<div class="gate-note">' + (st === "作成中" ? "作成中のあいだ、この" + p.kind + "のタスクは行軍表に出ません。「進行中」にすると、その日から行軍表に出ます。" : "「" + st + "」なので、この" + p.kind + "のタスクは行軍表から外れています。") + "</div>";
       if (!multi) {
         const pp = parts[0], cs = pp.clear || [], met = cs.filter(condMet).length;
@@ -2556,7 +2585,7 @@ function renderPage(box, p){
           (cs.length && met === cs.length && st !== "クリア" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-page-clear>クリアにする</button></div>' : "") +
           '<p class="panel-e" style="margin:.4rem 0 0;font-size:.74rem">クリアすると、結びついたタスクの世代が上がります(行軍表の世代はここだけで上がります)。' + (p.kind === "STAGE" ? "クリアしたSTAGEは、その省の土地(領土)として残ります。進行中のあいだも、クリア条件を満たした割合だけ領土になります。省の支配の深さ(タスクの定着度)が0になると土地は失われ、その省へのRAIDを引き渡すと取り戻せます。" : "") + '</p>');
         h += panel("タスク", (ts.length ? '<span class="ph-n">' + ts.length + "つ</span>" : "") + (pg.taskForm ? "" : '<button type="button" class="linkbtn" data-task-new>+ 作る</button>'),
-          gateNote + (ts.length ? '<div class="tasks">' + ts.map(taskRow).join("") + "</div>" : (pg.taskForm ? "" : empty("まだありません。"))) + (pg.taskForm ? taskFormHtml(p) : ""));
+          gateNote + (ts.length ? '<div class="tasks">' + ts.map(taskRow).join("") + "</div>" : (pg.taskForm ? "" : empty("まだありません。"))) + (pg.taskForm ? taskFormHtml(p) : linkSel));
       } else {
         h += gateNote;
         parts.forEach((pp, i) => {
@@ -2575,6 +2604,7 @@ function renderPage(box, p){
         const loose = ts.filter(t => !parts.some(pp => (pp.taskIds || []).includes(t.def.id)));
         h += '<div class="row-btns"><button type="button" class="btn ghost sm" data-part-add>+ 区分を足す</button></div>';
         if (loose.length) h += panel("区分に入っていないタスク", "", '<div class="tasks">' + loose.map(taskRow).join("") + "</div>");
+        if (linkSel) h += linkSel;
         const all = parts.flatMap(pp => pp.clear || []);
         if (all.length && all.every(condMet) && st !== "クリア") h += '<div style="margin:.5rem 0"><button type="button" class="btn" data-page-clear>クリアにする</button></div>';
       }
@@ -2742,6 +2772,11 @@ function bindPages(){
   box.addEventListener("click", async e => {
     const q = sx => e.target.closest(sx); let b;
     if ((b = q("[data-goto-page]"))) { e.preventDefault(); openPage(b.dataset.gotoPage); return; }
+    if ((b = q("[data-tunlink]")) && pg.open && pageById(pg.open)) {
+      const pu = pageById(pg.open), t = state.tasks.find(x => x.def.id === b.dataset.tunlink);
+      if (!confirm("「" + (t ? t.def.name : "") + "」と" + pu.label + "の結びつきを外しますか。ほかに結びつきが無ければ、待機中になります。")) return;
+      await linkTask(b.dataset.tunlink, pu, false); computeTasks(); renderDetail(); return;
+    }
     if ((b = q("[data-tdel]"))) {
       const id = b.dataset.tdel, t = state.tasks.find(x => x.def.id === id); if (!t) return;
       if (!confirm("「" + t.def.name + "」を削除しますか。記録ごと国力の計算から外れます(省の地図の下の「削除したタスク」から戻せます)。")) return;
@@ -2955,9 +2990,11 @@ function bindPages(){
       return tsave(x => { const t = x.tables[tid]; t.cols.push(ty === "select" ? { name: nm, type: ty, options: op } : { name: nm, type: ty }); t.rows.forEach(r => r.push(ty === "check" ? false : "")); }); }
   });
   box.addEventListener("change", async e => {
+    if (e.target.matches && e.target.matches("[data-tlink-pick]") && e.target.value) { const u = pageById(e.target.value); if (u) { await linkTask(e.target.dataset.tlinkPick, u, true); computeTasks(); renderDetail(); } return; }
     const p = pg.open && pageById(pg.open); if (!p) return;
     const c = e.target.closest("[data-cond-check]");
     if (c) { const id = c.dataset.condCheck, on = c.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); condLists(x).forEach(l => { const k = l.find(z => z.id === id); if (k) k.done = on; }); }); renderDetail(); return; }
+    if (e.target.matches && e.target.matches("[data-tlink-here]") && e.target.value) { const pp0 = pg.open ? pageById(pg.open) : null; if (pp0) { await linkTask(e.target.value, pp0, true); computeTasks(); renderDetail(); } return; }
     if (e.target.id === "cf-metric") { const keep = Array.from(document.querySelectorAll("[data-cf-task]:checked")).map(x => x.value); pg.condMetric = e.target.value; renderDetail();
       keep.forEach(v => { const el = Array.from(document.querySelectorAll("[data-cf-task]")).find(x => x.value === v); if (el) el.checked = true; }); return; }
     const ac = e.target.closest("[data-act-check]");
@@ -3201,7 +3238,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
