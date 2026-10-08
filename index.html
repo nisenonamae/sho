@@ -415,7 +415,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-08 r56";
+const APP_VERSION = "2026-10-08 r57";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -678,10 +678,15 @@ function tideViewHtml(){
   const today = taskDay(), P = TPERIODS[tide.period], from = addDays(today, -(P - 1)), prevTo = addDays(from, -1), prevFrom = addDays(from, -P);
   const ms = liveMinistries(), es = tide.doc.entries.filter(e => !e.deleted);
   const nm = t => (ms.find(m => m.tag === t) || { name: t }).name;
+  // 毎朝の計算と同じ式:熱量1の値段 = 土台(3)÷(熱量の上限(5)+ 抱えている熱量の合計)
+  const allNow = es.filter(e => e.type !== "cancel").map(e => tideAt(e, today));
+  const heldNow = allNow.reduce((a, p) => a + Math.abs(p.焦燥) + Math.abs(p.純粋) + Math.abs(p.安心), 0), priceNow = 3 / (5 + heldNow);
+  const credOf = t => ((state.tideState || {}).credibility || {})[t] ?? 0.5;
   let h = '<div class="tide-top"><button type="button" class="btn sm" data-tide-new="plus">+ プラスを記録</button><button type="button" class="btn ghost sm" data-tide-new="minus">− マイナスを記録</button>' +
     '<span class="tperiod">' + Object.keys(TPERIODS).map(k => '<button type="button" data-tide-period="' + k + '" aria-pressed="' + (k === tide.period) + '">' + k + "</button>").join("") + "</span></div>";
   const TS = state.tideState;
-  if (TS) h += '<div class="tmarket"><b>気持ちの相場</b> 熱量1 = 重要度 ' + Number(TS.price).toFixed(2) + '<small>(抱えている熱量 ' + Number(TS.held).toFixed(1) + "・" + esc(TS.date) + ' の毎朝の計算)。気持ちを抱えるほど1つあたりは軽くなります。</small></div>';
+  h += '<div class="tmarket"><b>気持ちの相場</b> 熱量1 = 重要度 ' + priceNow.toFixed(2) + '<small>抱えている熱量 ' + heldNow.toFixed(1) + "。気持ちを抱えるほど1つあたりは軽くなります。" +
+    (TS ? "(毎朝の計算 " + esc(TS.date) + " では " + Number(TS.price).toFixed(2) + ")" : "") + "</small></div>";
   if (tide.form) h += tideFormHtml(tide.form, ms);
   const rows = ms.map(m => {
     const mine = es.filter(e => shareOf(e, m.tag) > 0);
@@ -689,7 +694,8 @@ function tideViewHtml(){
     const mv = { 焦燥: now.焦燥 - then.焦燥, 純粋: now.純粋 - then.純粋, 安心: now.安心 - then.安心 };
     const inPeriod = mine.filter(e => e.date >= from && e.date <= today).sort((a, b) => a.date < b.date ? 1 : -1);
     const burden = mine.filter(e => e.type === "plus").reduce((a, e) => a + (e.burden || 0) * remainRatio(e) * shareOf(e, m.tag), 0);
-    return { m, now, mv, inPeriod, burden, ev: evalRate(m.tag, from, today), evPrev: evalRate(m.tag, prevFrom, prevTo) };
+    const goal = priceNow * (now.焦燥 + credOf(m.tag) * now.純粋 + now.安心);
+    return { m, now, mv, inPeriod, burden, goal, ev: evalRate(m.tag, from, today), evPrev: evalRate(m.tag, prevFrom, prevTo) };
   }).sort((a, b) => Math.abs(net(b.mv)) - Math.abs(net(a.mv)) || Math.abs(net(b.now)) - Math.abs(net(a.now)));
   const bar = p => { const tot = Math.abs(p.焦燥) + Math.abs(p.純粋) + Math.abs(p.安心) || 1;
     return '<span class="tbar">' + (p.焦燥 ? '<i class="t-a" style="width:' + (Math.abs(p.焦燥) / tot * 100) + '%"></i>' : "") + (p.純粋 ? '<i class="t-p" style="width:' + (Math.abs(p.純粋) / tot * 100) + '%"></i>' : "") + (p.安心 ? '<i class="t-r" style="width:' + (Math.abs(p.安心) / tot * 100) + '%"></i>' : "") + "</span>"; };
@@ -697,8 +703,9 @@ function tideViewHtml(){
   h += rows.map(r => {
     const ev = r.ev == null ? "" : '<span class="tev">タスクの評価 ' + Math.round(r.ev * 100) + "%" + (r.evPrev != null ? (r.ev > r.evPrev + 0.05 ? " ↑" : r.ev < r.evPrev - 0.05 ? " ↓" : " →") + "(前の" + tide.period + " " + Math.round(r.evPrev * 100) + "%)" : "") + "</span>";
     return '<section class="panel tide-m" style="--mc:' + colorOf(r.m.tag) + '"><div class="panel-h"><span class="tm-n">' + esc(r.m.name) + '</span><span class="ph-r"><span class="tmv ' + (net(r.mv) > 0 ? "up" : net(r.mv) < 0 ? "down" : "") + '">' + tide.period + " " + sign(net(r.mv)) + "</span>" +
-      '<span class="ph-n">今 ' + sign(net(r.now)) + "</span>" + (r.burden ? '<span class="ph-n">しんどさ ' + r.burden.toFixed(1) + "</span>" : "") +
-      (TS && TS.value && TS.value[r.m.tag] != null ? '<span class="ph-n" title="重要度に足される時勢(目標へ毎日1割ずつ近づく)">重要度 ' + sign(+TS.value[r.m.tag]) + "</span>" : "") +
+      '<span class="ph-n" title="今抱えている気持ちの強さ(熱量の単位。重要度ではありません)">熱量 ' + sign(net(r.now)) + "</span>" + (r.burden ? '<span class="ph-n">しんどさ ' + r.burden.toFixed(1) + "</span>" : "") +
+      '<span class="ph-n" title="気持ちの相場 × (焦燥 + 信用 × 純粋 + 安心)。毎朝の計算で、重要度がこの値へ毎日1割ずつ近づきます">重要度の目標 ' + sign(r.goal) + "</span>" +
+      (TS && TS.value && TS.value[r.m.tag] != null ? '<span class="ph-n" title="今の重要度に足されている時勢(' + esc(TS.date) + ' の毎朝の計算)">今の重要度 ' + sign(+TS.value[r.m.tag]) + "</span>" : "") +
       (TS && TS.credibility && TS.credibility[r.m.tag] != null ? '<span class="ph-n' + (TS.credibility[r.m.tag] < 0.5 ? " lowcred" : "") + '" title="やりたい気持ちが行動につながった割合。純粋なやりたい気持ちの効きにだけ掛かる">信用 ' + Number(TS.credibility[r.m.tag]).toFixed(2) + "</span>" : "") + "</span></div>" +
       '<div class="panel-b">' + (net(r.now) || r.mv.焦燥 || r.mv.純粋 || r.mv.安心 ? bar(r.now) : "") + ev +
       (r.inPeriod.length ? r.inPeriod.map(e => tideRowHtml(e, nm, r.m.tag)).join("") : '<div class="panel-e">この期間の記録はありません。</div>') + "</div></section>";
