@@ -410,7 +410,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r51";
+const APP_VERSION = "2026-10-08 r52";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -576,7 +576,7 @@ function computeTasks(){
   if (!E || !state.defs) { state.tasks = []; return; }
   const today = taskDay();
   const defs0 = E.allDefs(state.defs, state.overlay);
-  state.tasks = (E.applyGates && pg.doc ? E.applyGates(defs0, pg.doc) : defs0).map(raw => {
+  state.tasks = (E.applyGates && pg.doc ? E.applyGates(defs0, pg.doc, state.overlay) : defs0).map(raw => {
     const def = E.mergeOverlay(raw, (state.overlay.tasks || {})[raw.id], today);
     const rep = E.replay(def, E.mergedLogFor(state.logs, state.applogs, def.id), today);
     const last = rep.days.length ? rep.days[rep.days.length - 1] : null;
