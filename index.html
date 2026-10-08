@@ -75,6 +75,7 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.tmarket{border:1px solid var(--rule);border-radius:6px;background:#fff;padding:.4rem .7rem;margin:.3rem 0 .6rem;font-size:.86rem}.tmarket small{display:block;color:var(--sub);font-size:.74rem}.lowcred{color:#B3283C}
 .tagpick{display:flex;flex-wrap:wrap;gap:.3rem}.chip-l{border:1px solid var(--rule);border-radius:12px;padding:.05rem .55rem;font-size:.8rem;background:#fff}
 .tshares{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}.tshares input{width:4rem}.tshare{display:block;color:#4A7FC1;font-size:.7rem}
 .linksel{margin-top:.4rem}.linksel select{max-width:100%;font-size:.84rem}.tunl{font-size:.72rem;color:var(--sub)}.tfold select{font-size:.76rem;max-width:11rem}
@@ -413,7 +414,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-08 r54";
+const APP_VERSION = "2026-10-08 r55";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -556,6 +557,7 @@ async function loadAll(){
     if (!pgQ.pending.length) await loadPages().catch(() => {});
     await loadMins().catch(() => {});
     await loadTide().catch(() => {});
+    state.tideState = ((await readJson("roadmap/gov/tide_state.json").catch(() => ({}))) || {}).data || null;
     try { const dr = JSON.parse(localStorage.getItem(KEY_DRAFT) || "null"); if (dr && !staff.draft && !currentTerm()) staff.draft = dr; } catch (err) {}
     state.depsAuto = ((await readJson("roadmap/gov/deps_auto.json").catch(() => ({}))) || {}).data || null;
     setTimeout(fromHash, 0);      // 「#page=…」のリンクで開かれたら、そのページへ
@@ -677,6 +679,8 @@ function tideViewHtml(){
   const nm = t => (ms.find(m => m.tag === t) || { name: t }).name;
   let h = '<div class="tide-top"><button type="button" class="btn sm" data-tide-new="plus">+ プラスを記録</button><button type="button" class="btn ghost sm" data-tide-new="minus">− マイナスを記録</button>' +
     '<span class="tperiod">' + Object.keys(TPERIODS).map(k => '<button type="button" data-tide-period="' + k + '" aria-pressed="' + (k === tide.period) + '">' + k + "</button>").join("") + "</span></div>";
+  const TS = state.tideState;
+  if (TS) h += '<div class="tmarket"><b>気持ちの相場</b> 熱量1 = 重要度 ' + Number(TS.price).toFixed(2) + '<small>(抱えている熱量 ' + Number(TS.held).toFixed(1) + "・" + esc(TS.date) + ' の毎朝の計算)。気持ちを抱えるほど1つあたりは軽くなります。</small></div>';
   if (tide.form) h += tideFormHtml(tide.form, ms);
   const rows = ms.map(m => {
     const mine = es.filter(e => shareOf(e, m.tag) > 0);
@@ -692,11 +696,13 @@ function tideViewHtml(){
   h += rows.map(r => {
     const ev = r.ev == null ? "" : '<span class="tev">タスクの評価 ' + Math.round(r.ev * 100) + "%" + (r.evPrev != null ? (r.ev > r.evPrev + 0.05 ? " ↑" : r.ev < r.evPrev - 0.05 ? " ↓" : " →") + "(前の" + tide.period + " " + Math.round(r.evPrev * 100) + "%)" : "") + "</span>";
     return '<section class="panel tide-m" style="--mc:' + colorOf(r.m.tag) + '"><div class="panel-h"><span class="tm-n">' + esc(r.m.name) + '</span><span class="ph-r"><span class="tmv ' + (net(r.mv) > 0 ? "up" : net(r.mv) < 0 ? "down" : "") + '">' + tide.period + " " + sign(net(r.mv)) + "</span>" +
-      '<span class="ph-n">今 ' + sign(net(r.now)) + "</span>" + (r.burden ? '<span class="ph-n">しんどさ ' + r.burden.toFixed(1) + "</span>" : "") + "</span></div>" +
+      '<span class="ph-n">今 ' + sign(net(r.now)) + "</span>" + (r.burden ? '<span class="ph-n">しんどさ ' + r.burden.toFixed(1) + "</span>" : "") +
+      (TS && TS.value && TS.value[r.m.tag] != null ? '<span class="ph-n" title="重要度に足される時勢(目標へ毎日1割ずつ近づく)">重要度 ' + sign(+TS.value[r.m.tag]) + "</span>" : "") +
+      (TS && TS.credibility && TS.credibility[r.m.tag] != null ? '<span class="ph-n' + (TS.credibility[r.m.tag] < 0.5 ? " lowcred" : "") + '" title="やりたい気持ちが行動につながった割合。純粋なやりたい気持ちの効きにだけ掛かる">信用 ' + Number(TS.credibility[r.m.tag]).toFixed(2) + "</span>" : "") + "</span></div>" +
       '<div class="panel-b">' + (net(r.now) || r.mv.焦燥 || r.mv.純粋 || r.mv.安心 ? bar(r.now) : "") + ev +
       (r.inPeriod.length ? r.inPeriod.map(e => tideRowHtml(e, nm, r.m.tag)).join("") : '<div class="panel-e">この期間の記録はありません。</div>') + "</div></section>";
   }).join("");
-  h += '<p class="panel-e">赤は焦燥、青は純粋なやりたい気持ち、緑は安心。期間の数字は、その期間に効いた分です。積み上がったままの焦りと、タスクの評価を見比べて、薄れていたら打ち消してください。</p>';
+  h += '<p class="panel-e">重要度への効き方:熱量1の値段(気持ちの相場)×(焦燥 + 信用 × 純粋 + 安心)× 省の割合 に、重要度が毎日1割ずつ近づきます。信用は、やりたい気持ちを書いたあと、その省で計画が動いた割合です。</p><p class="panel-e">赤は焦燥、青は純粋なやりたい気持ち、緑は安心。期間の数字は、その期間に効いた分です。積み上がったままの焦りと、タスクの評価を見比べて、薄れていたら打ち消してください。</p>';
   return h;
 }
 function tideRowHtml(e, nm, here){
@@ -2426,7 +2432,7 @@ function alertRoadHtml(tag){
     '<div class="rsub">ALERT(緊急)</div>' + (act.length ? act.map(card).join("") : '<div class="empty" style="font-size:.82rem;margin:.1rem 0 .4rem">対応中のものはありません。</div>') +
     '<button type="button" class="rc-add" data-page-new="ALERT" data-page-parent="m:' + esc(tag) + '">+ ALERTを出す</button>' +
     '<div class="rsub" style="margin-top:.8rem">RAID(侵攻)</div>' + (rAct.length ? rAct.map(raidCard).join("") : "") +
-    (cands.length ? '<div class="cands"><div class="cands-h">侵攻の候補</div>' + cands.map(c => '<div class="cand"><span><b>' + esc(c.m.name) + '</b><small>要再設定 ' + c.fall + "/" + c.all + (c.idle != null ? "・" + c.idle + "日済ませていない" : "・まだ一度も済ませていない") + '</small></span><button type="button" class="linkbtn" data-raid-new="' + esc(c.m.tag) + '">RAIDを仕掛ける</button></div>').join("") + "</div>" : "") +
+    (cands.length ? '<div class="cands"><div class="cands-h">侵攻の候補</div>' + cands.map(c => '<div class="cand"><span><b>' + esc(c.m.name) + '</b><small>' + esc(candWhy(c)) + '</small></span><button type="button" class="linkbtn" data-raid-new="' + esc(c.m.tag) + '">RAIDを仕掛ける</button></div>').join("") + "</div>" : "") +
     '<button type="button" class="rc-add" data-raid-new="" >+ RAIDを仕掛ける</button>' +
     ((done.length || rDone.length) ? '<details class="fold"><summary>終わったもの ' + (done.length + rDone.length) + "件</summary>" + done.map(card).join("") + rDone.map(raidCard).join("") + "</details>" : "") + "</div>";
 }
@@ -2487,17 +2493,22 @@ const raidActive = p => ["計画中", "侵攻中"].includes(p.status);
 function raidCandidates(){
   const dt = defenseTag(), ms = ((state.gov && state.gov.ministries) || []).filter(m => m.tag !== dt);
   const busy = new Set(pages().filter(p => isRaid(p) && raidActive(p)).map(p => p.target));
+  const ts0 = state.tideState || {}, cred = ts0.credibility || {}, counted = ts0.counted || {};
   return ms.map(m => {
     const ts = state.tasks.filter(t => (t.def.ministries || []).includes(m.tag) && !["アーカイブ", "達成済み", "休止中"].includes(t.status));
-    if (!ts.length) return null;
+    // 時勢と行動のずれ:気持ちを書いても計画が動かず、信用が記録の無いときの値(1/2)を下回った
+    const gap = counted[m.tag] > 0 && cred[m.tag] != null && cred[m.tag] < 0.5 ? cred[m.tag] : null;
+    if (!ts.length && gap == null) return null;
     const fall = ts.filter(t => t.status === "要再設定").length;
     const last = ts.map(t => t.lastDone).filter(Boolean).sort().pop() || null;
     const idle = last ? Math.round((Date.parse(taskDay()) - Date.parse(last)) / 864e5) : null;
-    const score = fall / ts.length + (idle == null ? 1 : Math.min(1, idle / 14));
-    if (!(fall >= 3 || fall / ts.length >= 0.5 || (idle != null && idle >= 7))) return null;
-    return { m, fall, all: ts.length, idle, score, busy: busy.has(m.tag) };
+    const score = (ts.length ? fall / ts.length + (idle == null ? 1 : Math.min(1, idle / 14)) : 0) + (gap != null ? 0.5 - gap : 0);
+    const stuck = ts.length && (fall >= 3 || fall / ts.length >= 0.5 || (idle != null && idle >= 7));
+    if (!stuck && gap == null) return null;
+    return { m, fall, all: ts.length, idle, score, busy: busy.has(m.tag), gap, stuck };
   }).filter(Boolean).sort((a, b) => b.score - a.score);
 }
+const candWhy = c => [c.stuck ? "要再設定 " + c.fall + "/" + c.all + (c.idle != null ? "・" + c.idle + "日済ませていない" : "・まだ一度も済ませていない") : "", c.gap != null ? "時勢と行動のずれ(信用 " + c.gap.toFixed(2) + ")" : ""].filter(Boolean).join("・");
 function raidCard(p){
   const ms = (state.gov && state.gov.ministries) || [], acts = p.actions || [], d = acts.filter(a => a.done).length;
   return '<div class="rcard raid-card' + (raidActive(p) ? "" : " closed") + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || ((ms.find(m => m.tag === p.target) || {}).name || "") + "の再始動") + "</span></a>" +
@@ -2870,7 +2881,7 @@ function bindPages(){
       const dtg = defenseTag(); if (!dtg) return;
       const target = b.dataset.raidNew || "", c = raidCandidates().find(x => x.m.tag === target), rid = "pg" + uid(), rl = nextLabel("RAID", "m:" + dtg, dtg);
       await savePages(doc => { doc.pages.push({ id: rid, parent: "m:" + dtg, kind: "RAID", label: rl, title: c ? c.m.name + "の再始動" : "", target,
-        now: c ? "要再設定 " + c.fall + "/" + c.all + (c.idle != null ? "、" + c.idle + "日済ませていない" : "") : "", goal: "", actions: [], handover: {}, due: "",
+        now: c ? candWhy(c) : "", goal: "", actions: [], handover: {}, due: "",
         status: "計画中", statusLog: [{ date: taskDay(), status: "計画中" }], body: "", tables: {}, created: taskDay(), updated: taskDay() }); });
       pg.edit = true; openPage(rid); return;
     }
@@ -3265,7 +3276,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
