@@ -75,6 +75,7 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.aedit{display:flex;gap:.3rem;align-items:center;flex-wrap:wrap}.aedit-b{font-size:.72rem;color:var(--sub)}
 .amode{font-size:.68rem;border:1px solid var(--rule);border-radius:8px;padding:0 .3rem;color:var(--sub)}
 .rpace{font-size:.8rem;color:var(--sub);margin:.2rem 0 .4rem}.rpace.late{color:#B3283C;font-weight:700}
 .rplan{border:1px solid #B3283C33;background:#B3283C0d;border-radius:6px;padding:.4rem .7rem;margin:.4rem 0;font-size:.88rem}.rplan small{display:block;color:var(--sub);font-size:.74rem}
@@ -419,7 +420,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-08 r58";
+const APP_VERSION = "2026-10-08 r59";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2506,8 +2507,13 @@ function renderAlert(box, p, head){
   h += panel("縮退運転", "", p.degrade ? "<p style=\"margin:0;white-space:pre-wrap\">" + esc(p.degrade) + "</p>" : empty("未記入。対応のあいだ、ほかの習慣をどこまで縮めるかを決めておきます。"));
   const acts = p.actions || [], ad = acts.filter(a => a.done).length;
   h += panel("対応", acts.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (ad / acts.length * 100) + '%"></i></span><b>' + ad + "/" + acts.length + "</b>済み</span>" : "",
-    acts.filter(a => !(isRaid(p) && a.rev)).map(a => '<div class="cond' + (a.done ? " met" : "") + '"><input type="checkbox" data-act-check="' + a.id + '"' + (a.done ? " checked" : "") + "><span>" + esc(a.text) +
-      (isRaid(p) ? ' <small class="amode">' + (a.mode === "daily" ? "毎日" : "1回") + "</small>" : "") + (a.due ? " <small>" + esc(a.due.slice(5).replace("-", "/")) + "まで</small>" : "") + "</span>" +
+    acts.filter(a => !(isRaid(p) && a.rev)).map(a => pg.actEdit === a.id
+      ? '<div class="cond aedit"><input id="ae-text" value="' + esc(a.text) + '" style="flex:1">' +
+        (isRaid(p) ? '<select id="ae-mode"><option value="once"' + (a.mode !== "daily" ? " selected" : "") + '>1回だけ</option><option value="daily"' + (a.mode === "daily" ? " selected" : "") + ">毎日(侵攻中のあいだ)</option></select>" : "") +
+        '<input id="ae-due" type="date" value="' + esc(a.due || "") + '"><button type="button" class="btn sm" data-act-save="' + a.id + '">保存</button><button type="button" class="linkbtn" data-act-edit-x>やめる</button></div>'
+      : '<div class="cond' + (a.done ? " met" : "") + '"><input type="checkbox" data-act-check="' + a.id + '"' + (a.done ? " checked" : "") + "><span>" + esc(a.text) +
+      (isRaid(p) ? ' <small class="amode">' + (a.mode === "daily" ? "毎日" : "1回") + "</small>" : "") + (a.due ? " <small>" + esc(a.due.slice(5).replace("-", "/")) + "まで</small>" : "") +
+      ' <button type="button" class="linkbtn aedit-b" data-act-edit="' + a.id + '" title="作戦を直す">✎</button></span>' +
       (a.taskId ? '<small class="ph-n">行軍表に出ています</small>' : '<button type="button" class="linkbtn" data-act-task="' + a.id + '">行軍表に出す</button>') + '<button type="button" class="del" data-act-del="' + a.id + '">外す</button></div>').join("") +
     '<div class="cform"><input id="act-text" placeholder="期限つきの単発の行動" style="flex:1"><input id="act-due" type="date"><button type="button" class="btn sm" data-act-add>足す</button></div>');
   const cs = p.clear || [], met = cs.filter(condMet).length;
@@ -2614,8 +2620,13 @@ function renderRaid(box, p, head){
     "期限 " + esc(r.prevDue || "なし") + " → " + r.pctAt + "% で修正" + (r.reason ? "(" + esc(r.reason) + ")" : "") + (r.done.length ? "<br>済んだ作戦:" + r.done.map(esc).join("・") : "") + (r.carried.length ? "<br>引き継いだ作戦:" + r.carried.map(esc).join("・") : "") + (r.added.length ? "<br>足した作戦:" + r.added.map(esc).join("・") : "") + "</div>").join("") + "</details>";
   const acts = p.actions || [], ad = acts.filter(a => a.done && !(isRaid(p) && a.rev)).length, an = acts.filter(a => !(isRaid(p) && a.rev)).length;
   h += panelHtml("作戦", an ? '<span class="gauge"><span class="gbar"><i style="width:' + (ad / an * 100) + '%"></i></span><b>' + ad + "/" + an + "</b>済み</span>" : "",
-    acts.filter(a => !(isRaid(p) && a.rev)).map(a => '<div class="cond' + (a.done ? " met" : "") + '"><input type="checkbox" data-act-check="' + a.id + '"' + (a.done ? " checked" : "") + "><span>" + esc(a.text) +
-      (isRaid(p) ? ' <small class="amode">' + (a.mode === "daily" ? "毎日" : "1回") + "</small>" : "") + (a.due ? " <small>" + esc(a.due.slice(5).replace("-", "/")) + "まで</small>" : "") + "</span>" +
+    acts.filter(a => !(isRaid(p) && a.rev)).map(a => pg.actEdit === a.id
+      ? '<div class="cond aedit"><input id="ae-text" value="' + esc(a.text) + '" style="flex:1">' +
+        (isRaid(p) ? '<select id="ae-mode"><option value="once"' + (a.mode !== "daily" ? " selected" : "") + '>1回だけ</option><option value="daily"' + (a.mode === "daily" ? " selected" : "") + ">毎日(侵攻中のあいだ)</option></select>" : "") +
+        '<input id="ae-due" type="date" value="' + esc(a.due || "") + '"><button type="button" class="btn sm" data-act-save="' + a.id + '">保存</button><button type="button" class="linkbtn" data-act-edit-x>やめる</button></div>'
+      : '<div class="cond' + (a.done ? " met" : "") + '"><input type="checkbox" data-act-check="' + a.id + '"' + (a.done ? " checked" : "") + "><span>" + esc(a.text) +
+      (isRaid(p) ? ' <small class="amode">' + (a.mode === "daily" ? "毎日" : "1回") + "</small>" : "") + (a.due ? " <small>" + esc(a.due.slice(5).replace("-", "/")) + "まで</small>" : "") +
+      ' <button type="button" class="linkbtn aedit-b" data-act-edit="' + a.id + '" title="作戦を直す">✎</button></span>' +
       (a.taskId ? '<small class="ph-n">行軍表に出ています</small>' : '<button type="button" class="linkbtn" data-act-task="' + a.id + '">行軍表に出す</button>') + '<button type="button" class="del" data-act-del="' + a.id + '">外す</button></div>').join("") +
     '<div class="cform"><input id="act-text" placeholder="片付けるための行動(例:Ankiの溜まりを1日200枚ずつ)" style="flex:1">' +
       (isRaid(p) ? '<select id="act-mode" title="行軍表に出すときの出方"><option value="once">1回だけ</option><option value="daily">毎日(侵攻中のあいだ)</option></select>' : "") +
@@ -3043,6 +3054,22 @@ function bindPages(){
       if (q("[data-act-add]")) { const t = (document.getElementById("act-text").value || "").trim(), du = document.getElementById("act-due").value; if (!t) return;
         const md = (document.getElementById("act-mode") || {}).value || (isRaid(p) ? "once" : "daily");
         await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.actions = (x.actions || []).concat([{ id: uid(), text: t, due: du, done: false, mode: md }]); }); rerender(); return; }
+      if ((b = q("[data-act-edit]"))) { pg.actEdit = b.dataset.actEdit; rerender(); return; }
+      if (q("[data-act-edit-x]")) { pg.actEdit = null; rerender(); return; }
+      if ((b = q("[data-act-save]"))) {
+        const id = b.dataset.actSave, a0 = (p.actions || []).find(z => z.id === id); if (!a0) return;
+        const text = (document.getElementById("ae-text").value || "").trim(), due = document.getElementById("ae-due").value, mode = (document.getElementById("ae-mode") || {}).value || a0.mode;
+        if (!text) { msg("作戦の文を入れてください。", true); return; }
+        // 行軍表に出したあとの作戦なら、タスクの名前・出方・期限の説明も一緒に直す
+        if (a0.taskId && state.tasks.some(t => t.def.id === a0.taskId)) {
+          if (text !== a0.text) { const err = await renameTask(a0.taskId, text); if (err) { msg(err, true); return; } }
+          if (mode !== a0.mode || due !== a0.due) await overlayWrite(ov => { const o = ov.tasks[a0.taskId] = Object.assign({}, ov.tasks[a0.taskId] || {});
+            o.edits = Object.assign({}, o.edits || {}, isRaid(p) ? { kind: mode === "daily" ? "習慣型" : "完了型" } : {}, { requirement: p.label + (isRaid(p) ? "の作戦" : "の対応") + (due ? "(" + due.slice(5).replace("-", "/") + "まで)" : "") }); });
+        }
+        await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const z = (x.actions || []).find(k => k.id === id); if (z) Object.assign(z, { text, due, mode }); });
+        logPlan([rootTag(p)], p.kind + "を直した", p.id, "作戦:" + text);
+        pg.actEdit = null; computeTasks(); rerender(); msg("作戦を直しました。"); return;
+      }
       if ((b = q("[data-act-del]"))) { const id = b.dataset.actDel; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.actions = (x.actions || []).filter(a => a.id !== id); }); rerender(); return; }
       if ((b = q("[data-act-task]"))) {
         const a = (p.actions || []).find(z => z.id === b.dataset.actTask); if (!a) return;
