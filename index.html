@@ -75,6 +75,7 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.tren-b{font-size:.74rem;color:var(--sub)}.tren{display:inline-flex;gap:.3rem;align-items:center}.tren input{min-width:8rem}
 .tmarket{border:1px solid var(--rule);border-radius:6px;background:#fff;padding:.4rem .7rem;margin:.3rem 0 .6rem;font-size:.86rem}.tmarket small{display:block;color:var(--sub);font-size:.74rem}.lowcred{color:#B3283C}
 .tagpick{display:flex;flex-wrap:wrap;gap:.3rem}.chip-l{border:1px solid var(--rule);border-radius:12px;padding:.05rem .55rem;font-size:.8rem;background:#fff}
 .tshares{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}.tshares input{width:4rem}.tshare{display:block;color:#4A7FC1;font-size:.7rem}
@@ -414,7 +415,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-08 r55";
+const APP_VERSION = "2026-10-08 r56";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -812,6 +813,34 @@ async function linkTask(id, page, on){
   });
   if (ok) logPlan([tg], on ? "タスクを結びつけた" : "タスクを外した", id, t.def.name);
   return ok;
+}
+
+
+// タスクの名前を変える(前の名前は別名として残る)。行軍表の設定(所要時間・場所・続けるタスクなど)は名前で結びついているので、一緒に付け替える
+async function renameTask(id, name){
+  name = String(name || "").trim();
+  const t = state.tasks.find(x => x.def.id === id); if (!t) return "タスクが見つかりません。";
+  if (!name) return "名前を入れてください。";
+  if (name === t.def.name) return "";
+  if (state.tasks.some(x => x.def.id !== id && (x.def.name === name || (x.def.aliases || []).includes(name)))) return "同じ名前のタスクがあります。";
+  const old = t.def.name;
+  const ok = await overlayWrite(ov => { const o = ov.tasks[id] = Object.assign({}, ov.tasks[id] || {}); o.edits = Object.assign({}, o.edits || {}, { name }); });
+  if (!ok) return "保存できませんでした。";
+  for (let i = 0; i < 3; i++) {
+    try {
+      const r = await readJson("roadmap/settings.json"); const st = r.data; if (!st || !st.tasks) break;
+      let changed = false;
+      if (st.tasks[old] && !st.tasks[name]) { st.tasks[name] = st.tasks[old]; delete st.tasks[old]; changed = true; }
+      for (const c of Object.values(st.tasks)) for (const k of Object.keys(c || {})) {
+        if (c[k] === old) { c[k] = name; changed = true; }
+        else if (Array.isArray(c[k]) && c[k].includes(old)) { c[k] = c[k].map(x => x === old ? name : x); changed = true; }
+      }
+      if (changed) await writeJson("roadmap/settings.json", st, r.sha);
+      break;
+    } catch (err) { if (err.status !== 409 && err.status !== 422) break; }
+  }
+  logPlan(t.def.ministries, "タスクを直した", id, old + " → " + name);
+  return "";
 }
 
 /* ───────── 省の一覧の切り替え:一覧・依存の図・重要度 ───────── */
@@ -2601,7 +2630,9 @@ function renderPage(box, p){
       const condRows = (cs, pid) => (cs.length ? cs.map(c => '<div class="cond' + (condMet(c) ? " met" : "") + '">' + (c.type === "manual" ? '<input type="checkbox" data-cond-check="' + c.id + '"' + (c.done ? " checked" : "") + ">" : (condMet(c) ? "✓" : "○")) +
           '<span>' + esc(condText(c)) + ' <small>' + esc(condNow(c)) + '</small></span><button type="button" class="del" data-cond-del="' + c.id + '">外す</button></div>').join("") : (pg.condForm === pid ? "" : empty("まだありません。何ができたらクリアか、を決めます。"))) +
         (pg.condForm === pid ? condFormHtml(p) : "");
-      const taskRow = t => '<div class="tk' + (t.waiting ? " waiting" : t.status === "要再設定" ? " fall" : "") + '"><span>' + esc(t.def.name) +
+      const taskRow = t => '<div class="tk' + (t.waiting ? " waiting" : t.status === "要再設定" ? " fall" : "") + '"><span>' +
+          (pg.renaming === t.def.id ? '<span class="tren"><input id="tren-in" value="' + esc(t.def.name) + '"><button type="button" class="btn sm" data-tren-save="' + esc(t.def.id) + '">保存</button><button type="button" class="linkbtn" data-tren-x>やめる</button></span>'
+            : esc(t.def.name) + ' <button type="button" class="linkbtn tren-b" data-tren="' + esc(t.def.id) + '" title="名前を変える">✎</button>') +
           "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span>" +
           '<button type="button" class="linkbtn tunl" data-tunlink="' + esc(t.def.id) + '" title="このページとの結びつきを外す(ほかに結びつきが無ければ待機中になる)">外す</button>' +
           '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button>' +
@@ -2810,6 +2841,10 @@ function bindPages(){
   box.addEventListener("click", async e => {
     const q = sx => e.target.closest(sx); let b;
     if ((b = q("[data-goto-page]"))) { e.preventDefault(); openPage(b.dataset.gotoPage); return; }
+    if ((b = q("[data-tren]"))) { pg.renaming = b.dataset.tren; renderDetail(); const inp = document.getElementById("tren-in"); if (inp) inp.focus(); return; }
+    if (q("[data-tren-x]")) { pg.renaming = null; renderDetail(); return; }
+    if ((b = q("[data-tren-save]"))) { const err = await renameTask(b.dataset.trenSave, (document.getElementById("tren-in") || {}).value);
+      if (err) { msg(err); return; } pg.renaming = null; computeTasks(); renderDetail(); msg("名前を変えました。前の名前は別名として残ります。"); return; }
     if ((b = q("[data-tunlink]")) && pg.open && pageById(pg.open)) {
       const pu = pageById(pg.open), t = state.tasks.find(x => x.def.id === b.dataset.tunlink);
       if (!confirm("「" + (t ? t.def.name : "") + "」と" + pu.label + "の結びつきを外しますか。ほかに結びつきが無ければ、待機中になります。")) return;
@@ -3276,7 +3311,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
