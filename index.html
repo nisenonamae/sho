@@ -75,6 +75,10 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.amode{font-size:.68rem;border:1px solid var(--rule);border-radius:8px;padding:0 .3rem;color:var(--sub)}
+.rpace{font-size:.8rem;color:var(--sub);margin:.2rem 0 .4rem}.rpace.late{color:#B3283C;font-weight:700}
+.rplan{border:1px solid #B3283C33;background:#B3283C0d;border-radius:6px;padding:.4rem .7rem;margin:.4rem 0;font-size:.88rem}.rplan small{display:block;color:var(--sub);font-size:.74rem}
+.rprog div{display:flex;gap:.5rem;font-size:.8rem;padding:.15rem 0;border-top:1px dashed var(--rule)}.rprog span{color:var(--sub);min-width:3rem}
 .tren-b{font-size:.74rem;color:var(--sub)}.tren{display:inline-flex;gap:.3rem;align-items:center}.tren input{min-width:8rem}
 .tmarket{border:1px solid var(--rule);border-radius:6px;background:#fff;padding:.4rem .7rem;margin:.3rem 0 .6rem;font-size:.86rem}.tmarket small{display:block;color:var(--sub);font-size:.74rem}.lowcred{color:#B3283C}
 .tagpick{display:flex;flex-wrap:wrap;gap:.3rem}.chip-l{border:1px solid var(--rule);border-radius:12px;padding:.05rem .55rem;font-size:.8rem;background:#fff}
@@ -415,7 +419,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-08 r57";
+const APP_VERSION = "2026-10-08 r58";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2502,7 +2506,8 @@ function renderAlert(box, p, head){
   h += panel("縮退運転", "", p.degrade ? "<p style=\"margin:0;white-space:pre-wrap\">" + esc(p.degrade) + "</p>" : empty("未記入。対応のあいだ、ほかの習慣をどこまで縮めるかを決めておきます。"));
   const acts = p.actions || [], ad = acts.filter(a => a.done).length;
   h += panel("対応", acts.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (ad / acts.length * 100) + '%"></i></span><b>' + ad + "/" + acts.length + "</b>済み</span>" : "",
-    acts.map(a => '<div class="cond' + (a.done ? " met" : "") + '"><input type="checkbox" data-act-check="' + a.id + '"' + (a.done ? " checked" : "") + "><span>" + esc(a.text) + (a.due ? " <small>" + esc(a.due.slice(5).replace("-", "/")) + "まで</small>" : "") + "</span>" +
+    acts.filter(a => !(isRaid(p) && a.rev)).map(a => '<div class="cond' + (a.done ? " met" : "") + '"><input type="checkbox" data-act-check="' + a.id + '"' + (a.done ? " checked" : "") + "><span>" + esc(a.text) +
+      (isRaid(p) ? ' <small class="amode">' + (a.mode === "daily" ? "毎日" : "1回") + "</small>" : "") + (a.due ? " <small>" + esc(a.due.slice(5).replace("-", "/")) + "まで</small>" : "") + "</span>" +
       (a.taskId ? '<small class="ph-n">行軍表に出ています</small>' : '<button type="button" class="linkbtn" data-act-task="' + a.id + '">行軍表に出す</button>') + '<button type="button" class="del" data-act-del="' + a.id + '">外す</button></div>').join("") +
     '<div class="cform"><input id="act-text" placeholder="期限つきの単発の行動" style="flex:1"><input id="act-due" type="date"><button type="button" class="btn sm" data-act-add>足す</button></div>');
   const cs = p.clear || [], met = cs.filter(condMet).length;
@@ -2573,20 +2578,57 @@ function renderRaid(box, p, head){
   const fall = ts.filter(t => t.status === "要再設定").length;
   h += panelHtml("対象の省", "", tm ? '<div class="frow"><span class="fl">省</span><p><b>' + esc(tm.name) + '</b></p></div><div class="frow"><span class="fl">いまの様子</span><p>タスク ' + ts.length + "(要再設定 " + fall + ")</p></div>" : emptyHtml("直すの画面で選びます。"));
   h += panelHtml("今の状態 → 目標の状態", "", '<div class="frow"><span class="fl">今の状態</span>' + (p.now ? "<p>" + esc(p.now) + "</p>" : emptyHtml("未記入")) + '</div><div class="frow"><span class="fl">目標の状態</span>' + (p.goal ? "<p>" + esc(p.goal) + "</p>" : emptyHtml("未記入")) + "</div>");
-  const acts = p.actions || [], ad = acts.filter(a => a.done).length;
-  h += panelHtml("作戦", acts.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (ad / acts.length * 100) + '%"></i></span><b>' + ad + "/" + acts.length + "</b>済み</span>" : "",
-    acts.map(a => '<div class="cond' + (a.done ? " met" : "") + '"><input type="checkbox" data-act-check="' + a.id + '"' + (a.done ? " checked" : "") + "><span>" + esc(a.text) + (a.due ? " <small>" + esc(a.due.slice(5).replace("-", "/")) + "まで</small>" : "") + "</span>" +
+  // 目標への進み具合(手で入力)と、期限に間に合うか
+  const prog = p.progress || [], pct = prog.length ? +prog[prog.length - 1].pct : 0;
+  const revs = p.revisions || [], start = (revs.length ? revs[revs.length - 1].date : null) || ((p.statusLog || []).find(x => x.status === "侵攻中") || {}).date || p.created;
+  const base = revs.length ? revs[revs.length - 1].pctAt : 0;                     // 今の計画を始めたときの進み具合
+  let pace = "";
+  if (p.status === "侵攻中" && p.due && start) {
+    const total = Math.max(1, daysBetween(start, p.due)), gone = Math.max(0, daysBetween(start, taskDay())), left = daysBetween(taskDay(), p.due);
+    const rate = gone > 0 ? (pct - base) / gone : null, need = left > 0 ? (100 - pct) / left : null;
+    const late = pct < 100 && (left < 0 || (rate != null && gone >= 1 && (rate <= 0 || taskDay() > p.due || pct + rate * left < 100)));
+    pace = '<div class="rpace' + (late ? " late" : "") + '">' + (late ? "⚠ このペースだと期限(" + esc(p.due.slice(5).replace("-", "/")) + ")に間に合いません。" : "期限(" + esc(p.due.slice(5).replace("-", "/")) + ")まで あと" + left + "日。") +
+      (rate != null ? "今の計画で1日あたり " + rate.toFixed(1) + "%。" : "") + (need != null && pct < 100 ? "残り " + (100 - pct) + "% を、1日あたり " + need.toFixed(1) + "% で。" : "") +
+      (late ? '<button type="button" class="btn sm" data-raid-revise style="margin-left:.4rem">計画を修正する</button>' : "") + "</div>";
+  }
+  if (isRaid(p) && revs.length) {
+    const r0 = revs[revs.length - 1];
+    h += '<div class="rplan"><b>今の計画(版' + (revs.length + 1) + ')</b> 前の計画で <b>' + r0.pctAt + "%</b> 終わった → 残りの <b>" + (100 - r0.pctAt) + "%</b> を " + (p.due ? "<b>" + esc(p.due.slice(5).replace("-", "/")) + "</b> までに" : "やる") +
+      (r0.done.length ? '<small>前の計画で済んだ作戦:' + r0.done.map(esc).join("・") + "</small>" : "") + "</div>";
+  }
+  if (isRaid(p)) h += panelHtml("目標への進み具合(手で入力)", '<span class="gauge"><span class="gbar"><i style="width:' + Math.min(100, pct) + '%"></i></span><b>' + pct + "%</b></span>",
+    pace + '<div class="cform"><input id="rp-pct" type="number" min="0" max="100" step="5" value="' + pct + '" style="width:5rem">%<input id="rp-note" placeholder="メモ(例:単語帳の第3章まで)" style="flex:1"><button type="button" class="btn sm" data-raid-prog>記録する</button></div>' +
+    (prog.length ? '<div class="rprog">' + prog.slice(-6).reverse().map(x => "<div><span>" + esc(x.date.slice(5).replace("-", "/")) + "</span><b>" + x.pct + "%</b>" + (x.note ? " " + esc(x.note) : "") + "</div>").join("") + "</div>" : "") +
+    (p.status === "侵攻中" && !pace.includes("data-raid-revise") ? '<div style="margin-top:.4rem"><button type="button" class="linkbtn" data-raid-revise>計画を修正する</button></div>' : ""));
+  // 計画を修正する画面
+  if (isRaid(p) && pg.raidRevise) {
+    const undone = (p.actions || []).filter(a => !a.done && !a.rev), doneNow = (p.actions || []).filter(a => a.done && !a.rev);
+    h += panelHtml("計画を修正する", "", '<p class="panel-e" style="margin-top:0">今の進み具合 <b>' + pct + "%</b> を「前の計画で終わった分」として記録し、残りの <b>" + (100 - pct) + "%</b> を新しい計画でやります。</p>" +
+      (doneNow.length ? '<div class="frow"><span class="fl">済んだ作戦</span><p>' + doneNow.map(a => esc(a.text)).join("・") + "</p></div>" : "") +
+      '<div class="frow"><span class="fl">引き継ぐ作戦</span><div>' + (undone.length ? undone.map(a => '<label class="cfopt"><input type="checkbox" data-rv-keep value="' + a.id + '" checked> ' + esc(a.text) + "</label>").join("") : '<span class="panel-e">ありません</span>') + "</div></div>" +
+      '<div class="f"><label>新しく足す作戦(1行に1つ。1回だけの作戦になります)</label><textarea id="rv-new" style="min-height:3rem"></textarea></div>' +
+      '<div class="grid2"><div class="f"><label>新しい期限</label><input id="rv-due" type="date" value="' + esc(p.due || "") + '"></div><div class="f"><label>修正する理由</label><input id="rv-why" placeholder="例:思ったより量が多かった"></div></div>' +
+      '<div class="row-btns"><button type="button" class="btn" data-raid-revise-save>この計画で続ける</button><button type="button" class="btn ghost" data-raid-revise-x>やめる</button></div>');
+  }
+  if (isRaid(p) && revs.length) h += '<details class="fold"><summary>計画の版 ' + (revs.length + 1) + "</summary>" + revs.map((r, i) => '<div class="decree"><div class="dd">版' + (i + 1) + "(" + esc(r.from || "") + "〜" + esc(r.date) + ")</div>" +
+    "期限 " + esc(r.prevDue || "なし") + " → " + r.pctAt + "% で修正" + (r.reason ? "(" + esc(r.reason) + ")" : "") + (r.done.length ? "<br>済んだ作戦:" + r.done.map(esc).join("・") : "") + (r.carried.length ? "<br>引き継いだ作戦:" + r.carried.map(esc).join("・") : "") + (r.added.length ? "<br>足した作戦:" + r.added.map(esc).join("・") : "") + "</div>").join("") + "</details>";
+  const acts = p.actions || [], ad = acts.filter(a => a.done && !(isRaid(p) && a.rev)).length, an = acts.filter(a => !(isRaid(p) && a.rev)).length;
+  h += panelHtml("作戦", an ? '<span class="gauge"><span class="gbar"><i style="width:' + (ad / an * 100) + '%"></i></span><b>' + ad + "/" + an + "</b>済み</span>" : "",
+    acts.filter(a => !(isRaid(p) && a.rev)).map(a => '<div class="cond' + (a.done ? " met" : "") + '"><input type="checkbox" data-act-check="' + a.id + '"' + (a.done ? " checked" : "") + "><span>" + esc(a.text) +
+      (isRaid(p) ? ' <small class="amode">' + (a.mode === "daily" ? "毎日" : "1回") + "</small>" : "") + (a.due ? " <small>" + esc(a.due.slice(5).replace("-", "/")) + "まで</small>" : "") + "</span>" +
       (a.taskId ? '<small class="ph-n">行軍表に出ています</small>' : '<button type="button" class="linkbtn" data-act-task="' + a.id + '">行軍表に出す</button>') + '<button type="button" class="del" data-act-del="' + a.id + '">外す</button></div>').join("") +
-    '<div class="cform"><input id="act-text" placeholder="片付けるための行動(例:Ankiの溜まりを1日200枚ずつ)" style="flex:1"><input id="act-due" type="date"><button type="button" class="btn sm" data-act-add>足す</button></div>' +
-    (p.status === "侵攻中" ? '<div style="margin-top:.5rem"><button type="button" class="btn' + (acts.length && ad === acts.length ? "" : " ghost") + '" data-raid-status="制圧">制圧にする</button></div>' : ""));
+    '<div class="cform"><input id="act-text" placeholder="片付けるための行動(例:Ankiの溜まりを1日200枚ずつ)" style="flex:1">' +
+      (isRaid(p) ? '<select id="act-mode" title="行軍表に出すときの出方"><option value="once">1回だけ</option><option value="daily">毎日(侵攻中のあいだ)</option></select>' : "") +
+      '<input id="act-due" type="date"><button type="button" class="btn sm" data-act-add>足す</button></div>' +
+    (p.status === "侵攻中" ? '<div style="margin-top:.5rem"><button type="button" class="btn' + ((an && ad === an) || pct >= 100 ? "" : " ghost") + '" data-raid-status="制圧">制圧にする</button></div>' : ""));
   // 引き渡し:対象の省のどのSTAGE・WAVEを再開させるか
   const units = tm ? pages().filter(x => rootTag(x) === tm.tag && isUnit(x)).sort(byLabel) : [];
   const ho = p.handover || {};
-  h += panelHtml("引き渡し", "", (tm ? (units.length ? '<p class="panel-e" style="margin-top:0">制圧したら、' + esc(tm.name) + "のどのSTAGE・WAVEを再開させるかを選びます。引き渡すと、選んだものが「進行中」に戻ります。</p>" +
+  h += panelHtml("引き渡し(任意)", "", (tm ? (units.length ? '<p class="panel-e" style="margin-top:0">制圧したら、' + esc(tm.name) + "のどのSTAGE・WAVEを再開させるかを選びます。引き渡すと、選んだものが「進行中」に戻ります。</p>" +
       '<div class="chips">' + units.map(u => '<label class="chip"><input type="checkbox" data-ho-unit value="' + u.id + '"' + ((ho.units || []).includes(u.id) ? " checked" : "") + (p.status === "引き渡し済み" ? " disabled" : "") + "> " + esc(u.label) + (u.title ? " " + esc(u.title) : "") + "(" + esc(stOf(u)) + ")</label>").join("") + "</div>"
       : emptyHtml(tm.name + "には、まだSTAGE・WAVEの中身がありません。")) : emptyHtml("対象の省を選ぶと出ます。")) +
-    (p.status === "制圧" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-raid-handover>引き渡す</button></div>' : "") +
-    (p.status === "引き渡し済み" ? '<p class="ph-n">' + esc(ho.date || "") + " に引き渡しました。</p>" : ""));
+    (p.status === "制圧" ? '<div class="row-btns" style="margin-top:.5rem"><button type="button" class="btn" data-raid-handover>引き渡す</button><button type="button" class="btn ghost" data-raid-finish>引き渡さずに終える</button></div>' : "") +
+    (p.status === "引き渡し済み" ? '<p class="ph-n">' + esc(ho.date || "") + (ho.none ? " に終えました(引き渡しなし)。" : " に引き渡しました。") + "</p>" : ""));
   if (String(p.body || "").trim()) h += panelHtml("メモ", "", '<div class="pbody">' + renderPageBody(p) + "</div>");
   h += '<details class="pg-more"><summary>その他</summary><div class="pg-foot"><span>このページのリンク</span><input readonly value="' + esc(pageUrl(p.id)) + '" onclick="this.select()"><button type="button" class="btn ghost sm" data-page-del style="border-color:var(--shu);color:var(--shu)">このRAIDを消す</button></div></details>';
   h += '<span class="status" id="pg-msg"></span>';
@@ -2964,6 +3006,29 @@ function bindPages(){
     // クリア条件
     if (p && isRaid(p)) {
       if ((b = q("[data-raid-status]"))) { const v = b.dataset.raidStatus; await savePages(doc => setStatus(doc.pages.find(y => y.id === p.id), v)); computeTasks(); rerender(); return; }
+      if (q("[data-raid-prog]")) { const v = Math.max(0, Math.min(100, Math.round(+document.getElementById("rp-pct").value || 0))), nt = (document.getElementById("rp-note").value || "").trim();
+        await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.progress = (x.progress || []).filter(z => z.date !== taskDay()).concat([{ date: taskDay(), pct: v, note: nt }]); });
+        rerender(); msg("進み具合を記録しました(" + v + "%)。"); return; }
+      if (q("[data-raid-revise]")) { pg.raidRevise = true; rerender(); return; }
+      if (q("[data-raid-revise-x]")) { pg.raidRevise = false; rerender(); return; }
+      if (q("[data-raid-revise-save]")) {
+        const keep = new Set(Array.from(document.querySelectorAll("[data-rv-keep]:checked")).map(x => x.value));
+        const adds = (document.getElementById("rv-new").value || "").split("\n").map(x => x.trim()).filter(Boolean);
+        const nd = document.getElementById("rv-due").value, why = (document.getElementById("rv-why").value || "").trim();
+        const prog0 = p.progress || [], pctAt = prog0.length ? +prog0[prog0.length - 1].pct : 0;
+        await savePages(doc => {
+          const x = doc.pages.find(y => y.id === p.id), revs0 = x.revisions || [], no = revs0.length + 1;
+          const cur = (x.actions || []).filter(a => !a.rev), from = revs0.length ? revs0[revs0.length - 1].date : (((x.statusLog || []).find(z => z.status === "侵攻中") || {}).date || x.created);
+          const rec = { date: taskDay(), from, prevDue: x.due || "", newDue: nd, pctAt, reason: why, done: cur.filter(a => a.done).map(a => a.text), carried: cur.filter(a => !a.done && keep.has(a.id)).map(a => a.text), added: adds, dropped: cur.filter(a => !a.done && !keep.has(a.id)).map(a => a.text) };
+          (x.actions || []).forEach(a => { if (!a.rev && (a.done || !keep.has(a.id))) a.rev = no; });          // 済んだ作戦・引き継がない作戦は、前の版のものとしてしまう
+          x.actions = (x.actions || []).concat(adds.map(t => ({ id: uid(), text: t, due: "", done: false, mode: "once" })));
+          x.revisions = revs0.concat([rec]); if (nd) x.due = nd;
+        });
+        pg.raidRevise = false; rerender(); msg("計画を修正しました。前の計画で " + pctAt + "% 終わり、残りの " + (100 - pctAt) + "% を新しい計画でやります。"); return;
+      }
+      if (q("[data-raid-finish]")) { if (!confirm("引き渡さずに、このRAIDを終えますか。")) return;
+        await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.handover = { units: [], date: taskDay(), none: true }; setStatus(x, "引き渡し済み"); });
+        computeTasks(); rerender(); msg("このRAIDを終えました。"); return; }
       if (q("[data-raid-handover]")) {
         const ids = Array.from(document.querySelectorAll("[data-ho-unit]:checked")).map(x => x.value);
         if (!confirm(ids.length ? "選んだ " + ids.length + " 件を進行中に戻して、引き渡しますか。" : "再開させるSTAGE・WAVEを選ばずに引き渡しますか。")) return;
@@ -2976,18 +3041,20 @@ function bindPages(){
       if (isAlert(p) && (b = q("[data-alert-status]"))) { const v = b.dataset.alertStatus; await savePages(doc => setStatus(doc.pages.find(y => y.id === p.id), v)); computeTasks(); rerender(); return; }
       if ((b = q("[data-alert-level]"))) { const n = +b.dataset.alertLevel; await savePages(doc => { doc.pages.find(y => y.id === p.id).level = n; }); rerender(); return; }
       if (q("[data-act-add]")) { const t = (document.getElementById("act-text").value || "").trim(), du = document.getElementById("act-due").value; if (!t) return;
-        await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.actions = (x.actions || []).concat([{ id: uid(), text: t, due: du, done: false }]); }); rerender(); return; }
+        const md = (document.getElementById("act-mode") || {}).value || (isRaid(p) ? "once" : "daily");
+        await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.actions = (x.actions || []).concat([{ id: uid(), text: t, due: du, done: false, mode: md }]); }); rerender(); return; }
       if ((b = q("[data-act-del]"))) { const id = b.dataset.actDel; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.actions = (x.actions || []).filter(a => a.id !== id); }); rerender(); return; }
       if ((b = q("[data-act-task]"))) {
         const a = (p.actions || []).find(z => z.id === b.dataset.actTask); if (!a) return;
         const tag = rootTag(p), day = taskDay(), tid = "t" + (await sha1Hex(a.text + "|" + day)).slice(0, 10);
-        const def = { id: tid, name: a.text, aliases: [], ministries: [tag], waves: [{ label: p.label, url: pageUrl(p.id) }], slot: "一日中", stance: "守", kind: "習慣型", interval: "", weight: null, quota: null,
+        const once = isRaid(p) && a.mode !== "daily";      // 1回だけの作戦は完了型(1回やれば終わる)、毎日の作戦は侵攻中のあいだ毎日出る
+        const def = { id: tid, name: a.text, aliases: [], ministries: [tag], waves: [{ label: p.label, url: pageUrl(p.id) }], slot: "一日中", stance: "守", kind: once ? "完了型" : "習慣型", interval: "", weight: null, quota: null,
           requirement: p.label + (isRaid(p) ? "の作戦" : "の対応") + (a.due ? "(" + a.due.slice(5).replace("-", "/") + "まで)" : ""), created: day, initial: { status: "新規" }, generations: [{ gen: 1, from: day, target: null }], events: [] };
         for (let i = 0; i < 3; i++) { const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] }; ov.newTasks = (ov.newTasks || []).concat([def]);
           try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); state.overlay = ov; break; } catch (err) { if (err.status !== 409 && err.status !== 422) { msg(err.message, true); return; } } }
         await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const z = (x.actions || []).find(k => k.id === a.id); if (z) z.taskId = tid; });
         logPlan([rootTag(p)], "タスクを作った", tid, a.text);
-        computeTasks(); rerender(); msg("「" + a.text + "」を行軍表に出しました(" + (isRaid(p) ? "侵攻中のあいだ出て、制圧すると外れます" : "収束すると外れます") + ")。"); return;
+        computeTasks(); rerender(); msg("「" + a.text + "」を行軍表に出しました(" + (isRaid(p) ? (a.mode === "daily" ? "侵攻中のあいだ毎日出て、制圧すると外れます" : "1回やれば終わります") : "収束すると外れます") + ")。"); return;
       }
       if (q("[data-review-save]")) { const cause = document.getElementById("rv-cause").value, prevent = document.getElementById("rv-prevent").value;
         await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.review = Object.assign({}, x.review || {}, { cause, prevent }); if (x.status === "収束") setStatus(x, "振り返り済み"); }); rerender(); return; }
