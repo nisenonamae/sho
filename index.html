@@ -424,7 +424,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-08 r61";
+const APP_VERSION = "2026-10-08 r62";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1910,7 +1910,8 @@ function termForm(d, ms){
     '<div class="f"><label>終わり</label><input id="tf-end" type="date" value="' + esc(d.end) + '"></div></div>' +
     '<div class="f" style="margin-top:.4rem"><label>スローガン</label><input id="tf-slogan" value="' + esc(d.slogan.text) + '"></div>' +
     '<div class="f" style="margin-top:.4rem"><label>スローガンの概要</label><textarea id="tf-note" style="min-height:3rem">' + esc(d.slogan.note) + "</textarea></div>" +
-    (edit ? '<p class="panel-e" style="font-size:.8rem">重点と抑制は、作戦期の画面の「重点を変える(期に1回まで)」で変えます。</p>' : focusPicker(ms, d.focus, d.restrain)) + g +
+    (edit ? (d.focusUsed ? '<p class="panel-e" style="font-size:.8rem">重点と抑制の変更は、この期ではもう使いました(期に1回まで)。</p>'
+        : focusPicker(ms, d.focus, d.restrain) + '<div class="f"><label>重点・抑制を変えたときの理由(変えたときだけ。変えると「期に1回」の1回として数えます)</label><input id="tf-fwhy" value="' + esc(d.fwhy || "") + '"></div>') : focusPicker(ms, d.focus, d.restrain)) + g +
     ((d.goals || []).length < MAX_GOALS ? '<button type="button" class="btn ghost sm" data-g-add>目標を足す(3つまで)</button>' : "") +
     (edit ? '<div class="f" style="margin-top:.6rem"><label>直す理由</label><input id="tf-why" placeholder="例:目標を足し忘れた"></div>' +
         '<div style="margin-top:.8rem;display:flex;gap:.5rem"><button type="button" class="btn" data-term-edit-save>直したことを保存</button><button type="button" class="btn ghost" data-term-edit-cancel>やめる</button></div></div>'
@@ -2000,7 +2001,7 @@ function bindStaff(){
       mt.issues.push({ id: uid(), text: t, thought: "" }); saveDraft(); if (t) sfMsg("論点に入れました(" + mt.issues.length + "つ)。"); return renderDetail(); }
     if (staff.draft && (b = q("[data-issue-del]"))) { readMeeting(staff.draft); staff.draft.meeting.issues.splice(+b.dataset.issueDel, 1); saveDraft(); return renderDetail(); }
     if (term && q("[data-term-edit]")) {
-      staff.edit = { editing: true, id: term.id, name: term.name, start: term.start, end: term.end, slogan: Object.assign({}, term.slogan), focus: term.focus, restrain: term.restrain,
+      staff.edit = { editing: true, id: term.id, name: term.name, start: term.start, end: term.end, slogan: Object.assign({}, term.slogan), focus: term.focus, restrain: term.restrain, focusUsed: (term.focusChanges || []).length > 0,
         goals: (term.goals || []).map(g => ({ id: g.id, issued: true, hasValues: (g.values || []).length > 0, text: g.text, criterion: g.criterion, target: g.target, unit: g.unit, due: g.due, tag: g.tag, tags: g.tags || (g.tag ? [g.tag] : []),
           step: (g.firstStep || {}).name || "", slot: (g.firstStep || {}).slot || "朝" })) };
       return renderDetail();
@@ -2010,7 +2011,12 @@ function bindStaff(){
     if (staff.edit && (b = q("[data-g-del]"))) { readTermForm(staff.edit); staff.edit.start = term.start; const gx = staff.edit.goals[+b.dataset.gDel]; if (gx && gx.hasValues) return; staff.edit.goals.splice(+b.dataset.gDel, 1); return renderDetail(); }
     if (staff.edit && q("[data-term-edit-save]")) {
       const ed = staff.edit, why = (document.getElementById("tf-why") || {}).value || "";
-      readTermForm(ed); ed.start = term.start; ed.focus = term.focus; ed.restrain = term.restrain;
+      readTermForm(ed); ed.start = term.start;
+      ed.fwhy = ((document.getElementById("tf-fwhy") || {}).value || "").trim();
+      if (ed.focusUsed) { ed.focus = term.focus; ed.restrain = term.restrain; }
+      const same = (a, b) => (a || []).slice().sort().join() === (b || []).slice().sort().join();
+      const focusChanged = !ed.focusUsed && (!same(ed.focus, term.focus) || !same(ed.restrain, term.restrain));
+      if (focusChanged && !ed.fwhy) return sfMsg("重点・抑制を変えたときは、その理由を書いてください。", true);
       const p = issueProblems(ed); if (p.length) return sfMsg("保存できません。足りないもの:" + p.join("、"), true);
       const added = ed.goals.filter(g => !g.issued), removed = term.goals.filter(g => !ed.goals.some(x => x.id === g.id));
       // 足した目標の最初の一歩を、行軍表のタスクに
@@ -2025,10 +2031,11 @@ function bindStaff(){
         }
       }
       const what = [ed.name !== term.name ? "名前" : "", ed.end !== term.end ? "終わりの日(" + term.end + "→" + ed.end + ")" : "", ed.slogan.text !== term.slogan.text || ed.slogan.note !== term.slogan.note ? "スローガン" : "",
-        added.length ? "目標を足した:" + added.map(g => g.text).join("・") : "", removed.length ? "目標を外した:" + removed.map(g => g.text).join("・") : "",
+        focusChanged ? "重点・抑制" : "", added.length ? "目標を足した:" + added.map(g => g.text).join("・") : "", removed.length ? "目標を外した:" + removed.map(g => g.text).join("・") : "",
         ed.goals.filter(g => g.issued).some(g => { const o = term.goals.find(x => x.id === g.id); return o && (o.text !== g.text || o.criterion !== g.criterion || +o.target !== +g.target || o.unit !== g.unit || o.due !== g.due || (o.tags || [o.tag]).join() !== (g.tags || []).join()); }) ? "目標の中身" : ""].filter(Boolean);
       await saveStaff(doc => { const t = doc.terms.find(x => x.id === term.id);
         t.name = ed.name; t.end = ed.end; t.slogan = { title: ed.name, text: ed.slogan.text, note: ed.slogan.note };
+        if (focusChanged && !(t.focusChanges || []).length) { t.focusChanges = [{ date: taskDay(), why: ed.fwhy, from: { focus: t.focus, restrain: t.restrain }, via: "作戦期を直す" }]; t.focus = ed.focus; t.restrain = ed.restrain; }
         t.goals = ed.goals.map(g => { const o = t.goals.find(x => x.id === g.id) || {};
           return Object.assign({}, o, { id: g.id, text: g.text, criterion: g.criterion, target: +g.target, unit: g.unit, due: g.due, tag: (g.tags || [])[0] || g.tag, tags: g.tags, firstStep: o.firstStep || { name: g.step, slot: g.slot }, values: o.values || [] }); });
         t.edits = (t.edits || []).concat([{ date: taskDay(), what: what.join("、") || "変更なし", why: why.trim() }]); });
