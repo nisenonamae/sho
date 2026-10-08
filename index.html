@@ -410,7 +410,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-07 r47";
+const APP_VERSION = "2026-10-07 r51";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1848,7 +1848,7 @@ async function issueTerm(d){
       if (have.has(t.name)) continue;
       ov.newTasks.push({ id: await sha1Id(t.name, day), name: t.name, aliases: [], ministries: t.tags ? t.tags : (t.tag ? [t.tag] : []), waves: [], slot: t.slot, stance: "攻", kind: t.kind,
         interval: t.interval, weight: null, quota: null, requirement: t.requirement, created: day, initial: { status: "新規" },
-        generations: [{ gen: 1, from: day, target: 10 }], events: [], staff: true });
+        generations: [{ gen: 1, from: day, target: null }], events: [], staff: true });
     }
     try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); break; } catch (e) { if (e.status !== 409 && e.status !== 422) throw e; }
   }
@@ -1907,7 +1907,7 @@ function bindStaff(){
           const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] }; ov.newTasks = ov.newTasks || [];
           const have = new Set(ov.newTasks.map(t => t.name).concat(state.tasks.filter(t => !["アーカイブ", "達成済み"].includes(t.status)).map(t => t.def.name)));
           for (const g of added) if (!have.has(g.step)) ov.newTasks.push({ id: await sha1Id(g.step, day), name: g.step, aliases: [], ministries: g.tags, waves: [], slot: g.slot, stance: "攻", kind: "習慣型",
-            interval: "", weight: null, quota: null, requirement: "参謀本部の目標:" + g.text, created: day, initial: { status: "新規" }, generations: [{ gen: 1, from: day, target: 10 }], events: [], staff: true });
+            interval: "", weight: null, quota: null, requirement: "参謀本部の目標:" + g.text, created: day, initial: { status: "新規" }, generations: [{ gen: 1, from: day, target: null }], events: [], staff: true });
           try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); break; } catch (err) { if (err.status !== 409 && err.status !== 422) return sfMsg(err.message, true); }
         }
       }
@@ -1974,7 +1974,6 @@ function bindStaff(){
 const NOTION = {
   ministries: { name: "省一覧", url: "https://app.notion.com/p/211ec28615e5494a97490bfd5f52d135", why: "省を足す・名前やタグ・依存先を直す" },
   tide: { name: "時勢", url: "https://app.notion.com/p/5fe7620f45124ce4beb6ff12d9fcf354", why: "出来事を記録して、省の重要度を増減させる" },
-  wealth: { name: "国富", url: "https://app.notion.com/p/02eaf9dee0f94840812bca4777519717", why: "達成して残った成果を記録する" },
   rules: { name: "レギュレーション", url: "https://app.notion.com/p/60b39e7caee24b9fa8c2ed24742a67a4", why: "国力の計算の変更を記録する" },
   code: { name: "国家運営規程", url: "https://app.notion.com/p/3d248dd8079581358342cd2412628fe1", why: "体制の運営の決まり(読むもの)" },
 };
@@ -2063,6 +2062,27 @@ async function flushAct(){
 }
 
 const PLAN_KINDS = { STAGE: 1, WAVE: 1, ALERT: 1, RAID: 1 };
+const genQ = [];
+function queueGen(p, up){ genQ.push({ id: p.id, label: p.label, tag: rootTag(p), up }); setTimeout(flushGen, 0); }
+async function flushGen(){
+  if (!genQ.length || !state.conn) return;
+  const jobs = genQ.splice(0), day = taskDay();
+  const plan = jobs.map(jb => ({ jb, ts: jb.tag ? tasksFor(jb.tag, jb.label, jb.id).concat(state.tasks.filter(t => t.status === "アーカイブ" && (t.def.waves || []).some(w => ((w && w.url) || "").endsWith("#page=" + jb.id)))) : [] }));
+  const ok = await overlayWrite(ov => {
+    for (const { jb, ts } of plan) for (const t of ts) {
+      const o = ov.tasks[t.def.id] = Object.assign({}, ov.tasks[t.def.id] || {}), gens = (o.generations || []).slice();
+      if (jb.up) {
+        if (gens.some(g => g.by === jb.id)) continue;                       // このクリアで、もう上げてある
+        const cur = (t.def.generations || []).concat(gens).filter(g => g.from <= day).reduce((a, g) => Math.max(a, g.gen || 1), 1);
+        gens.push({ gen: cur + 1, from: day, target: null, by: jb.id });
+      } else {
+        const keep = gens.filter(g => g.by !== jb.id); if (keep.length === gens.length) continue; gens.length = 0; keep.forEach(g => gens.push(g));
+      }
+      o.generations = gens;
+    }
+  });
+  if (ok) { plan.forEach(({ jb, ts }) => ts.length && logPlan([jb.tag], jb.up ? "世代を上げた" : "世代を戻した", jb.id, jb.label)); computeTasks(); try { if (pg.open || state.open) renderDetail(); else renderList(); } catch (err) {} }
+}
 function pagesSnap(){ const m = {}; (pg.doc.pages || []).forEach(p => { if (PLAN_KINDS[p.kind] && !p.imported) m[p.id] = JSON.stringify(p); }); return m; }
 function savePages(mutate){
   const before = pagesSnap();
@@ -2074,6 +2094,11 @@ function savePages(mutate){
     if (!tag) return;
     const was = before[id] ? JSON.parse(before[id]) : null;
     const kind = !was ? p.kind + "を作った" : p.deleted && !was.deleted ? p.kind + "を消した" : (p.status !== was.status ? p.kind + "の状態を変えた" : p.kind + "を直した");
+    // 中身(STAGE1-1 など)をクリアしたら、結びついたタスクの世代を上げる。クリアを取り消したら戻す
+    if ((p.kind === "STAGE" || p.kind === "WAVE") && String(p.label).includes("-") && was) {
+      if (p.status === "クリア" && was.status !== "クリア" && !p.deleted) queueGen(p, true);
+      else if (was.status === "クリア" && (p.status !== "クリア" || p.deleted)) queueGen(p, false);
+    }
     logPlan([tag], kind, p.id, p.label + (p.title ? " " + p.title : ""));
   });
   pgQ.pending.push(mutate);
@@ -2529,7 +2554,7 @@ function renderPage(box, p){
           '<div class="frow"><span class="fl">タスク内容</span>' + (pp.content ? '<p>' + esc(pp.content) + "</p>" : empty("未記入")) + "</div>");
         h += panel("クリア条件", (cs.length ? gaugeHtml(p) : "") + (pg.condForm ? "" : '<button type="button" class="linkbtn" data-cond-new="' + pp.id + '">+ 足す</button>'), condRows(cs, pp.id) +
           (cs.length && met === cs.length && st !== "クリア" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-page-clear>クリアにする</button></div>' : "") +
-          '<p class="panel-e" style="margin:.4rem 0 0;font-size:.74rem">クリアすると、翌朝の計算で国富 +2。まとまり(' + esc(String(p.label).split("-")[0]) + ')の中身が全部クリアになると、さらに +3。</p>');
+          '<p class="panel-e" style="margin:.4rem 0 0;font-size:.74rem">クリアすると、結びついたタスクの世代が上がります(行軍表の世代はここだけで上がります)。' + (p.kind === "STAGE" ? "クリアしたSTAGEは、その省の土地(領土)として残ります。進行中のあいだも、クリア条件を満たした割合だけ領土になります。省の支配の深さ(タスクの定着度)が0になると土地は失われ、その省へのRAIDを引き渡すと取り戻せます。" : "") + '</p>');
         h += panel("タスク", (ts.length ? '<span class="ph-n">' + ts.length + "つ</span>" : "") + (pg.taskForm ? "" : '<button type="button" class="linkbtn" data-task-new>+ 作る</button>'),
           gateNote + (ts.length ? '<div class="tasks">' + ts.map(taskRow).join("") + "</div>" : (pg.taskForm ? "" : empty("まだありません。"))) + (pg.taskForm ? taskFormHtml(p) : ""));
       } else {
@@ -2590,7 +2615,7 @@ function condFormHtml(p){
           (near.length ? '<div class="cf-list">' + near.map(box).join("") + "</div>" : '<div class="panel-e">' + (pp ? "この区分" : "この" + (p.kind || "")) + "のタスクはまだありません。</div>") +
           (rest.length ? '<details class="cf-more"><summary>ほかのタスク ' + rest.length + '件</summary><div class="cf-list">' + rest.map(box).join("") + "</div></details>" : "") + "</div>" +
         '<div class="cf-sec cf-rule"><span>選んだタスクが</span><select id="cf-metric"><option value="status"' + (metric === "status" ? " selected" : "") + '>状況が</option><option value="total"' + (metric === "total" ? " selected" : "") + '>累計が</option><option value="streak"' + (metric === "streak" ? " selected" : "") + ">連続が</option></select>" +
-          (metric === "status" ? '<select id="cf-value">' + ["進行中", "定着", "熟達", "殿堂入り"].map(v => "<option" + (v === "定着" ? " selected" : "") + ">" + v + "</option>").join("") + "</select><span>以上</span>"
+          (metric === "status" ? '<select id="cf-value" title="殿堂入りは自分で決めるので、条件にはしません">' + ["進行中", "定着", "熟達"].map(v => "<option" + (v === "定着" ? " selected" : "") + ">" + v + "</option>").join("") + "</select><span>以上</span>"
             : '<input id="cf-value" type="number" min="1" placeholder="30" style="width:5rem"><span>回以上</span>') + "</div>"
       : '<div class="cf-sec"><div class="cf-h">手で確かめること(1行に1つ)</div><textarea id="cf-text" style="min-height:4.5rem" placeholder="例:模試で7割&#10;例:単語帳を1周する"></textarea></div>') +
     '<div class="row-btns"><button type="button" class="btn sm" data-cond-add>足す</button><button type="button" class="btn ghost sm" data-cond-cancel>やめる</button><span class="status" id="cf-msg"></span></div></div>';
@@ -2698,7 +2723,7 @@ function renderPlaces(){
     '<p style="font-size:.84rem;margin:.2rem 0">省・STAGE・WAVE・ページは、このアプリで足したり直したりします。</p>' +
     (pg.doc.strictFrom ? '<p style="font-size:.84rem;margin:.4rem 0">タスクは計画のもとで進めます。STAGE・WAVEが進行中でないタスクと、このアプリに無いSTAGE・WAVEのタスクは、' + esc(pg.doc.strictFrom.slice(5).replace("-", "/")) + 'から「待機中」になり、行軍表に出ません。</p>' : "") +
     '<p style="font-size:.84rem;margin:.4rem 0 .2rem">次のものはNotionにあり、<b>Claudeに頼んで</b>直します:</p>' +
-    '<ul style="font-size:.84rem;margin:.2rem 0;padding-left:1.2rem"><li>時勢(出来事と省の重要度の増減)</li><li>国富(達成して残った成果)</li><li>レギュレーション(国力の計算を変えた記録)</li><li>国家運営規程</li></ul>';
+    '<ul style="font-size:.84rem;margin:.2rem 0;padding-left:1.2rem"><li>時勢(出来事と省の重要度の増減)</li><li>レギュレーション(国力の計算を変えた記録)</li><li>国家運営規程</li></ul>';
 }
 function bindPages(){
   const box = document.getElementById("detail");
@@ -2842,7 +2867,7 @@ function bindPages(){
         const a = (p.actions || []).find(z => z.id === b.dataset.actTask); if (!a) return;
         const tag = rootTag(p), day = taskDay(), tid = "t" + (await sha1Hex(a.text + "|" + day)).slice(0, 10);
         const def = { id: tid, name: a.text, aliases: [], ministries: [tag], waves: [{ label: p.label, url: pageUrl(p.id) }], slot: "一日中", stance: "守", kind: "習慣型", interval: "", weight: null, quota: null,
-          requirement: p.label + (isRaid(p) ? "の作戦" : "の対応") + (a.due ? "(" + a.due.slice(5).replace("-", "/") + "まで)" : ""), created: day, initial: { status: "新規" }, generations: [{ gen: 1, from: day, target: 1 }], events: [] };
+          requirement: p.label + (isRaid(p) ? "の作戦" : "の対応") + (a.due ? "(" + a.due.slice(5).replace("-", "/") + "まで)" : ""), created: day, initial: { status: "新規" }, generations: [{ gen: 1, from: day, target: null }], events: [] };
         for (let i = 0; i < 3; i++) { const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] }; ov.newTasks = (ov.newTasks || []).concat([def]);
           try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); state.overlay = ov; break; } catch (err) { if (err.status !== 409 && err.status !== 422) { msg(err.message, true); return; } } }
         await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const z = (x.actions || []).find(k => k.id === a.id); if (z) z.taskId = tid; });
@@ -2899,7 +2924,7 @@ function bindPages(){
       const mins = [tag].concat(Array.from(document.querySelectorAll("[data-tf-min]:checked")).map(x => x.value), extra.map(u => rootTag(u))).filter((x, i, a) => x && a.indexOf(x) === i);
       const def = { id, name, aliases: [], ministries: mins, waves: [{ label: p.label, url: pageUrl(p.id) }].concat(extra.map(u => ({ label: u.label, url: pageUrl(u.id) }))), slot: v("tf-slot") || "一日中", stance: "攻", kind: "習慣型",
         interval: v("tf-interval"), weight: null, quota: null, requirement: v("tf-step") ? "最初の一歩:" + v("tf-step") : "", created: day, initial: { status: "新規" },
-        generations: [{ gen: 1, from: day, target: 10 }], events: [] };
+        generations: [{ gen: 1, from: day, target: null }], events: [] };
       for (let i = 0; i < 3; i++) {
         const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] };
         ov.newTasks = (ov.newTasks || []).concat([def]);
@@ -3176,7 +3201,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
