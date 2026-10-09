@@ -75,6 +75,9 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.failrow{margin:.2rem 0 .4rem;text-align:right}.failb{color:#8a3a2a;font-size:.8rem}
+.failbox{border:1px solid #b3283c55;background:#b3283c0a;border-radius:6px;padding:.5rem .8rem;margin:.4rem 0 .6rem}.failbox .fb-h{font-weight:700;color:#8a2030;margin-bottom:.3rem}.failbox .fb-h small{font-weight:400;color:var(--sub);margin-left:.4rem}
+.failb2{background:#8a2030;border-color:#8a2030}.raid-card.failed .ast{background:#8a2030;color:#fff}
 .dpicker{width:100%;margin-top:.3rem}.dpks{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.2rem}
 .dpk{border:1px solid var(--rule);background:#fff;border-radius:6px;padding:.1rem .4rem;font:inherit;font-size:.78rem;cursor:pointer;line-height:1.2;text-align:center}
 .dpk small{display:block;font-size:.66rem;color:var(--sub)}.dpk.sat small{color:#2F6E8A}.dpk.sun small{color:#B3283C}
@@ -424,7 +427,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-09 r63";
+const APP_VERSION = "2026-10-09 r64";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2525,9 +2528,10 @@ function renderAlert(box, p, head){
   const lvName = (ALV.find(x => x[0] === (p.level || 1)) || ALV[0])[1], dl = daysLeft(p);
   h += '<div class="pg-head"><span class="pk pk-ALERT">' + esc(p.label) + "</span>" + (p.title ? "<h2>" + esc(p.title) + "</h2>" : '<h2><button type="button" class="linkbtn big" data-page-edit>名前を付ける</button></h2>') +
     '<button type="button" class="btn ghost sm" data-page-edit>直す</button></div>' +
-    '<div class="stchips">' + AST.map(x => '<button type="button" data-alert-status="' + x + '" aria-pressed="' + (p.status === x) + '">' + x + "</button>").join("") + "</div>" +
+    '<div class="stchips">' + AST.map(x => '<button type="button" data-alert-status="' + x + '" aria-pressed="' + (p.status === x) + '"' + (p.status === "失敗" ? " disabled" : "") + ">" + x + "</button>").join("") + "</div>" +
     '<div class="stchips lvchips">' + ALV.map(([n, l]) => '<button type="button" data-alert-level="' + n + '" class="lvb lv' + n + '" aria-pressed="' + ((p.level || 1) === n) + '">' + n + " " + l + "</button>").join("") +
       '<span class="st-gauge ' + (dl != null && dl < 0 && alertActive(p) ? "due-over" : "") + '">' + esc(dueText(p)) + "</span></div>";
+  h += failBlockHtml(p);
   h += panel("何が起きたか", '<button type="button" class="linkbtn" data-page-edit>直す</button>',
     (p.happened ? "<p class=\"purpose-text\" style=\"font-size:.95rem\">" + esc(p.happened) + "</p>" : empty("未記入")) +
     '<div class="frow"><span class="fl">気づいた日</span><p>' + esc(p.detected || "—") + '</p></div><div class="frow"><span class="fl">期限</span><p>' + esc(p.due || "—") + "</p></div>");
@@ -2563,6 +2567,28 @@ function renderAlert(box, p, head){
 }
 
 
+
+// ───── 失敗として終える(ALERT・RAID) ─────
+function failBlockHtml(p){
+  const active = isRaid(p) ? raidActive(p) : alertActive(p), f = p.failure || {};
+  if (p.status === "失敗") {
+    const prev = p.prevId ? pageById(p.prevId) : null, next = p.retriedBy ? pageById(p.retriedBy) : null;
+    return '<div class="failbox"><div class="fb-h">失敗の記録 <small>' + esc(f.date || "") + "</small></div>" +
+      (isRaid(p) ? '<div class="frow"><span class="fl">進み具合</span><p>' + (f.pctAt != null ? f.pctAt + "%" : "—") + "(計画の版 " + ((f.revisions || 0) + 1) + ")</p></div>" : "") +
+      '<div class="frow"><span class="fl">何が起きたか</span><p>' + esc(f.reason || "—") + "</p></div>" +
+      '<div class="frow"><span class="fl">学び</span><p>' + esc(f.lesson || "—") + "</p></div>" +
+      (isRaid(p) ? (next ? '<p class="panel-e">もう一度立てたRAID:<a href="#" data-goto-page="' + next.id + '">' + esc(next.label + " " + (next.title || "")) + "</a></p>"
+        : '<div class="row-btns"><button type="button" class="btn sm" data-raid-retry>同じ目標でもう一度RAIDを立てる</button></div>') : "") + "</div>";
+  }
+  if (!active) return "";
+  if (pg.failForm === p.id) return '<div class="failbox"><div class="fb-h">失敗として終える</div>' +
+    '<p class="panel-e" style="margin-top:0">' + (isRaid(p) ? "期限までに(計画を直しても)やり切れなかったときに使います。" : "省を守りきれなかったときに使います。") + "失敗も、次に生かすための記録として残ります。</p>" +
+    '<div class="f"><label>何が起きたか</label><textarea id="fl-reason" style="min-height:3rem" placeholder="例:模試の週と重なり、作戦の半分しか回せなかった"></textarea></div>' +
+    '<div class="f"><label>学び(次に生かすこと)</label><textarea id="fl-lesson" style="min-height:3rem" placeholder="例:試験の週は作戦の量を半分にして計画する"></textarea></div>' +
+    '<div class="row-btns"><button type="button" class="btn sm failb2" data-fail-save>失敗として終える</button><button type="button" class="btn ghost sm" data-fail-x>やめる</button></div></div>';
+  return '<div class="failrow"><button type="button" class="linkbtn failb" data-fail-open>失敗として終える…</button></div>';
+}
+
 /* ───────── RAID(防衛省の主体的な侵攻:止まった省を再始動できる状態に戻す) ───────── */
 const RST = ["計画中", "侵攻中", "制圧", "引き渡し済み"];
 const raidActive = p => ["計画中", "侵攻中"].includes(p.status);
@@ -2588,7 +2614,7 @@ function raidCandidates(){
 const candWhy = c => [c.stuck ? "要再設定 " + c.fall + "/" + c.all + (c.idle != null ? "・" + c.idle + "日済ませていない" : "・まだ一度も済ませていない") : "", c.gap != null ? "時勢と行動のずれ(信用 " + c.gap.toFixed(2) + ")" : ""].filter(Boolean).join("・");
 function raidCard(p){
   const ms = (state.gov && state.gov.ministries) || [], acts = (p.actions || []).filter(a => !a.rev), d = acts.filter(actDone).length;
-  return '<div class="rcard raid-card' + (raidActive(p) ? "" : " closed") + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || ((ms.find(m => m.tag === p.target) || {}).name || "") + "の再始動") + "</span></a>" +
+  return '<div class="rcard raid-card' + (raidActive(p) ? "" : " closed") + (p.status === "失敗" ? " failed" : "") + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || ((ms.find(m => m.tag === p.target) || {}).name || "") + "の再始動") + "</span></a>" +
     '<div class="rc-meta"><span class="ast">' + esc(p.status) + "</span>" + (p.target ? "<span>対象 " + esc((ms.find(m => m.tag === p.target) || { name: p.target }).name) + "</span>" : "") +
     (acts.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (d / acts.length * 100) + '%"></i></span><b>' + d + "/" + acts.length + "</b>作戦</span>" : "") + "</div></div>";
 }
@@ -2608,7 +2634,11 @@ function renderRaid(box, p, head){
   }
   h += '<div class="pg-head"><span class="pk pk-RAID">' + esc(p.label) + "</span>" + (p.title ? "<h2>" + esc(p.title) + "</h2>" : '<h2><button type="button" class="linkbtn big" data-page-edit>名前を付ける</button></h2>') +
     '<button type="button" class="btn ghost sm" data-page-edit>直す</button></div>' +
-    '<div class="stchips">' + RST.map(x => '<button type="button" data-raid-status="' + x + '" aria-pressed="' + (p.status === x) + '">' + x + "</button>").join("") + (p.due ? '<span class="st-gauge">' + esc(dueText(p)) + "</span>" : "") + "</div>";
+    '<div class="stchips">' + RST.map(x => '<button type="button" data-raid-status="' + x + '" aria-pressed="' + (p.status === x) + '"' + (p.status === "失敗" ? " disabled" : "") + ">" + x + "</button>").join("") + (p.due ? '<span class="st-gauge">' + esc(dueText(p)) + "</span>" : "") + "</div>";
+  h += failBlockHtml(p);
+  if (p.prevId && pageById(p.prevId)) { const pv = pageById(p.prevId), pf = pv.failure || {};
+    h += '<div class="rplan"><b>再挑戦</b> 前のRAID <a href="#" data-goto-page="' + pv.id + '">' + esc(pv.label) + "</a> は " + esc(pf.date || "") + " に失敗(進み具合 " + (pf.pctAt != null ? pf.pctAt + "%" : "—") + ")" +
+      (pf.lesson ? "<small>前の学び:" + esc(pf.lesson) + "</small>" : "") + "</div>"; }
   // 対象の省の今の様子
   const ts = tm ? state.tasks.filter(t => (t.def.ministries || []).includes(tm.tag) && !["アーカイブ", "達成済み"].includes(t.status)) : [];
   const fall = ts.filter(t => t.status === "要再設定").length;
@@ -3080,6 +3110,26 @@ function bindPages(){
       }
     }
     if (p && (isAlert(p) || isRaid(p))) {
+      if ((isAlert(p) || isRaid(p)) && q("[data-fail-open]")) { pg.failForm = p.id; rerender(); return; }
+      if (q("[data-fail-x]")) { pg.failForm = null; rerender(); return; }
+      if ((isAlert(p) || isRaid(p)) && q("[data-fail-save]")) {
+        const reason = (document.getElementById("fl-reason").value || "").trim(), lesson = (document.getElementById("fl-lesson").value || "").trim();
+        if (!reason) { msg("何が起きたかを書いてください。", true); return; }
+        const prog = p.progress || [], pctAt = prog.length ? +prog[prog.length - 1].pct : 0;
+        await savePages(doc => { const x = doc.pages.find(y => y.id === p.id);
+          x.failure = Object.assign({ date: taskDay(), reason, lesson }, isRaid(p) ? { pctAt, revisions: (x.revisions || []).length } : {});
+          setStatus(x, "失敗"); });
+        pg.failForm = null; computeTasks(); rerender(); msg("失敗として終えました。記録は次に生かせるよう残ります。"); return;
+      }
+      if (isRaid(p) && q("[data-raid-retry]")) {
+        const dtg = rootTag(p) || defenseTag(), nid = "pg" + uid(), nl = nextLabel("RAID", p.parent, dtg);
+        const carry = (p.actions || []).filter(a => !a.rev && !actDone(a)).map(a => Object.assign({ id: uid(), text: a.text, due: "", done: false, mode: a.mode || "once" }, a.mode === "days" ? { days: [] , mode: "once" } : {}));
+        await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.retriedBy = nid;
+          doc.pages.push({ id: nid, parent: p.parent, kind: "RAID", label: nl, title: (p.title || "") + "(再挑戦)", status: "計画中", statusLog: [{ date: taskDay(), status: "計画中" }],
+            created: taskDay(), target: p.target || "", now: p.now || "", goal: p.goal || "", actions: carry, progress: [], prevId: p.id }); });
+        logPlan([dtg], "RAIDを作った", nid, nl);
+        pg.open = nid; computeTasks(); rerender(); msg("同じ目標で、もう一度RAIDを立てました。済んでいない作戦を引き継いでいます(期限と日にちは決め直してください)。"); return;
+      }
       if (isAlert(p) && (b = q("[data-alert-status]"))) { const v = b.dataset.alertStatus; await savePages(doc => setStatus(doc.pages.find(y => y.id === p.id), v)); computeTasks(); rerender(); return; }
       if ((b = q("[data-alert-level]"))) { const n = +b.dataset.alertLevel; await savePages(doc => { doc.pages.find(y => y.id === p.id).level = n; }); rerender(); return; }
       if (q("[data-act-add]")) { const t = (document.getElementById("act-text").value || "").trim(), du = document.getElementById("act-due").value; if (!t) return;
@@ -3574,6 +3624,7 @@ SE.init([
   ["[data-dpick]", el => el.getAttribute("aria-pressed") === "true" ? "toggleOff" : "toggleOn"],
   ["[data-tdel], [data-del], [data-page-del], [data-act-del], [data-cond-del], [data-tide-del], [data-tcol-del], [data-trow-del], [data-g-del], [data-issue-del], [data-cd-del], [data-st-del], [data-box-del], [data-ch-del], [data-tunlink], [data-min-del]", "remove"],
   ["[data-act-task]", "send"],
+  ["[data-fail-save]", "down"],
   ["[data-task-add], [data-page-save], [data-act-add], [data-cond-add], [data-save], [data-sl-save], [data-pp-save], [data-min-save], [data-review-save], [data-review-send], [data-term-edit-save], [data-act-save], [data-raid-prog], [data-raid-revise-save], [data-tren-save], [data-ss-save], [data-ps-save], [data-st-save], [data-draft-save], [data-gval], [data-raid-handover], [data-focus-change], [data-close-term]", "save"],
   ["[data-open], [data-goto-page], [data-goto-tide], #connect, #reload", "open"],
   ["[data-mtab], [data-stab], [data-lv], [data-view], nav button", "tab"]
