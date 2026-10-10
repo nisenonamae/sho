@@ -427,7 +427,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-09 r64";
+const APP_VERSION = "2026-10-10 r65";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2143,8 +2143,23 @@ const stOf = p => (!p.status || p.status === "未着手") ? "作成中" : p.stat
 const RANK_ST = { "要再設定": 0, "新規": 1, "進行中": 2, "定着": 3, "熟達": 4, "殿堂入り": 5 };
 const APP_BASE = "https://nisenonamae.github.io/sho/";
 const pageUrl = id => APP_BASE + "#page=" + id;
+// GitHubは書き込んだ直後しばらく、ひとつ前の内容を返すことがある。ページの記録に版(rev)を付け、
+// 手元より古い版が返ってきたら、新しい版が来るまで少し待って読み直す(古い内容で手元を上書きしない)
+async function readPagesFresh(minRev){
+  const waits = window.__shoFreshWaits || [0, 700, 1200, 2000, 3000, 4000];
+  let r = null;
+  for (const w of waits) {
+    if (w) await new Promise(res => setTimeout(res, w));
+    r = await readJson(PAGES);
+    if (!minRev || ((r.data && r.data.rev) || 0) >= minRev) return { r, fresh: true };
+  }
+  return { r, fresh: false };
+}
 async function loadPages(){
-  const r = await readJson(PAGES); pg.doc = Object.assign({ version: 1, pages: [] }, r.data || {}); pg.sha = r.sha;
+  const mine = (pg.doc && pg.doc.rev) || 0;
+  const { r, fresh } = await readPagesFresh(mine);
+  if (!fresh && pg.doc && mine) return;            // まだ古い内容しか来ない:手元(新しい)をそのまま使う
+  pg.doc = Object.assign({ version: 1, pages: [] }, r.data || {}); pg.sha = r.sha;
   // 計画(省アプリのSTAGE・WAVE)に無いタスクは待機中にする。その決まりが始まった日を一度だけ記録する
   if (!pg.doc.strictFrom) await savePages(doc => { if (doc.strictFrom) return false; doc.strictFrom = taskDay(); }).catch(() => {});
 }
@@ -2235,10 +2250,10 @@ async function flushPages(){
   pgQ.running = (async () => {
     for (let guard = 0; guard < 6 && pgQ.pending.length; guard++) {
       const n = pgQ.pending.length;
-      try { pg.sha = await writeJson(PAGES, pg.doc, pg.sha); pgQ.pending = pgQ.pending.slice(n); }
+      try { pg.doc.rev = (pg.doc.rev || 0) + 1; pg.sha = await writeJson(PAGES, pg.doc, pg.sha); pg.lastRev = pg.doc.rev; pgQ.pending = pgQ.pending.slice(n); }
       catch (e) {
         if (e.status === 409 || e.status === 422) {
-          const r = await readJson(PAGES); pg.doc = Object.assign({ version: 1, pages: [] }, r.data || {}); pg.sha = r.sha;
+          const { r } = await readPagesFresh(pg.lastRev || 0); pg.doc = Object.assign({ version: 1, pages: [] }, r.data || {}); pg.sha = r.sha;
           pgQ.pending.forEach(m => { try { m(pg.doc); } catch (err) {} }); renderDetail(); continue;
         }
         const el = document.getElementById("pg-msg"); if (el) { el.textContent = "保存できませんでした:" + e.message; el.classList.add("err"); }
@@ -3499,7 +3514,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
