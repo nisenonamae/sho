@@ -75,6 +75,15 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.ul-box{margin-top:.3rem}.ul-bar{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:.35rem 0}
+.ul-f{border:1px solid var(--rule);background:#fff;border-radius:999px;padding:.1rem .65rem;font:inherit;font-size:.8rem;cursor:pointer}
+.ul-f[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ul-row{display:flex;align-items:center;gap:.45rem;padding:.35rem 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.ul-row input[type=checkbox]{width:1.15rem;height:1.15rem;flex:0 0 auto;accent-color:var(--ink)}
+.ul-n{flex:1;min-width:8rem;font-weight:700;word-break:break-word}.ul-n small{display:block;font-weight:400;font-size:.72rem;color:var(--sub)}
+.ul-del{background:#B3283C;border-color:#B3283C}
+.orphan-box{margin-top:1rem}
+
 .linkbox{border:1px solid var(--rule);border-left:4px solid var(--ink);border-radius:6px;background:#fff;padding:.5rem .7rem;margin:.4rem 0}
 .lb-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem}
 #tl-q{width:100%;padding:.4rem .55rem;border:1px solid var(--rule);border-radius:5px}
@@ -460,7 +469,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-12 r70";
+const APP_VERSION = "2026-10-12 r71";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -840,15 +849,64 @@ function deletedTasks(tag){
   return E.allDefs(state.defs, state.overlay, true).filter(d => gone.has(d.id) && (d.ministries || []).includes(tag));
 }
 // 計画(省アプリのSTAGE・WAVE・ALERT・RAID)に結びついていないタスク
-function unlinkedTasks(tag){
-  const ps = pages().filter(p => ["STAGE", "WAVE", "ALERT", "RAID"].includes(p.kind));
+function linkedTest(){
+  const ps = pages().filter(p => ["STAGE", "WAVE", "ALERT", "RAID"].includes(p.kind) && !p.deleted && !p.imported);
   const ids = new Set(ps.map(p => p.id)), keys = new Set(ps.map(p => rootTag(p) + "|" + String(p.label).toUpperCase()));
-  return state.tasks.filter(t => (t.def.ministries || []).includes(tag) && !HIDDEN_ST.has(t.status) && t.status !== "達成済み" && !(t.def.waves || []).some(w => {
+  return t => (t.def.waves || []).some(w => {
     const m = /#page=([\w-]+)/.exec((w && w.url) || ""); if (m && ids.has(m[1])) return true;
     const lab = String((w && w.label) || w || "").replace(/\s+/g, "").toUpperCase();
     return (t.def.ministries || []).some(mi => keys.has(mi + "|" + lab));
-  }));
+  });
 }
+// 計画に結びついていないタスク(要再設定・休止中・終わったものも含む。消すときに見つけられるように)
+function unlinkedTasks(tag){ const linked = linkedTest(); return state.tasks.filter(t => (t.def.ministries || []).includes(tag) && !t.def.staff && !linked(t)); }
+// どの省にも属していないタスク(どの省の地図にも出ないので、省の一覧の下に出す)
+function orphanTasks(){
+  const tags = new Set(((state.gov && state.gov.ministries) || []).map(m => m.tag)), linked = linkedTest();
+  return state.tasks.filter(t => !t.def.staff && !(t.def.ministries || []).some(m => tags.has(m)) && !linked(t));
+}
+/* まとめて削除する欄。状況で絞り込み、チェックを付けて選ぶ */
+const UL_GROUPS = [["all", "すべて"], ["reset", "要再設定"], ["rest", "休止中・終わった"], ["other", "そのほか"]];
+const ulGroup = t => t.status === "要再設定" ? "reset" : ["休止中", "アーカイブ", "実験終了", "殿堂入り", "達成済み"].includes(t.status) ? "rest" : "other";
+function unlinkedBlockHtml(list, key, title, note, rowExtra){
+  if (!list.length) return "";
+  const f = (pg.ulFilter || {})[key] || "all", shown = list.filter(t => f === "all" || ulGroup(t) === f).sort((a, b) => a.def.name.localeCompare(b.def.name, "ja"));
+  const cnt = g => list.filter(t => g === "all" || ulGroup(t) === g).length;
+  return '<details class="fold tfold"' + ((pg.ulOpen || {})[key] ? " open" : "") + ' data-ul-fold="' + esc(key) + '"><summary>' + esc(title) + " " + list.length + "件</summary>" +
+    '<p class="panel-e">' + note + "</p>" +
+    '<div class="ul-box" data-ul-box="' + esc(key) + '"><div class="ul-bar">' + UL_GROUPS.filter(([g]) => g === "all" || cnt(g)).map(([g, l]) => '<button type="button" class="ul-f" data-ul-filter="' + esc(key) + ":" + g + '" aria-pressed="' + (f === g) + '">' + l + " " + cnt(g) + "</button>").join("") + "</div>" +
+    '<div class="ul-bar"><button type="button" class="btn ghost sm" data-ul-all="' + esc(key) + '">見えているものを全部選ぶ</button><button type="button" class="btn ghost sm" data-ul-none="' + esc(key) + '">選ぶのをやめる</button></div>' +
+    shown.map(t => '<div class="ul-row"><input type="checkbox" data-ul-id="' + esc(t.def.id) + '" aria-label="' + esc(t.def.name) + 'を選ぶ"><span class="ul-n">' + nameHtml(t.def.name) + "<small>" + esc(t.status) + ((t.def.ministries || []).length ? "" : "・所属なし") + "</small></span>" + (rowExtra ? rowExtra(t) : "") +
+      '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button></div>').join("") +
+    '<div class="ul-bar"><button type="button" class="btn sm ul-del" data-ul-del="' + esc(key) + '">選んだものを削除(<span data-ul-n="' + esc(key) + '">0</span>件)</button></div></div></details>';
+}
+async function bulkDelete(ids){
+  const ts = ids.map(id => state.tasks.find(x => x.def.id === id)).filter(Boolean); if (!ts.length) return false;
+  const ok = await overlayWrite(ov => { ts.forEach(t => { ov.tasks[t.def.id] = Object.assign({}, ov.tasks[t.def.id] || {}, { deleted: true }); }); });
+  if (ok) ts.forEach(t => logPlan(t.def.ministries, "タスクを消した", t.def.id, t.def.name));
+  return ok ? ts.length : false;
+}
+document.addEventListener("click", async e => {
+  const q = x => e.target.closest && e.target.closest(x); let b;
+  const rer = () => { if (state.open) renderDetail(); else renderList(); };
+  const boxOf = k => document.querySelector('[data-ul-box="' + k + '"]');
+  const recount = k => { const bx = boxOf(k), n = bx ? bx.querySelectorAll("[data-ul-id]:checked").length : 0; const el = document.querySelector('[data-ul-n="' + k + '"]'); if (el) el.textContent = n; };
+  if ((b = q("[data-ul-filter]"))) { const v = b.dataset.ulFilter, cut = v.lastIndexOf(":"), k = v.slice(0, cut), g = v.slice(cut + 1); pg.ulFilter = pg.ulFilter || {}; pg.ulFilter[k] = g; pg.ulOpen = pg.ulOpen || {}; pg.ulOpen[k] = true; rer(); return; }
+  if ((b = q("[data-ul-all]")) || (b = q("[data-ul-none]"))) { const k = b.dataset.ulAll || b.dataset.ulNone, on = !!b.dataset.ulAll, bx = boxOf(k); if (bx) bx.querySelectorAll("[data-ul-id]").forEach(x => x.checked = on); recount(k); return; }
+  if ((b = q("[data-ul-del]"))) {
+    const k = b.dataset.ulDel, bx = boxOf(k), ids = bx ? Array.from(bx.querySelectorAll("[data-ul-id]:checked")).map(x => x.dataset.ulId) : [];
+    if (!ids.length) { renderNotice("削除するタスクを選んでください。"); return; }
+    if (!confirm(ids.length + "件のタスクを削除しますか。記録ごと国力の計算から外れます(「削除したタスク」から戻せます)。")) return;
+    const n = await bulkDelete(ids); pg.ulOpen = pg.ulOpen || {}; pg.ulOpen[k] = true;
+    computeTasks(); rer(); if (n) renderNotice(n + "件のタスクを削除しました。「削除したタスク」から戻せます。"); return;
+  }
+});
+document.addEventListener("change", e => {
+  if (!e.target.matches || !e.target.matches("[data-ul-id]")) return;
+  const bx = e.target.closest("[data-ul-box]"); if (!bx) return;
+  const k = bx.dataset.ulBox, el = document.querySelector('[data-ul-n="' + k + '"]'); if (el) el.textContent = bx.querySelectorAll("[data-ul-id]:checked").length;
+});
+document.addEventListener("toggle", e => { const d = e.target; if (d && d.dataset && d.dataset.ulFold) { pg.ulOpen = pg.ulOpen || {}; pg.ulOpen[d.dataset.ulFold] = d.open; } }, true);
 
 
 // タスクをSTAGE・WAVEのページに結びつける・外す(結びつきは省アプリでだけ変える)
@@ -1163,6 +1221,8 @@ function renderList(){
       '<span class="mm"><span class="now-s">' + (nS ? esc(nS.label) : "STAGE —") + '</span><span class="now-w">' + (nW ? esc(nW.label) : "WAVE —") + "</span>" +
       (p ? "<span>支配 " + Math.round(p.dominance) + "</span><span>領土 " + p.territory + "</span>" : "") + "</span></button></li>";
   }).join("") + "</ul>";
+  const orph = orphanTasks();
+  if (orph.length) box.insertAdjacentHTML("beforeend", '<div class="orphan-box">' + unlinkedBlockHtml(orph, "orphan", "どの省にも属していないタスク", "省が無い(消した省・名前の変わった省を含む)ので、どの省の地図にも出ないタスクです。要らないものは、チェックを付けてまとめて削除できます。") + "</div>");
 }
 // 今のSTAGE・WAVE:省の直下のいまここから、その下のいまここへ、たどれるところまで(STAGE1 の下で STAGE1-2 が進行中なら STAGE1-2)
 function deepNow(tag, kind){
@@ -2643,12 +2703,9 @@ function pageTreeHtml(tag){
     panelHtml("資料", '<button type="button" class="linkbtn" data-page-new="page" data-page-parent="m:' + esc(tag) + '">+ 足す</button>',
       docs.length ? '<div class="dgrid">' + docs.sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || ""))).map(docCard).join("") + "</div>" : emptyHtml("まだありません。調べたこと・表・アプリなど、この省で使うものを置きます。"), "docs") +
     (() => { const un = unlinkedTasks(tag), gone = deletedTasks(tag);
-      return (un.length ? '<details class="fold tfold"><summary>計画に結びついていないタスク ' + un.length + "件</summary>" +
-          '<p class="panel-e">STAGE・WAVEに結びついていないタスクは、待機中で行軍表に出ません。結びつけると、そのSTAGE・WAVEが進行中のあいだ出ます。</p>' +
-          un.map(t => { const us = pages().filter(x => isUnit(x) && rootTag(x) === tag).sort(byLabel);
-            return '<div class="tk"><span>' + esc(t.def.name) + "</span><span>" + esc(t.status) + "</span>" +
-              (us.length ? '<select data-tlink-pick="' + esc(t.def.id) + '"><option value="">結びつける…</option>' + us.map(u => '<option value="' + esc(u.id) + '">' + esc(u.label + (u.title ? " " + u.title : "") + "(" + stOf(u) + ")") + "</option>").join("") + "</select>" : "") +
-              '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button></div>'; }).join("") + "</details>" : "") +
+      return unlinkedBlockHtml(un, "m:" + tag, "計画に結びついていないタスク", "STAGE・WAVEに結びついていないタスクは、待機中で行軍表に出ません。結びつけると、そのSTAGE・WAVEが進行中のあいだ出ます。昔の要らないタスクは、チェックを付けてまとめて削除できます。",
+          t => { const us = pages().filter(x => isUnit(x) && rootTag(x) === tag).sort(byLabel);
+            return us.length ? '<select data-tlink-pick="' + esc(t.def.id) + '"><option value="">結びつける…</option>' + us.map(u => '<option value="' + esc(u.id) + '">' + esc(u.label + (u.title ? " " + u.title : "") + "(" + stOf(u) + ")") + "</option>").join("") + "</select>" : ""; }) +
         (gone.length ? '<details class="fold tfold"><summary>削除したタスク ' + gone.length + "件</summary>" +
           gone.map(d0 => '<div class="tk"><span>' + esc(d0.name) + '</span><button type="button" class="linkbtn" data-trestore="' + esc(d0.id) + '">元に戻す</button></div>').join("") + "</details>" : ""); })() +
     (box.length ? '<details class="fold movebox"><summary>引っ越し箱(Notionから写したもの)' + box.length + "件</summary>" +
@@ -3747,7 +3804,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
