@@ -75,6 +75,15 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.linkbox{border:1px solid var(--rule);border-left:4px solid var(--ink);border-radius:6px;background:#fff;padding:.5rem .7rem;margin:.4rem 0}
+.lb-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem}
+#tl-q{width:100%;padding:.4rem .55rem;border:1px solid var(--rule);border-radius:5px}
+.lb-scope{display:flex;gap:.3rem;margin:.4rem 0}.lb-scope button{border:1px solid var(--rule);background:#fff;border-radius:999px;padding:.1rem .7rem;font:inherit;font-size:.8rem;cursor:pointer}
+.lb-scope button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.lb-n{font-size:.76rem;color:var(--sub);margin:.1rem 0 .2rem}
+.lb-row{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;border-bottom:1px solid var(--rule)}
+.lb-name{flex:1;min-width:0;word-break:break-word;font-weight:700}.lb-name small{display:block;font-weight:400;color:var(--sub);font-size:.72rem}
+
 .tgrp{display:flex;align-items:center;gap:.45rem;padding:.4rem 0;border-bottom:1px dashed var(--rule);flex-wrap:wrap}
 .tg-tog{border:1px solid var(--rule);background:#fff;border-radius:4px;width:1.8rem;height:1.8rem;cursor:pointer;color:var(--sub);flex:0 0 auto}
 .tg-marks{display:inline-flex;flex-wrap:wrap;gap:.1rem}
@@ -451,7 +460,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-12 r69";
+const APP_VERSION = "2026-10-12 r70";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -860,6 +869,26 @@ async function linkTask(id, page, on){
 
 
 
+
+/* ───────── すでにあるタスクを結びつける:名前と範囲で絞り込む ───────── */
+// ひらがなとカタカナ、大文字と小文字の違いは気にせず探す
+const kanaFold = x => String(x || "").toLowerCase().replace(/[\u30a1-\u30f6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+function linkListHtml(){
+  const ctx = pg._link; if (!ctx) return "";
+  const scope = pg.linkScope || "mine", words = kanaFold(pg.linkQ || "").split(/\s+/).filter(Boolean);
+  let cand = state.tasks.filter(t => !ctx.have.has(t.def.id) && !["アーカイブ", "達成済み"].includes(t.status));
+  if (scope === "mine") cand = cand.filter(t => (t.def.ministries || []).includes(ctx.tg));
+  if (scope === "free") cand = cand.filter(t => !(t.def.waves || []).length);
+  if (words.length) cand = cand.filter(t => { const h = kanaFold([t.def.name].concat(t.def.aliases || []).join(" ")); return words.every(w => h.includes(w)); });
+  cand.sort((a, b) => a.def.name.localeCompare(b.def.name, "ja"));
+  const shown = cand.slice(0, 40);
+  return '<div class="lb-n">' + cand.length + "件" + (cand.length > 40 ? "(はじめの40件。名前で絞り込んでください)" : "") + "</div>" +
+    (shown.length ? shown.map(t => '<div class="lb-row"><span class="lb-name">' + nameHtml(t.def.name) + "<small>" + esc((t.def.ministries || []).join("・") || "所属なし") + "・" + esc(t.status) +
+      ((t.def.waves || []).length ? "" : "・結びつきなし") + '</small></span><button type="button" class="btn sm" data-tlink-add="' + esc(t.def.id) + '">結びつける</button></div>').join("")
+      : '<p class="note">当てはまるタスクはありません。</p>');
+}
+function refreshLinkList(){ const el = document.getElementById("tl-list"); if (el) el.innerHTML = linkListHtml(); }
+document.addEventListener("input", e => { if (e.target && e.target.id === "tl-q") { pg.linkQ = e.target.value; refreshLinkList(); } });
 /* ───────── 天体制度:タスクを最大8つに分け、水金地火木土天海の印を付けた別々のタスクにする ─────────
    心理的な障壁を減らすため。印は名前の先頭に入れる(行軍表・チェック・国力年報など、どこでもそのまま出る)。
    元のタスクは削除の印を付けて残し(戻せる)、クリア条件で元のタスクを指していたものは天体それぞれの条件に置き換える */
@@ -2944,12 +2973,13 @@ function renderPage(box, p){
           '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button>' +
           (multi ? '<span class="tparts" title="入れる区分(いくつでも)">' + parts.map((pp, i) => '<button type="button" class="tpart-b" data-tpart="' + esc(t.def.id) + ":" + pp.id + '" title="' + esc(pp.name || "") + '" aria-pressed="' + ((pp.taskIds || []).includes(t.def.id)) + '">' + (i + 1) + "</button>").join("") + "</span>" : "") + "</div>" + (pg.splitting === t.def.id ? tentaiFormHtml(t) : "");
       const linkSel = (() => { const have = new Set(ts.map(t => t.def.id)), tg = rootTag(p);
-        const cand = state.tasks.filter(t => !have.has(t.def.id) && !["アーカイブ", "達成済み"].includes(t.status));
-        const mine = cand.filter(t => (t.def.ministries || []).includes(tg)), other = cand.filter(t => !(t.def.ministries || []).includes(tg));
-        if (!cand.length) return "";
-        const opt = t => '<option value="' + esc(t.def.id) + '">' + esc(t.def.name) + "(" + esc(t.status) + ")</option>";
-        return '<div class="linksel"><select data-tlink-here><option value="">+ すでにあるタスクを結びつける…</option>' + (mine.length ? '<optgroup label="この省のタスク">' + mine.map(opt).join("") + "</optgroup>" : "") +
-          (other.length ? '<optgroup label="ほかの省のタスク(この省にも属するようになります)">' + other.map(opt).join("") + "</optgroup>" : "") + "</select></div>"; })();
+        if (!state.tasks.some(t => !have.has(t.def.id) && !["アーカイブ", "達成済み"].includes(t.status))) return "";
+        pg._link = { have, tg };
+        if (!pg.linkOpen) return '<div class="linksel"><button type="button" class="btn ghost sm" data-tlink-open>+ すでにあるタスクを結びつける</button></div>';
+        return '<div class="linkbox"><div class="lb-h"><b>すでにあるタスクを結びつける</b><button type="button" class="linkbtn" data-tlink-close>閉じる</button></div>' +
+          '<input id="tl-q" type="search" autocomplete="off" placeholder="名前で探す(空白で区切ると、両方を含むもの)" value="' + esc(pg.linkQ || "") + '">' +
+          '<div class="lb-scope">' + [["mine", "この省"], ["free", "結びつきなし"], ["all", "すべて"]].map(([k, l]) => '<button type="button" data-tlink-scope="' + k + '" aria-pressed="' + ((pg.linkScope || "mine") === k) + '">' + l + "</button>").join("") + "</div>" +
+          '<div id="tl-list">' + linkListHtml() + "</div></div>"; })();
       const gateNote = st === "進行中" ? "" : '<div class="gate-note">' + (st === "作成中" ? "作成中のあいだ、この" + p.kind + "のタスクは行軍表に出ません。「進行中」にすると、その日から行軍表に出ます。" : "「" + st + "」なので、この" + p.kind + "のタスクは行軍表から外れています。") + "</div>";
       if (!multi) {
         const pp = parts[0], cs = pp.clear || [], met = cs.filter(condMet).length;
@@ -3157,6 +3187,11 @@ function bindPages(){
       await linkTask(b.dataset.tunlink, pu, false); computeTasks(); renderDetail(); return;
     }
     // 天体制度
+    if (q("[data-tlink-open]")) { pg.linkOpen = true; renderDetail(); const qi = document.getElementById("tl-q"); if (qi) qi.focus(); return; }
+    if (q("[data-tlink-close]")) { pg.linkOpen = false; renderDetail(); return; }
+    if ((b = q("[data-tlink-scope]"))) { pg.linkScope = b.dataset.tlinkScope; document.querySelectorAll("[data-tlink-scope]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); refreshLinkList(); return; }
+    if ((b = q("[data-tlink-add]"))) { const pp0 = pg.open ? pageById(pg.open) : null; if (!pp0) return; b.disabled = true;
+      await linkTask(b.dataset.tlinkAdd, pp0, true); computeTasks(); renderDetail(); const qi = document.getElementById("tl-q"); if (qi) { qi.focus(); qi.setSelectionRange(qi.value.length, qi.value.length); } return; }
     if ((b = q("[data-tgtog]"))) { const k = b.dataset.tgtog; pg.tgOpen = pg.tgOpen || new Set(); pg.tgOpen.has(k) ? pg.tgOpen.delete(k) : pg.tgOpen.add(k); renderDetail(); return; }
     if ((b = q("[data-tsplit]"))) { pg.splitting = b.dataset.tsplit; pg.splitN = 4; pg.splitNotes = []; renderDetail(); return; }
     if (q("[data-tsplit-x]")) { pg.splitting = null; renderDetail(); return; }
