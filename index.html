@@ -75,6 +75,21 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.tmark{display:inline-flex;align-items:center;gap:.18em;padding:0 .42em 0 .14em;margin-right:.32em;border:1px solid var(--tc);border-radius:999px;
+  background:color-mix(in srgb,var(--tc) 11%,#fff);vertical-align:.08em;font-size:.78em;line-height:1.55;white-space:nowrap}
+.tmark svg{width:1.25em;height:1.25em;flex:0 0 auto}
+.tmark b{color:var(--tc);font-weight:700;letter-spacing:.02em}
+
+.tentai{display:inline-block;font-size:.72rem;font-weight:700;color:#fff;border-radius:999px;padding:0 .45rem;margin-right:.3rem;line-height:1.55;vertical-align:.08em;letter-spacing:.02em}
+.tt-0{background:#7D838C}.tt-1{background:#C49A1E}.tt-2{background:#2F7A58}.tt-3{background:#C0392B}.tt-4{background:#B5652A}.tt-5{background:#8C7350}.tt-6{background:#2E9C98}.tt-7{background:#2C4FA8}
+.tsplit-b,.tmerge-b{font-size:.76rem;margin-right:.3rem}
+.tsplit{border:1px solid var(--rule);border-left:4px solid #2C4FA8;border-radius:6px;background:#fff;padding:.5rem .7rem;margin:.2rem 0 .6rem}
+.tsplit .ts-h{font-weight:700;margin-bottom:.2rem}.tsplit .ts-e{font-size:.78rem;color:var(--sub);margin:0 0 .4rem}
+.ts-n{display:flex;gap:.25rem;flex-wrap:wrap;margin:.2rem 0 .45rem}.ts-n button{min-width:2.2rem;border:1px solid var(--rule);background:#fff;border-radius:4px;padding:.15rem .4rem;cursor:pointer;font:inherit}
+.ts-n button[aria-pressed="true"]{background:#2C4FA8;color:#fff;border-color:#2C4FA8}
+.ts-auto{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;font-size:.8rem;margin:0 0 .4rem}.ts-auto input{width:5rem}
+.ts-rows{display:grid;gap:.25rem;margin-bottom:.4rem}.ts-row{display:flex;gap:.4rem;align-items:center}.ts-row input{flex:1;min-width:0}
+
 .failrow{margin:.2rem 0 .4rem;text-align:right}.failb{color:#8a3a2a;font-size:.8rem}
 .failbox{border:1px solid #b3283c55;background:#b3283c0a;border-radius:6px;padding:.5rem .8rem;margin:.4rem 0 .6rem}.failbox .fb-h{font-weight:700;color:#8a2030;margin-bottom:.3rem}.failbox .fb-h small{font-weight:400;color:var(--sub);margin-left:.4rem}
 .failb2{background:#8a2030;border-color:#8a2030}.raid-card.failed .ast{background:#8a2030;color:#fff}
@@ -427,7 +442,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-10 r66";
+const APP_VERSION = "2026-10-12 r68";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -834,6 +849,130 @@ async function linkTask(id, page, on){
   return ok;
 }
 
+
+
+/* ───────── 天体制度:タスクを最大8つに分け、水金地火木土天海の印を付けた別々のタスクにする ─────────
+   心理的な障壁を減らすため。印は名前の先頭に入れる(行軍表・チェック・国力年報など、どこでもそのまま出る)。
+   元のタスクは削除の印を付けて残し(戻せる)、クリア条件で元のタスクを指していたものは天体それぞれの条件に置き換える */
+const PLANETS = [["水", "☿"], ["金", "♀"], ["地", "♁"], ["火", "♂"], ["木", "♃"], ["土", "♄"], ["天", "♅"], ["海", "♆"]];
+const TENTAI_RE = /^([☿♀♁♂♃♄♅♆])([水金地火木土天海]) (.+)$/;
+const tentaiIndex = name => { const m = TENTAI_RE.exec(String(name || "")); return m ? PLANETS.findIndex(p => p[0] === m[2]) : -1; };
+/* ───────── 天体制度の印(水金地火木土天海)。名前の先頭の「☿水 」などを、天体の絵の札にして出す ───────── */
+const TMARK = [
+  ["水", "☿", "#7D838C", '<circle cx="8" cy="8" r="6.2" fill="#A2A8AF"/><circle cx="5.6" cy="6" r="1.1" fill="#80868D"/><circle cx="10.2" cy="9.6" r="1.4" fill="#80868D"/><circle cx="7.2" cy="11.2" r=".8" fill="#80868D"/><circle cx="10.6" cy="5.4" r=".6" fill="#80868D"/>'],
+  ["金", "♀", "#B98A12", '<circle cx="8" cy="8" r="6.2" fill="#E6B93E"/><path d="M3.6 7.2c2-1.6 4.4-.4 6.2-1.4M4.6 10.4c2.2-.8 4.6.2 7-1.2" stroke="#F7DA82" stroke-width="1.1" fill="none" stroke-linecap="round"/>'],
+  ["地", "♁", "#2F6FB0", '<circle cx="8" cy="8" r="6.2" fill="#3B7DD8"/><path d="M4.4 5.6c1.2-1 2.6-.6 3 .4.3.9-.8 1.4-.4 2.4.4 1-1.2 1.6-2 .8-.9-.8-1.6-2.6-.6-3.6zM9.6 9c.9-.5 2.4-.3 2.6.8.2 1-.9 2-2 1.8-1-.2-1.6-1.9-.6-2.6zM9.8 4.2c.8-.2 1.8.3 1.6 1-.2.6-1.2.6-1.6.2-.3-.3-.4-1 0-1.2z" fill="#47A85F"/>'],
+  ["火", "♂", "#B8402C", '<circle cx="8" cy="8" r="6.2" fill="#D4583E"/><path d="M4.2 6.6c1.4.6 2.6-.4 3.8.2M7.6 10.6c1.2-.4 2.4.4 3.6-.2" stroke="#A33A27" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="10.4" cy="6.2" r=".9" fill="#A33A27"/>'],
+  ["木", "♃", "#A86429", '<circle cx="8" cy="8" r="6.2" fill="#DDAA72"/><path d="M2.3 5.6h11.4M2 8.2h12M2.3 10.8h11.4" stroke="#B5733C" stroke-width="1.15"/><ellipse cx="10.2" cy="9.6" rx="1.3" ry=".75" fill="#C0532E"/>'],
+  ["土", "♄", "#9A7A2E", '<ellipse cx="8" cy="8.4" rx="7.4" ry="2.3" transform="rotate(-18 8 8.4)" fill="none" stroke="#B78F35" stroke-width="1.3"/><circle cx="8" cy="8" r="4.6" fill="#E4BC5C"/><path d="M3.9 8.9a7.4 2.3 -18 0 0 8.4-2.2" fill="none" stroke="#B78F35" stroke-width="1.3"/>'],
+  ["天", "♅", "#268C93", '<circle cx="8" cy="8" r="6" fill="#71D0D8"/><ellipse cx="8" cy="8" rx="1.7" ry="7.4" fill="none" stroke="#3A9DA7" stroke-width="1.1"/>'],
+  ["海", "♆", "#2C4FA8", '<circle cx="8" cy="8" r="6.2" fill="#3658C8"/><path d="M3.8 6.4c2.4-1 5.6-.8 8.4.2M4.4 10.2c2-.6 4.8-.4 6.6.4" stroke="#9DB2F2" stroke-width="1" fill="none" stroke-linecap="round"/><circle cx="10.6" cy="8.2" r=".9" fill="#1F3A96"/>']];
+const TMARK_RE = /([☿♀♁♂♃♄♅♆])([水金地火木土天海]) /g;
+function tmarkHtml(i){
+  const p = TMARK[i]; if (!p) return "";
+  return '<span class="tmark" style="--tc:' + p[2] + '" title="天体制度:' + p[0] + '(' + (i + 1) + '番目)"><svg viewBox="0 0 16 16" aria-hidden="true">' + p[3] + "</svg><b>" + p[0] + "</b></span>";
+}
+// 名前(エスケープして)の中の天体の印を、絵の札に置き換える
+function nameHtml(name){
+  return esc(name).replace(TMARK_RE, (m, sym, k) => { const i = TMARK.findIndex(p => p[0] === k); return i >= 0 ? tmarkHtml(i) : m; });
+}
+
+const tentaiNameHtml = name => nameHtml(name);
+// 範囲を等分したメモ(例:1〜100を5つ → 1〜20, 21〜40, …)
+function tentaiRanges(from, to, n){
+  from = Math.round(+from); to = Math.round(+to);
+  if (!isFinite(from) || !isFinite(to) || to < from) return [];
+  const total = to - from + 1, out = [];
+  for (let i = 0; i < n; i++) { const a = from + Math.floor(total * i / n), z = from + Math.floor(total * (i + 1) / n) - 1; out.push(z >= a ? (a === z ? String(a) : a + "〜" + z) : ""); }
+  return out;
+}
+async function splitTask(id, n, notes){
+  const t = state.tasks.find(x => x.def.id === id); if (!t) return "タスクが見つかりません。";
+  if (t.def.celestial || tentaiIndex(t.def.name) >= 0) return "天体に分けたタスクは、さらに分けられません。";
+  n = Math.max(2, Math.min(8, Math.round(+n) || 2));
+  const day = taskDay(), base = t.def.name, olds = [base].concat(t.def.aliases || []), w = +t.def.weight > 0 ? +t.def.weight : 1;
+  const parts = [];
+  for (let i = 0; i < n; i++) {
+    const note = String((notes || [])[i] || "").trim();
+    const name = PLANETS[i][1] + PLANETS[i][0] + " " + base + (note ? "(" + note + ")" : "");
+    if (state.tasks.some(x => x.def.name === name || (x.def.aliases || []).includes(name)) || parts.some(p => p.name === name)) return "「" + name + "」と同じ名前のタスクがあります。";
+    parts.push({ id: "t" + (await sha1Hex(name + "|" + day)).slice(0, 10), name, aliases: [], ministries: (t.def.ministries || []).slice(),
+      waves: (t.def.waves || []).map(x => ({ label: (x && x.label) || String(x), url: (x && x.url) || "" })), slot: t.def.slot || "一日中", stance: t.def.stance || "攻",
+      kind: t.def.kind || "習慣型", interval: t.def.interval || "", weight: Math.round(w / n * 1000) / 1000, quota: null, requirement: t.def.requirement || "",
+      created: day, initial: { status: "新規" }, generations: [{ gen: 1, from: day, target: null }], events: [], celestial: { group: id, index: i, of: n, base, note } });
+  }
+  const ids = parts.map(p => p.id), names = parts.map(p => p.name);
+  const ok = await overlayWrite(ov => {
+    ov.newTasks = (ov.newTasks || []).filter(x => !ids.includes(x.id)).concat(parts);
+    const o = ov.tasks[id] = Object.assign({}, ov.tasks[id] || {}); o.deleted = true; o.deletedAt = day; o.splitInto = ids;
+  });
+  if (!ok) return "保存できませんでした。";
+  // 行軍表の設定(場所・器官など)を引き継ぐ。所要時間は等分
+  for (let k = 0; k < 3; k++) {
+    try {
+      const r = await readJson("roadmap/settings.json"), st = r.data; if (!st || !st.tasks) break;
+      const c = olds.map(x => st.tasks[x]).find(Boolean); if (!c) break;
+      names.forEach(nm => { if (!st.tasks[nm]) { const cc = JSON.parse(JSON.stringify(c)); delete cc.next; if (+cc.min > 0) cc.min = Math.max(1, Math.round(+cc.min / n)); st.tasks[nm] = cc; } });
+      await writeJson("roadmap/settings.json", st, r.sha); break;
+    } catch (err) { if (err.status !== 409 && err.status !== 422) break; }
+  }
+  // クリア条件で元のタスクを指していたものは、天体それぞれの条件に置き換える(区分のタスクも)
+  await savePages(doc => {
+    let changed = false;
+    const fix = list => (list || []).flatMap(c => c && c.type !== "manual" && olds.includes(c.task)
+      ? (changed = true, names.map((nm, i) => Object.assign({}, c, { id: c.id + "_t" + i, task: nm, fromTentai: base }))) : [c]);
+    for (const p of doc.pages) {
+      if (p.clear) p.clear = fix(p.clear);
+      for (const pp of p.parts || []) {
+        if (pp.clear) pp.clear = fix(pp.clear);
+        if ((pp.taskIds || []).includes(id)) { pp.taskIds = pp.taskIds.filter(x => x !== id).concat(ids); changed = true; }
+      }
+    }
+    return changed ? undefined : false;
+  });
+  logPlan(t.def.ministries, "タスクを天体に分けた", id, base + " → " + n + "つ");
+  computeTasks();
+  return "";
+}
+async function mergeTentai(group){
+  const parts = state.tasks.filter(x => x.def.celestial && x.def.celestial.group === group);
+  if (!parts.length) return "分けたタスクが見つかりません。";
+  const base = parts[0].def.celestial.base, ids = parts.map(x => x.def.id), names = parts.map(x => x.def.name), day = taskDay();
+  const ok = await overlayWrite(ov => {
+    ids.forEach(pid => { const o = ov.tasks[pid] = Object.assign({}, ov.tasks[pid] || {}); o.deleted = true; o.deletedAt = day; });
+    const o = ov.tasks[group] = Object.assign({}, ov.tasks[group] || {}); delete o.deleted; delete o.deletedAt; delete o.splitInto;
+  });
+  if (!ok) return "保存できませんでした。";
+  await savePages(doc => {
+    let changed = false;
+    const back = list => { const out = [], seen = new Set();
+      for (const c of list || []) {
+        if (c && c.fromTentai === base && names.includes(c.task)) { changed = true; const key = c.metric + "|" + c.value; if (seen.has(key)) continue; seen.add(key);
+          const cc = Object.assign({}, c, { id: String(c.id).replace(/_t\d+$/, ""), task: base }); delete cc.fromTentai; out.push(cc); }
+        else out.push(c);
+      } return out; };
+    for (const p of doc.pages) {
+      if (p.clear) p.clear = back(p.clear);
+      for (const pp of p.parts || []) {
+        if (pp.clear) pp.clear = back(pp.clear);
+        if ((pp.taskIds || []).some(x => ids.includes(x))) { pp.taskIds = pp.taskIds.filter(x => !ids.includes(x)).concat([group]); changed = true; }
+      }
+    }
+    return changed ? undefined : false;
+  });
+  logPlan(parts[0].def.ministries, "天体を元に戻した", group, base);
+  computeTasks();
+  return "";
+}
+function tentaiFormHtml(t){
+  const n = pg.splitN || 4, notes = pg.splitNotes || [];
+  return '<div class="tsplit"><div class="ts-h">「' + esc(t.def.name) + "」を天体に分ける</div>" +
+    '<p class="ts-e">一気にやると重いタスクを、順番の区切りごとに別々のタスクにします。分けた天体はそれぞれ今日のタブに並び、別々にチェックできます。</p>' +
+    '<div class="ts-n" role="group" aria-label="いくつに分けるか">' + [2, 3, 4, 5, 6, 7, 8].map(k => '<button type="button" data-tsplit-n="' + k + '" aria-pressed="' + (k === n) + '">' + k + "</button>").join("") + "</div>" +
+    '<div class="ts-auto">範囲を等分して書く:<input id="ts-from" type="number" value="1" aria-label="はじめ">〜<input id="ts-to" type="number" placeholder="100" aria-label="おわり"><button type="button" class="btn ghost sm" data-tsplit-fill>メモを埋める</button></div>' +
+    '<div class="ts-rows">' + PLANETS.slice(0, n).map(([k, sym], i) => '<label class="ts-row">' + tmarkHtml(i) + '<input id="ts-note-' + i + '" value="' + esc(notes[i] || "") + '" placeholder="メモ(例:1〜20)。無くてもいい"></label>').join("") + "</div>" +
+    '<div class="row-btns"><button type="button" class="btn sm" data-tsplit-do="' + esc(t.def.id) + '">' + n + "つに分ける</button><button type=\"button\" class=\"btn ghost sm\" data-tsplit-x>やめる</button></div></div>";
+}
 
 // タスクの名前を変える(前の名前は別名として残る)。行軍表の設定(所要時間・場所・続けるタスクなど)は名前で結びついているので、一緒に付け替える
 async function renameTask(id, name){
@@ -2768,11 +2907,13 @@ function renderPage(box, p){
         (pg.condForm === pid ? condFormHtml(p) : "");
       const taskRow = t => '<div class="tk' + (t.waiting ? " waiting" : t.status === "要再設定" ? " fall" : "") + '"><span>' +
           (pg.renaming === t.def.id ? '<span class="tren"><input id="tren-in" value="' + esc(t.def.name) + '"><button type="button" class="btn sm" data-tren-save="' + esc(t.def.id) + '">保存</button><button type="button" class="linkbtn" data-tren-x>やめる</button></span>'
-            : esc(t.def.name) + ' <button type="button" class="linkbtn tren-b" data-tren="' + esc(t.def.id) + '" title="名前を変える">✎</button>') +
+            : tentaiNameHtml(t.def.name) + ' <button type="button" class="linkbtn tren-b" data-tren="' + esc(t.def.id) + '" title="名前を変える">✎</button>') +
           "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span>" +
           '<button type="button" class="linkbtn tunl" data-tunlink="' + esc(t.def.id) + '" title="このページとの結びつきを外す(ほかに結びつきが無ければ待機中になる)">外す</button>' +
+          (t.def.celestial ? '<button type="button" class="linkbtn tmerge-b" data-tmerge="' + esc(t.def.celestial.group) + '" title="分けた天体をまとめて、元のタスクに戻す">天体を元に戻す</button>'
+            : '<button type="button" class="linkbtn tsplit-b" data-tsplit="' + esc(t.def.id) + '" title="水金地火木土天海の、別々のタスクに分ける">天体に分ける</button>') +
           '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button>' +
-          (multi ? '<span class="tparts" title="入れる区分(いくつでも)">' + parts.map((pp, i) => '<button type="button" class="tpart-b" data-tpart="' + esc(t.def.id) + ":" + pp.id + '" title="' + esc(pp.name || "") + '" aria-pressed="' + ((pp.taskIds || []).includes(t.def.id)) + '">' + (i + 1) + "</button>").join("") + "</span>" : "") + "</div>";
+          (multi ? '<span class="tparts" title="入れる区分(いくつでも)">' + parts.map((pp, i) => '<button type="button" class="tpart-b" data-tpart="' + esc(t.def.id) + ":" + pp.id + '" title="' + esc(pp.name || "") + '" aria-pressed="' + ((pp.taskIds || []).includes(t.def.id)) + '">' + (i + 1) + "</button>").join("") + "</span>" : "") + "</div>" + (pg.splitting === t.def.id ? tentaiFormHtml(t) : "");
       const linkSel = (() => { const have = new Set(ts.map(t => t.def.id)), tg = rootTag(p);
         const cand = state.tasks.filter(t => !have.has(t.def.id) && !["アーカイブ", "達成済み"].includes(t.status));
         const mine = cand.filter(t => (t.def.ministries || []).includes(tg)), other = cand.filter(t => !(t.def.ministries || []).includes(tg));
@@ -2985,6 +3126,28 @@ function bindPages(){
       const pu = pageById(pg.open), t = state.tasks.find(x => x.def.id === b.dataset.tunlink);
       if (!confirm("「" + (t ? t.def.name : "") + "」と" + pu.label + "の結びつきを外しますか。ほかに結びつきが無ければ、待機中になります。")) return;
       await linkTask(b.dataset.tunlink, pu, false); computeTasks(); renderDetail(); return;
+    }
+    // 天体制度
+    if ((b = q("[data-tsplit]"))) { pg.splitting = b.dataset.tsplit; pg.splitN = 4; pg.splitNotes = []; renderDetail(); return; }
+    if (q("[data-tsplit-x]")) { pg.splitting = null; renderDetail(); return; }
+    const readNotes = () => { const n0 = pg.splitN || 4, out = (pg.splitNotes || []).slice(); for (let i = 0; i < n0; i++) { const el = document.getElementById("ts-note-" + i); if (el) out[i] = el.value; } return out; };
+    if ((b = q("[data-tsplit-n]"))) { pg.splitNotes = readNotes(); pg.splitN = +b.dataset.tsplitN; renderDetail(); return; }
+    if (q("[data-tsplit-fill]")) {
+      const f = (document.getElementById("ts-from") || {}).value, z = (document.getElementById("ts-to") || {}).value, rs = tentaiRanges(f, z, pg.splitN || 4);
+      if (!rs.length) { msg("はじめとおわりの数を入れてください(おわりは、はじめ以上)。", true); return; }
+      pg.splitNotes = rs; renderDetail(); return;
+    }
+    if ((b = q("[data-tsplit-do]"))) {
+      const id = b.dataset.tsplitDo, notes = readNotes(), n0 = pg.splitN || 4;
+      const e = await splitTask(id, n0, notes);
+      if (e) { msg(e, true); return; }
+      pg.splitting = null; pg.splitNotes = []; renderDetail(); msg(n0 + "つの天体に分けました。行軍表には、それぞれ別のタスクとして並びます。"); return;
+    }
+    if ((b = q("[data-tmerge]"))) {
+      const g = b.dataset.tmerge, ps = state.tasks.filter(x => x.def.celestial && x.def.celestial.group === g);
+      if (!confirm("分けた天体(" + ps.length + "つ)をまとめて、元のタスク「" + ((ps[0] && ps[0].def.celestial.base) || "") + "」に戻しますか。天体ごとの記録は計算から外れます。")) return;
+      const e = await mergeTentai(g); if (e) { msg(e, true); return; }
+      renderDetail(); msg("元のタスクに戻しました。"); return;
     }
     if ((b = q("[data-tdel]"))) {
       const id = b.dataset.tdel, t = state.tasks.find(x => x.def.id === id); if (!t) return;
@@ -3519,7 +3682,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
@@ -3644,6 +3807,7 @@ SE.init([
   ["[data-dpick]", el => el.getAttribute("aria-pressed") === "true" ? "toggleOff" : "toggleOn"],
   ["[data-tdel], [data-del], [data-page-del], [data-act-del], [data-cond-del], [data-tide-del], [data-tcol-del], [data-trow-del], [data-g-del], [data-issue-del], [data-cd-del], [data-st-del], [data-box-del], [data-ch-del], [data-tunlink], [data-min-del]", "remove"],
   ["[data-act-task]", "send"],
+  ["[data-tsplit-do]", "levelup"], ["[data-tmerge]", "down"],
   ["[data-fail-save]", "down"],
   ["[data-task-add], [data-page-save], [data-act-add], [data-cond-add], [data-save], [data-sl-save], [data-pp-save], [data-min-save], [data-review-save], [data-review-send], [data-term-edit-save], [data-act-save], [data-raid-prog], [data-raid-revise-save], [data-tren-save], [data-ss-save], [data-ps-save], [data-st-save], [data-draft-save], [data-gval], [data-raid-handover], [data-focus-change], [data-close-term]", "save"],
   ["[data-open], [data-goto-page], [data-goto-tide], #connect, #reload", "open"],
