@@ -81,7 +81,7 @@ textarea{min-height:7rem;line-height:1.6}
 .ul-row{display:flex;align-items:center;gap:.45rem;padding:.35rem 0;border-bottom:1px solid var(--rule);flex-wrap:wrap}
 .ul-row input[type=checkbox]{width:1.15rem;height:1.15rem;flex:0 0 auto;accent-color:var(--ink)}
 .ul-n{flex:1;min-width:8rem;font-weight:700;word-break:break-word}.ul-n small{display:block;font-weight:400;font-size:.72rem;color:var(--sub)}
-.ul-del{background:#B3283C;border-color:#B3283C}
+.ul-del{background:#B3283C;border-color:#B3283C}.ul-arch{background:#5E6A61;border-color:#5E6A61}
 .orphan-box{margin-top:1rem}
 
 .linkbox{border:1px solid var(--rule);border-left:4px solid var(--ink);border-radius:6px;background:#fff;padding:.5rem .7rem;margin:.4rem 0}
@@ -469,7 +469,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-12 r71";
+const APP_VERSION = "2026-10-12 r72";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -866,19 +866,32 @@ function orphanTasks(){
   return state.tasks.filter(t => !t.def.staff && !(t.def.ministries || []).some(m => tags.has(m)) && !linked(t));
 }
 /* まとめて削除する欄。状況で絞り込み、チェックを付けて選ぶ */
-const UL_GROUPS = [["all", "すべて"], ["reset", "要再設定"], ["rest", "休止中・終わった"], ["other", "そのほか"]];
-const ulGroup = t => t.status === "要再設定" ? "reset" : ["休止中", "アーカイブ", "実験終了", "殿堂入り", "達成済み"].includes(t.status) ? "rest" : "other";
+const UL_GROUPS = [["all", "すべて"], ["reset", "要再設定"], ["rest", "休止中・終わった"], ["other", "そのほか"], ["arch", "アーカイブ"]];
+const ulGroup = t => t.status === "アーカイブ" ? "arch" : t.status === "要再設定" ? "reset" : ["休止中", "実験終了", "殿堂入り", "達成済み"].includes(t.status) ? "rest" : "other";
+const ulIn = (t, g) => g === "all" ? ulGroup(t) !== "arch" : ulGroup(t) === g;     // 「すべて」にはアーカイブを入れない(しまったものなので)
 function unlinkedBlockHtml(list, key, title, note, rowExtra){
   if (!list.length) return "";
-  const f = (pg.ulFilter || {})[key] || "all", shown = list.filter(t => f === "all" || ulGroup(t) === f).sort((a, b) => a.def.name.localeCompare(b.def.name, "ja"));
-  const cnt = g => list.filter(t => g === "all" || ulGroup(t) === g).length;
-  return '<details class="fold tfold"' + ((pg.ulOpen || {})[key] ? " open" : "") + ' data-ul-fold="' + esc(key) + '"><summary>' + esc(title) + " " + list.length + "件</summary>" +
+  const f = (pg.ulFilter || {})[key] || "all", shown = list.filter(t => ulIn(t, f)).sort((a, b) => a.def.name.localeCompare(b.def.name, "ja"));
+  const cnt = g => list.filter(t => ulIn(t, g)).length, nArch = cnt("arch");
+  return '<details class="fold tfold"' + ((pg.ulOpen || {})[key] ? " open" : "") + ' data-ul-fold="' + esc(key) + '"><summary>' + esc(title) + " " + cnt("all") + "件" + (nArch ? "(ほかにアーカイブ " + nArch + "件)" : "") + "</summary>" +
     '<p class="panel-e">' + note + "</p>" +
-    '<div class="ul-box" data-ul-box="' + esc(key) + '"><div class="ul-bar">' + UL_GROUPS.filter(([g]) => g === "all" || cnt(g)).map(([g, l]) => '<button type="button" class="ul-f" data-ul-filter="' + esc(key) + ":" + g + '" aria-pressed="' + (f === g) + '">' + l + " " + cnt(g) + "</button>").join("") + "</div>" +
+    '<div class="ul-box" data-ul-box="' + esc(key) + '"><div class="ul-bar">' + UL_GROUPS.filter(([g]) => g === "all" || cnt(g) || g === f).map(([g, l]) => '<button type="button" class="ul-f" data-ul-filter="' + esc(key) + ":" + g + '" aria-pressed="' + (f === g) + '">' + l + " " + cnt(g) + "</button>").join("") + "</div>" +
     '<div class="ul-bar"><button type="button" class="btn ghost sm" data-ul-all="' + esc(key) + '">見えているものを全部選ぶ</button><button type="button" class="btn ghost sm" data-ul-none="' + esc(key) + '">選ぶのをやめる</button></div>' +
     shown.map(t => '<div class="ul-row"><input type="checkbox" data-ul-id="' + esc(t.def.id) + '" aria-label="' + esc(t.def.name) + 'を選ぶ"><span class="ul-n">' + nameHtml(t.def.name) + "<small>" + esc(t.status) + ((t.def.ministries || []).length ? "" : "・所属なし") + "</small></span>" + (rowExtra ? rowExtra(t) : "") +
-      '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button></div>').join("") +
-    '<div class="ul-bar"><button type="button" class="btn sm ul-del" data-ul-del="' + esc(key) + '">選んだものを削除(<span data-ul-n="' + esc(key) + '">0</span>件)</button></div></div></details>';
+      (t.status === "アーカイブ" ? '<button type="button" class="linkbtn" data-ul-one="revive:' + esc(t.def.id) + '">元に戻す</button>' : '<button type="button" class="linkbtn" data-ul-one="archive:' + esc(t.def.id) + '">アーカイブ</button>') +
+      '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button></div>').join("") + (shown.length ? "" : '<p class="note">当てはまるタスクはありません。</p>') +
+    '<div class="ul-bar">' + (f === "arch" ? '<button type="button" class="btn sm" data-ul-act="revive:' + esc(key) + '">選んだものを元に戻す(<span data-ul-n="' + esc(key) + '">0</span>件)</button>'
+      : '<button type="button" class="btn sm ul-arch" data-ul-act="archive:' + esc(key) + '">選んだものをアーカイブにする(<span data-ul-n="' + esc(key) + '">0</span>件)</button>') +
+    '<button type="button" class="btn sm ul-del" data-ul-del="' + esc(key) + '">選んだものを削除(<span data-ul-n="' + esc(key) + '">0</span>件)</button></div></div></details>';
+}
+// まとめてアーカイブにする / アーカイブから新規として戻す(状況の操作として、今日の日付で積む)
+async function bulkStatus(ids, kind){
+  const ts = ids.map(id => state.tasks.find(x => x.def.id === id)).filter(Boolean); if (!ts.length) return false;
+  const D = taskDay();
+  const ok = await overlayWrite(ov => { ts.forEach(t => { const o = ov.tasks[t.def.id] = Object.assign({}, ov.tasks[t.def.id] || {});
+    o.events = (o.events || []).filter(x => x.date !== D).concat([kind === "archive" ? { date: D, status: "アーカイブ" } : { date: D, status: "新規", set: { miss: 0 } }]); }); });
+  if (ok) ts.forEach(t => logPlan(t.def.ministries, kind === "archive" ? "タスクをアーカイブにした" : "タスクを戻した", t.def.id, t.def.name));
+  return ok ? ts.length : false;
 }
 async function bulkDelete(ids){
   const ts = ids.map(id => state.tasks.find(x => x.def.id === id)).filter(Boolean); if (!ts.length) return false;
@@ -890,9 +903,20 @@ document.addEventListener("click", async e => {
   const q = x => e.target.closest && e.target.closest(x); let b;
   const rer = () => { if (state.open) renderDetail(); else renderList(); };
   const boxOf = k => document.querySelector('[data-ul-box="' + k + '"]');
-  const recount = k => { const bx = boxOf(k), n = bx ? bx.querySelectorAll("[data-ul-id]:checked").length : 0; const el = document.querySelector('[data-ul-n="' + k + '"]'); if (el) el.textContent = n; };
+  const recount = k => { const bx = boxOf(k), n = bx ? bx.querySelectorAll("[data-ul-id]:checked").length : 0; document.querySelectorAll('[data-ul-n="' + k + '"]').forEach(el => el.textContent = n); };
   if ((b = q("[data-ul-filter]"))) { const v = b.dataset.ulFilter, cut = v.lastIndexOf(":"), k = v.slice(0, cut), g = v.slice(cut + 1); pg.ulFilter = pg.ulFilter || {}; pg.ulFilter[k] = g; pg.ulOpen = pg.ulOpen || {}; pg.ulOpen[k] = true; rer(); return; }
   if ((b = q("[data-ul-all]")) || (b = q("[data-ul-none]"))) { const k = b.dataset.ulAll || b.dataset.ulNone, on = !!b.dataset.ulAll, bx = boxOf(k); if (bx) bx.querySelectorAll("[data-ul-id]").forEach(x => x.checked = on); recount(k); return; }
+  if ((b = q("[data-ul-act]")) || (b = q("[data-ul-one]"))) {
+    const one = !!b.dataset.ulOne, v = b.dataset.ulAct || b.dataset.ulOne, cut = v.indexOf(":"), kind = v.slice(0, cut), rest = v.slice(cut + 1);
+    let ids, k = null;
+    if (one) ids = [rest]; else { k = rest; const bx = boxOf(k); ids = bx ? Array.from(bx.querySelectorAll("[data-ul-id]:checked")).map(x => x.dataset.ulId) : []; }
+    if (!ids.length) { renderNotice("タスクを選んでください。"); return; }
+    const n = await bulkStatus(ids, kind);
+    if (k) { pg.ulOpen = pg.ulOpen || {}; pg.ulOpen[k] = true; } else { const fd = b.closest("[data-ul-fold]"); if (fd) { pg.ulOpen = pg.ulOpen || {}; pg.ulOpen[fd.dataset.ulFold] = true; } }
+    computeTasks(); rer();
+    if (n) renderNotice(n + "件を" + (kind === "archive" ? "アーカイブにしました。「アーカイブ」の絞り込みから戻せます。" : "新規として戻しました。"));
+    return;
+  }
   if ((b = q("[data-ul-del]"))) {
     const k = b.dataset.ulDel, bx = boxOf(k), ids = bx ? Array.from(bx.querySelectorAll("[data-ul-id]:checked")).map(x => x.dataset.ulId) : [];
     if (!ids.length) { renderNotice("削除するタスクを選んでください。"); return; }
@@ -904,7 +928,7 @@ document.addEventListener("click", async e => {
 document.addEventListener("change", e => {
   if (!e.target.matches || !e.target.matches("[data-ul-id]")) return;
   const bx = e.target.closest("[data-ul-box]"); if (!bx) return;
-  const k = bx.dataset.ulBox, el = document.querySelector('[data-ul-n="' + k + '"]'); if (el) el.textContent = bx.querySelectorAll("[data-ul-id]:checked").length;
+  const k = bx.dataset.ulBox, n = bx.querySelectorAll("[data-ul-id]:checked").length; document.querySelectorAll('[data-ul-n="' + k + '"]').forEach(el => el.textContent = n);
 });
 document.addEventListener("toggle", e => { const d = e.target; if (d && d.dataset && d.dataset.ulFold) { pg.ulOpen = pg.ulOpen || {}; pg.ulOpen[d.dataset.ulFold] = d.open; } }, true);
 
