@@ -427,7 +427,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-10 r65";
+const APP_VERSION = "2026-10-10 r66";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -3068,9 +3068,14 @@ function bindPages(){
       const rdF = document.getElementById("rd-title") ? { title: v("rd-title").trim(), target: v("rd-target"), due: v("rd-due"), now: v("rd-now"), goal: v("rd-goal") } : null;
       const alF = document.getElementById("al-title") ? { title: v("al-title").trim(), detected: v("al-detected"), due: v("al-due"), happened: v("al-happened"), protect: v("al-protect"), degrade: v("al-degrade"),
         protectTags: Array.from(document.querySelectorAll("[data-al-pm]:checked")).map(z => z.value) } : null;
-      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (alF) Object.assign(x, alF); if (rdF) Object.assign(x, rdF); if (document.getElementById("pg-title")) x.title = (v("pg-title") || "").trim(); x.body = v("pg-body") || "";
-        if (x.kind !== "page") { if (document.getElementById("pg-theme")) { if (x.parts && x.parts.length) { x.parts[0].theme = v("pg-theme") || ""; x.parts[0].content = v("pg-content") || ""; } else { x.theme = v("pg-theme") || ""; x.content = v("pg-content") || ""; } } if (v("pg-status") && v("pg-status") !== stOf(x) && isUnit(x)) { setStatus(x, v("pg-status")); syncGroup(doc, x); }
-          x.analysis = {}; ANALYSIS.forEach(([k]) => { const t = (v("pg-a-" + k) || "").trim(); if (t) x.analysis[k] = t; }); } x.updated = taskDay(); });
+      // 入力欄の中身は、押した瞬間にすべて読み取っておく。書き込みがぶつかって変更をかけ直すときには、入力欄はもう閉じているため
+      const has = id => !!document.getElementById(id);
+      const F = { title: has("pg-title") ? (v("pg-title") || "").trim() : null, body: v("pg-body") || "",
+        theme: has("pg-theme") ? (v("pg-theme") || "") : null, content: v("pg-content") || "", status: v("pg-status") || "",
+        analysis: has("pg-a-" + ANALYSIS[0][0]) ? ANALYSIS.reduce((o, [k]) => { const t = (v("pg-a-" + k) || "").trim(); if (t) o[k] = t; return o; }, {}) : null };
+      await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); if (!x) return false; if (alF) Object.assign(x, alF); if (rdF) Object.assign(x, rdF); if (F.title !== null) x.title = F.title; x.body = F.body;
+        if (x.kind !== "page") { if (F.theme !== null) { if (x.parts && x.parts.length) { x.parts[0].theme = F.theme; x.parts[0].content = F.content; } else { x.theme = F.theme; x.content = F.content; } } if (F.status && F.status !== stOf(x) && isUnit(x)) { setStatus(x, F.status); syncGroup(doc, x); }
+          if (F.analysis) x.analysis = Object.assign({}, F.analysis); } x.updated = taskDay(); });
       pg.edit = false; rerender(); return;
     }
     if (q("[data-page-addtable]") || q("[data-page-addapp]")) {
