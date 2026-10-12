@@ -472,7 +472,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-12 r73";
+const APP_VERSION = "2026-10-12 r74";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1448,6 +1448,10 @@ const LIMITS = [15, 30, 60, 90];  // 審議の制限時間(分)
 const gov = { archive: null, cons: null, consSha: null, amend: { items: [] }, amendSha: null, council: { supreme: [], standing: [] }, councilSha: null,
               view: null, open: null, draft: null };
 const nowIso = () => new Date(window.__shoNow || Date.now()).toISOString();
+// 本物の憲法と改憲案は、憲政院アプリが持つ。ここにあるのは見るための写し
+const KENSEIIN_APP = "https://nisenonamae.github.io/kenseiin/";
+const movedToKenseiin = () => !!((gov.amend && gov.amend.movedTo) || (gov.cons && gov.cons.copyOf === "kenseiin"));
+const kenseiinNote = what => '<div class="lock" style="margin:.4rem 0">' + what + '<a href="' + KENSEIIN_APP + '" target="_blank" rel="noopener">憲政院アプリを開く</a></div>';
 
 async function loadGov(){
   const [c, a, k, ar] = await Promise.all([readJson(GOVP.cons), readJson(GOVP.amend), readJson(GOVP.council), readJson(ARCHIVE).catch(() => ({}))]);
@@ -1538,7 +1542,7 @@ function renderCandidates(box){
 const backBtn = '<button type="button" class="back" data-gback>‹ 政府</button>';
 
 function renderGovHome(box){
-  const live = gov.amend.items.filter(a => ["審議待ち", "審議できる", "審議中"].includes(amendStatus(a))).length;
+  const live = movedToKenseiin() ? 0 : gov.amend.items.filter(a => ["審議待ち", "審議できる", "審議中"].includes(amendStatus(a))).length;
   const decrees = gov.council.supreme.filter(x => x.closedAt).slice(-3).reverse();
   const open = gov.council.standing.filter(x => standingStatus(x) !== "実施済み").length;
   const cands = (gov.council.candidates || []).filter(c => c.status === "候補");
@@ -1548,8 +1552,8 @@ function renderGovHome(box){
       '<button type="button" class="btn sm" data-cd-quick>溜める</button></div>' +
     '<div class="organs">' +
     '<button type="button" class="organ" data-gview="議題候補"><b>議題候補</b><span>' + (cands.length ? cands.length + "件" + (cands.some(c => c.star) ? "・★" + cands.filter(c => c.star).length : "") : "まだありません") + "</span></button>" +
-    '<button type="button" class="organ" data-gview="憲法"><b>憲法</b><span>' + (gov.cons ? "第" + gov.cons.version + "版・" + gov.cons.articles.length + "条" : "まだ写していません") + "</span></button>" +
-    '<button type="button" class="organ" data-gview="憲政院"><b>憲政院</b><span>改憲案の起草' + (live ? "・進行中 " + live : "") + "</span></button>" +
+    '<button type="button" class="organ" data-gview="憲法"><b>憲法</b><span>' + (gov.cons ? "第" + gov.cons.version + "版・" + gov.cons.articles.length + "条" + (gov.cons.copyOf === "kenseiin" ? "(写し)" : "") : "まだ写していません") + "</span></button>" +
+    '<button type="button" class="organ" data-gview="憲政院"><b>憲政院</b><span>' + (movedToKenseiin() ? "憲政院アプリへ" : "改憲案の起草" + (live ? "・進行中 " + live : "")) + "</span></button>" +
     '<button type="button" class="organ" data-gview="最高評議会"><b>最高評議会</b><span>改憲と重大国策の審議</span></button>' +
     '<button type="button" class="organ" data-gview="常任評議会"><b>常任評議会</b><span>議題' + (open ? "・未了 " + open : "") + "</span></button></div>" +
     (decrees.length ? '<div class="sec"><h3>最高評議会の議決</h3>' + decrees.map(x => '<div class="decree"><div class="dd">' + esc(x.closedAt.slice(0, 10)) + "　" + esc(x.title) +
@@ -1563,13 +1567,15 @@ function renderCons(box){
   const changed = {};
   for (const h of c.history || []) for (const id of h.articles || []) changed[id] = h.version;
   box.innerHTML = backBtn + '<div class="mh"><h2>' + esc(c.title) + '</h2><span>第' + c.version + "版</span></div>" +
-    '<p class="lock">この本文はここから直接は書き換えられません。変えるには、憲政院で改憲案を起草し、2日あけて最高評議会で可決する必要があります。</p>' +
+    (c.copyOf === "kenseiin" ? kenseiinNote("これは写しです。本物は憲政院アプリにあります。改正は、憲政院アプリで起草し、2日あけて最高評議会で可決します。")
+      : '<p class="lock">この本文はここから直接は書き換えられません。変えるには、憲政院で改憲案を起草し、2日あけて最高評議会で可決する必要があります。</p>') +
     c.articles.map(a => '<div class="art" style="padding-left:' + (a.depth * 0.9) + 'rem"><h4>' + esc(a.title) +
       (changed[a.id] && changed[a.id] > 1 ? '<span class="amd">第' + changed[a.id] + "版で改正</span>" : "") + "</h4>" + (a.text ? "<p>" + esc(a.text) + "</p>" : "") + "</div>").join("") +
     '<div class="sec"><h3>改正の履歴</h3>' + (c.history || []).slice().reverse().map(h => '<div class="decree"><div class="dd">第' + h.version + "版　" + esc(h.date) + "</div>" + esc(h.note || "") + "</div>").join("") + "</div>";
 }
 
 function renderKenseiin(box){
+  if (movedToKenseiin()) { box.innerHTML = backBtn + '<div class="mh"><h2>憲政院</h2></div>' + kenseiinNote("改憲案の起草と審議は、憲政院アプリに移りました。手順はこれまでと同じです(起草 → 2日あけて審議期間 → 最高評議会で議決)。"); return; }
   const d = gov.draft;
   if (d) return renderDraft(box, d);
   const items = gov.amend.items.slice().reverse();
@@ -1634,7 +1640,7 @@ function renderSupreme(box){
   const open = gov.open;
   if (open && open.kind === "amend") return renderAmendSession(box, gov.amend.items.find(x => x.id === open.id));
   if (open && open.kind === "policy") return renderPolicySession(box, gov.council.supreme.find(x => x.id === open.id));
-  const amends = gov.amend.items.filter(a => a.submitted).slice().reverse();
+  const amends = movedToKenseiin() ? [] : gov.amend.items.filter(a => a.submitted).slice().reverse();
   const doneSt = ["可決", "否決", "廃案"];
   const aRow = a => { const st = amendStatus(a);
     return '<button type="button" class="item" data-open-amend-s="' + esc(a.id) + '"><span>' + esc(a.title) + '<br><span style="font-size:.76rem;color:var(--sub)">審議期間 ' + esc(a.periodStart) + "〜" + esc(a.periodEnd) +
@@ -1646,8 +1652,8 @@ function renderSupreme(box){
   const pol = gov.council.supreme.slice().reverse(), pLive = pol.filter(p => !p.closedAt), pDone = pol.filter(p => p.closedAt);
   box.innerHTML = backBtn + '<div class="mh"><h2>最高評議会</h2></div>' +
     '<p style="font-size:.86rem;color:var(--sub)">最高議決機関。審議は制限時間を定めて深く集中して行う。議会終了を宣言した議決は確定し、すべての活動に優先する。</p>' +
-    '<div class="sec"><h3>改憲の審議</h3>' + (aLive.length ? aLive.map(aRow).join("") : '<div class="empty">審議を待っている改憲案はありません。</div>') +
-      foldHtml("これまでの改憲", aDone.map(aRow).join(""), aDone.length) + "</div>" +
+    '<div class="sec"><h3>改憲の審議</h3>' + (movedToKenseiin() ? kenseiinNote("改憲の審議は、憲政院アプリの最高評議会で行います。")
+      : (aLive.length ? aLive.map(aRow).join("") : '<div class="empty">審議を待っている改憲案はありません。</div>') + foldHtml("これまでの改憲", aDone.map(aRow).join(""), aDone.length)) + "</div>" +
     '<div class="sec"><h3>重大国策の審議</h3>' +
       '<div class="addrow"><input id="pol-title" placeholder="議題"><button type="button" class="btn sm" data-pol-new>議題を立てる</button></div>' +
       pLive.map(pRow).join("") + foldHtml("これまでの議決", pDone.map(pRow).join(""), pDone.length) + "</div>" +
