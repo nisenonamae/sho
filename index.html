@@ -75,6 +75,15 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.tgrp{display:flex;align-items:center;gap:.45rem;padding:.4rem 0;border-bottom:1px dashed var(--rule);flex-wrap:wrap}
+.tg-tog{border:1px solid var(--rule);background:#fff;border-radius:4px;width:1.8rem;height:1.8rem;cursor:pointer;color:var(--sub);flex:0 0 auto}
+.tg-marks{display:inline-flex;flex-wrap:wrap;gap:.1rem}
+.tmark.mini{margin-right:0;padding:0 .3em 0 .1em;font-size:.7em}
+.tmark.dim{opacity:.38;filter:grayscale(.5)}
+.tg-base{font-weight:700;min-width:0;word-break:break-word}
+.tg-sum{font-size:.76rem;color:var(--sub);margin-left:auto;white-space:nowrap}
+.tg-body{padding-left:.7rem;border-left:2px solid var(--rule);margin:0 0 .3rem .85rem}
+
 .tmark{display:inline-flex;align-items:center;gap:.18em;padding:0 .42em 0 .14em;margin-right:.32em;border:1px solid var(--tc);border-radius:999px;
   background:color-mix(in srgb,var(--tc) 11%,#fff);vertical-align:.08em;font-size:.78em;line-height:1.55;white-space:nowrap}
 .tmark svg{width:1.25em;height:1.25em;flex:0 0 auto}
@@ -442,7 +451,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-12 r68";
+const APP_VERSION = "2026-10-12 r69";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -963,6 +972,26 @@ async function mergeTentai(group){
   logPlan(parts[0].def.ministries, "天体を元に戻した", group, base);
   computeTasks();
   return "";
+}
+
+/* 天体のまとまり:ページのタスクの一覧では、同じタスクから分けた天体を見出し1行にたたみ、▸で開く */
+function tgRowsSho(ts, row){
+  const key = t => t.def.celestial ? t.def.celestial.group : null, cnt = {};
+  ts.forEach(t => { const k = key(t); if (k) cnt[k] = (cnt[k] || 0) + 1; });
+  const seen = new Set(); let out = "";
+  for (const t of ts) {
+    const k = key(t);
+    if (!k || cnt[k] < 2) { out += row(t); continue; }
+    if (seen.has(k)) continue; seen.add(k);
+    const mem = ts.filter(x => key(x) === k).sort((a, b) => a.def.celestial.index - b.def.celestial.index);
+    const open = (pg.tgOpen || new Set()).has(k), live = x => !["達成済み", "アーカイブ"].includes(x.status);
+    out += '<div class="tgrp"><button type="button" class="tg-tog" data-tgtog="' + esc(k) + '" aria-expanded="' + open + '" aria-label="' + (open ? "たたむ" : "全部の天体を見る") + '">' + (open ? "▾" : "▸") + "</button>" +
+      '<span class="tg-marks">' + mem.map(x => tmarkHtml(x.def.celestial.index).replace('class="tmark"', 'class="tmark mini' + (live(x) ? "" : " dim") + '"')).join("") + "</span>" +
+      '<span class="tg-base">' + esc(mem[0].def.celestial.base) + '</span><span class="tg-sum">' + mem.length + "つの天体" + (mem.some(x => x.waiting) ? "・待機中" : "") + "</span>" +
+      '<button type="button" class="linkbtn tmerge-b" data-tmerge="' + esc(k) + '" title="分けた天体をまとめて、元のタスクに戻す">天体を元に戻す</button></div>';
+    if (open) out += '<div class="tg-body">' + mem.map(row).join("") + "</div>";
+  }
+  return out;
 }
 function tentaiFormHtml(t){
   const n = pg.splitN || 4, notes = pg.splitNotes || [];
@@ -2910,7 +2939,7 @@ function renderPage(box, p){
             : tentaiNameHtml(t.def.name) + ' <button type="button" class="linkbtn tren-b" data-tren="' + esc(t.def.id) + '" title="名前を変える">✎</button>') +
           "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span>" +
           '<button type="button" class="linkbtn tunl" data-tunlink="' + esc(t.def.id) + '" title="このページとの結びつきを外す(ほかに結びつきが無ければ待機中になる)">外す</button>' +
-          (t.def.celestial ? '<button type="button" class="linkbtn tmerge-b" data-tmerge="' + esc(t.def.celestial.group) + '" title="分けた天体をまとめて、元のタスクに戻す">天体を元に戻す</button>'
+          (t.def.celestial ? ""
             : '<button type="button" class="linkbtn tsplit-b" data-tsplit="' + esc(t.def.id) + '" title="水金地火木土天海の、別々のタスクに分ける">天体に分ける</button>') +
           '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button>' +
           (multi ? '<span class="tparts" title="入れる区分(いくつでも)">' + parts.map((pp, i) => '<button type="button" class="tpart-b" data-tpart="' + esc(t.def.id) + ":" + pp.id + '" title="' + esc(pp.name || "") + '" aria-pressed="' + ((pp.taskIds || []).includes(t.def.id)) + '">' + (i + 1) + "</button>").join("") + "</span>" : "") + "</div>" + (pg.splitting === t.def.id ? tentaiFormHtml(t) : "");
@@ -2931,7 +2960,7 @@ function renderPage(box, p){
           (cs.length && met === cs.length && st !== "クリア" ? '<div style="margin-top:.5rem"><button type="button" class="btn" data-page-clear>クリアにする</button></div>' : "") +
           '<p class="panel-e" style="margin:.4rem 0 0;font-size:.74rem">クリアすると、結びついたタスクの世代が上がります(行軍表の世代はここだけで上がります)。' + (p.kind === "STAGE" ? "クリアしたSTAGEは、その省の土地(領土)として残ります。進行中のあいだも、クリア条件を満たした割合だけ領土になります。省の支配の深さ(タスクの定着度)が0になると土地は失われ、その省へのRAIDを引き渡すと取り戻せます。" : "") + '</p>');
         h += panel("タスク", (ts.length ? '<span class="ph-n">' + ts.length + "つ</span>" : "") + (pg.taskForm ? "" : '<button type="button" class="linkbtn" data-task-new>+ 作る</button>'),
-          gateNote + (ts.length ? '<div class="tasks">' + ts.map(taskRow).join("") + "</div>" : (pg.taskForm ? "" : empty("まだありません。"))) + (pg.taskForm ? taskFormHtml(p) : linkSel));
+          gateNote + (ts.length ? '<div class="tasks">' + tgRowsSho(ts, taskRow) + "</div>" : (pg.taskForm ? "" : empty("まだありません。"))) + (pg.taskForm ? taskFormHtml(p) : linkSel));
       } else {
         h += gateNote;
         parts.forEach((pp, i) => {
@@ -2944,12 +2973,12 @@ function renderPage(box, p){
                 '</textarea></div><div class="f"><label>タスク内容</label><textarea id="pe-content" style="min-height:3rem">' + esc(pp.content || "") + '</textarea></div><div class="row-btns"><button type="button" class="btn sm" data-part-save="' + pp.id + '">保存</button><button type="button" class="btn ghost sm" data-part-cancel>やめる</button></div></div>'
               : '<div class="part-b"><div class="frow"><span class="fl">主題</span>' + (pp.theme ? "<p>" + esc(pp.theme) + "</p>" : empty("未記入")) + '</div><div class="frow"><span class="fl">タスク内容</span>' + (pp.content ? "<p>" + esc(pp.content) + "</p>" : empty("未記入")) + "</div>" +
                 '<div class="frow"><span class="fl">クリア条件</span><div>' + condRows(cs, pp.id) + (pg.condForm === pp.id ? "" : '<button type="button" class="linkbtn" data-cond-new="' + pp.id + '">+ 条件を足す</button>') + "</div></div>" +
-                '<div class="frow"><span class="fl">タスク</span><div>' + (mine.length ? '<div class="tasks">' + mine.map(taskRow).join("") + "</div>" : empty("まだありません。")) +
+                '<div class="frow"><span class="fl">タスク</span><div>' + (mine.length ? '<div class="tasks">' + tgRowsSho(mine, taskRow) + "</div>" : empty("まだありません。")) +
                 (pg.taskForm === pp.id ? taskFormHtml(p) : '<button type="button" class="linkbtn" data-task-new="' + pp.id + '">+ この区分のタスクを作る</button>') + "</div></div></div>") + "</section>";
         });
         const loose = ts.filter(t => !parts.some(pp => (pp.taskIds || []).includes(t.def.id)));
         h += '<div class="row-btns"><button type="button" class="btn ghost sm" data-part-add>+ 区分を足す</button></div>';
-        if (loose.length) h += panel("区分に入っていないタスク", "", '<div class="tasks">' + loose.map(taskRow).join("") + "</div>");
+        if (loose.length) h += panel("区分に入っていないタスク", "", '<div class="tasks">' + tgRowsSho(loose, taskRow) + "</div>");
         if (linkSel) h += linkSel;
         const all = parts.flatMap(pp => pp.clear || []);
         if (all.length && all.every(condMet) && st !== "クリア") h += '<div style="margin:.5rem 0"><button type="button" class="btn" data-page-clear>クリアにする</button></div>';
@@ -3128,6 +3157,7 @@ function bindPages(){
       await linkTask(b.dataset.tunlink, pu, false); computeTasks(); renderDetail(); return;
     }
     // 天体制度
+    if ((b = q("[data-tgtog]"))) { const k = b.dataset.tgtog; pg.tgOpen = pg.tgOpen || new Set(); pg.tgOpen.has(k) ? pg.tgOpen.delete(k) : pg.tgOpen.add(k); renderDetail(); return; }
     if ((b = q("[data-tsplit]"))) { pg.splitting = b.dataset.tsplit; pg.splitN = 4; pg.splitNotes = []; renderDetail(); return; }
     if (q("[data-tsplit-x]")) { pg.splitting = null; renderDetail(); return; }
     const readNotes = () => { const n0 = pg.splitN || 4, out = (pg.splitNotes || []).slice(); for (let i = 0; i < n0; i++) { const el = document.getElementById("ts-note-" + i); if (el) out[i] = el.value; } return out; };
