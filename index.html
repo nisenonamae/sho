@@ -475,7 +475,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-14 r77";
+const APP_VERSION = "2026-10-14 r78";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2469,10 +2469,15 @@ async function loadMins(){
 function parseDeps(t){ const out = {}; String(t || "").split(/[、,，\n]/).forEach(x => { const m = /^\s*(.+?)\s*[::]\s*(-?[\d.]+)\s*$/.exec(x); if (m) out[m[1]] = +m[2]; }); return out; }
 const depsText = d => Object.entries(d || {}).map(([k, v]) => k + ":" + v).join(", ");
 // 省一覧をアプリの表示に反映する(朝の書き出しを待たずに、足した省がすぐ出る)
+// 同じタグの省が、アーカイブ済みと使われているもので2つあるときは、使われている方を返す
+function minEntry(doc, tag){ const all = ((doc && doc.ministries) || []).filter(x => x.tag === tag); return all.filter(x => !x.archived).slice(-1)[0] || all.slice(-1)[0] || null; }
+// 使われている省があるタグの、アーカイブ済みの古い記録は取り除く(同じタグで作り直したもの)
+function tidyMins(doc){ const live = new Set((doc.ministries || []).filter(x => !x.archived).map(x => x.tag)); doc.ministries = (doc.ministries || []).filter(x => !(x.archived && live.has(x.tag))); }
 function mergeMins(){
   if (!mins.doc || !state.gov) return;
   state.gov.ministries = state.gov.ministries || [];
-  const gone = new Set(mins.doc.ministries.filter(m => m.archived).map(m => m.tag));
+  const live = new Set(mins.doc.ministries.filter(m => !m.archived).map(m => m.tag));
+  const gone = new Set(mins.doc.ministries.filter(m => m.archived && !live.has(m.tag)).map(m => m.tag));
   state.gov.ministries = state.gov.ministries.filter(m => !gone.has(m.tag));
   for (const m of mins.doc.ministries) {
     if (m.archived) continue;
@@ -2485,6 +2490,7 @@ async function saveMins(mutate){
   for (let i = 0; i < 3; i++) {
     const doc = mins.doc || { version: 1, ministries: [] };
     if (mutate(doc) === false) return false;
+    tidyMins(doc);
     (doc.ministries || []).forEach(m => { delete m.deps; });      // 依存は記録から計算するので、手で書いた依存先は持たない
     doc.rev = (+doc.rev || 0) + 1;
     try { mins.sha = await writeJson(MINS, doc, mins.sha); mins.doc = doc; mins.stale = false; try { localStorage.setItem(MINS_LOCAL, JSON.stringify(doc)); } catch (e) {} mergeMins(); return true; }
@@ -3288,7 +3294,9 @@ function bindMins(){
     const msg = t => { document.getElementById("mf-msg").textContent = t; document.getElementById("mf-msg").classList.add("err"); };
     if (!name || !tag) return msg("名前と所属タグを入れてください。");
     if (((state.gov && state.gov.ministries) || []).some(m => m.tag === tag)) return msg("その所属タグの省はもうあります。");
-    const ok = await saveMins(doc => { doc.ministries = (doc.ministries || []).concat([{ tag, name, deadline: "", progress: 0, created: taskDay() }]); });
+    const ok = await saveMins(doc => { const old = minEntry(doc, tag);
+      if (old && old.archived) { delete old.archived; old.name = name; old.revived = taskDay(); return; }      // 同じタグで作り直すときは、アーカイブした方を戻す(2つ目を作らない)
+      doc.ministries = (doc.ministries || []).concat([{ tag, name, deadline: "", progress: 0, created: taskDay() }]); });
     if (ok) { mins.form = false; renderMinForm(); render(); }
   });
   document.getElementById("detail").addEventListener("click", async e => {
@@ -3297,7 +3305,7 @@ function bindMins(){
     if ((b = e.target.closest("[data-min-del]"))) {
       const tag = b.dataset.minDel, g = state.gov.ministries.find(x => x.tag === tag);
       if (!confirm("「" + (g ? g.name : tag) + "」を消しますか。省の一覧と国力の計算から外れます(タスクの記録は残ります)。")) return;
-      const ok = await saveMins(doc => { let m = (doc.ministries || []).find(x => x.tag === tag);
+      const ok = await saveMins(doc => { let m = minEntry(doc, tag);
         if (!m) { m = { tag, name: g ? g.name : tag, deps: g ? depsText(g.deps) : "" }; doc.ministries = (doc.ministries || []).concat([m]); }
         m.archived = taskDay(); });
       if (ok) { state.gov.ministries = state.gov.ministries.filter(x => x.tag !== tag); state.open = null; pg.open = null; render(); }
@@ -3307,7 +3315,7 @@ function bindMins(){
     if (e.target.closest("[data-min-cancel]")) { mins.edit = false; renderDetail(); return; }
     if ((b = e.target.closest("[data-min-save]"))) {
       const tag = b.dataset.minSave, name = document.getElementById("me-name").value.trim() || tag, deps = document.getElementById("me-deps").value.trim();
-      const ok = await saveMins(doc => { let m = (doc.ministries || []).find(x => x.tag === tag);
+      const ok = await saveMins(doc => { let m = minEntry(doc, tag); if (m && m.archived) m = null;
         if (!m) { const g = state.gov.ministries.find(x => x.tag === tag) || {}; m = { tag, progress: g.progress || 0, deadline: g.deadline || "" }; doc.ministries = (doc.ministries || []).concat([m]); }
         m.name = name; });
       if (ok) { mins.edit = false; try { renderList(); } catch (err) {} renderDetail(); renderNotice("名前を「" + name + "」にしました。行軍表には、次に開いたときから出ます。"); }
