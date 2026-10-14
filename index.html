@@ -75,6 +75,9 @@ textarea{min-height:7rem;line-height:1.6}
 .nplace span{font-size:.8rem;color:var(--sub)}
 .nplace .nlike{font-size:.82rem;color:var(--ink);border:1px dashed var(--rule);border-radius:3px;padding:.2rem .6rem}
 [hidden]{display:none !important}
+.hold-chip{font-size:.74rem;color:#7A5A00;background:#FCF2D8;border:1px solid #E5C77A;border-radius:3px;padding:0 .35rem;margin-right:.3rem}
+.hold-box{border:1px solid var(--rule);border-left:4px solid #C9A227;border-radius:6px;background:#fff;padding:.5rem .7rem;margin:.2rem 0 .6rem}
+
 .trb{padding:.05rem .55rem;font-size:.78rem;background:#2F5DA8;border-color:#2F5DA8}
 .rb-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:#FFF4F0;border:1px solid #E7B8AC;border-radius:6px;padding:.35rem .6rem;margin:.2rem 0 .5rem;font-size:.86rem}
 
@@ -472,7 +475,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-12 r74";
+const APP_VERSION = "2026-10-14 r76";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -635,6 +638,7 @@ async function loadReviewMonth(m){
 
 /* ───── タスクの今の状態(行軍表と同じ計算) ───── */
 function computeTasks(){
+  setTimeout(autoReleaseHolds, 0);
   const E = window.TaskEngine;
   if (!E || !state.defs) { state.tasks = []; return; }
   const today = taskDay();
@@ -981,6 +985,48 @@ function linkListHtml(){
 }
 function refreshLinkList(){ const el = document.getElementById("tl-list"); if (el) el.innerHTML = linkListHtml(); }
 document.addEventListener("input", e => { if (e.target && e.target.id === "tl-q") { pg.linkQ = e.target.value; refreshLinkList(); } });
+
+/* ───────── ページの中で、タスクを待機させる ─────────
+   page.holds = { タスクのid: [{ from, to(なければ解くまで), reason, until:{task, status}(なれば自動で解く) }] }。
+   決まりの計算(engine e10)が、待機させた期間をそのページの進行中から差し引く */
+const ST_RANK2 = { "新規": 1, "進行中": 2, "定着": 3, "熟達": 4, "殿堂入り": 5 };
+const mdS = d => d ? (+d.slice(5, 7)) + "/" + (+d.slice(8, 10)) : "";
+function activeHold(p, tid, day){ return (((p.holds || {})[tid]) || []).filter(h => h && h.from && day >= h.from && (!h.to || day < h.to)).slice(-1)[0] || null; }
+function holdHtml(p, t){
+  const h = activeHold(p, t.def.id, taskDay());
+  if (!h) return '<button type="button" class="linkbtn" data-hold="' + esc(t.def.id) + '" title="このページの中で、このタスクだけを止める">待機させる</button>';
+  const u = h.until && h.until.task ? state.tasks.find(x => x.def.id === h.until.task) : null;
+  return '<span class="hold-chip">このページで待機中' + (h.reason ? "(" + esc(h.reason) + ")" : "") + (h.to ? "・" + mdS(h.to) + "まで" : u ? "・「" + esc(u.def.name) + "」が" + esc(h.until.status) + "になったら" : "") + "</span>" +
+    '<button type="button" class="linkbtn" data-hold-off="' + esc(t.def.id) + '">解く</button>';
+}
+function holdFormHtml(p, t, ts){
+  const others = state.tasks.filter(x => x.def.id !== t.def.id && !["アーカイブ"].includes(x.status)).sort((a, b) => (ts.includes(b) ? 1 : 0) - (ts.includes(a) ? 1 : 0) || a.def.name.localeCompare(b.def.name, "ja"));
+  return '<div class="hold-box"><b>「' + esc(t.def.name) + "」を、このページで待機させる</b>" +
+    '<p class="panel-e">ページが進行中でも、このタスクだけ止めます(行軍表に出ず、要再設定にも近づかず、貯金も減らない)。状況・累計・連続はそのまま止まります。</p>' +
+    '<div class="f"><label>いつまで</label><select id="hold-kind"><option value="open">解くまで</option><option value="date">日付まで</option><option value="task">別のタスクが、ある状況になったら</option></select></div>' +
+    '<div class="f"><label>日付(日付までのとき。その日から動く)</label><input id="hold-date" type="date" value="' + addDaysS(taskDay(), 7) + '"></div>' +
+    '<div class="f"><label>タスクと状況(別のタスクのとき。そうなったら自動で解く)</label><div class="row"><select id="hold-task">' + others.map(x => '<option value="' + esc(x.def.id) + '">' + esc(x.def.name) + "(今 " + esc(x.status) + ")</option>").join("") +
+      '</select><select id="hold-st"><option>進行中</option><option selected>定着</option><option>熟達</option></select></div></div>' +
+    '<div class="f"><label>理由(一言)</label><input id="hold-why" placeholder="例:単語が定着してから始める"></div>' +
+    '<div class="row-btns"><button type="button" class="btn sm" data-hold-save="' + esc(t.def.id) + '">待機させる</button><button type="button" class="btn ghost sm" data-hold-x>やめる</button></div></div>';
+}
+const addDaysS = (d, n) => new Date(Date.parse(d + "T00:00:00Z") + n * 864e5).toISOString().slice(0, 10);
+// 「別のタスクが◯◯になったら」の待機は、省アプリを開いたときに確かめて、そろっていれば解く
+let holdReleasing = false;
+function autoReleaseHolds(){
+  if (holdReleasing || !pg.doc || !state.tasks.length) return;
+  const today = taskDay(), rel = [];
+  for (const p of pg.doc.pages || []) for (const [tid, hs] of Object.entries(p.holds || {})) {
+    const h = activeHold(p, tid, today); if (!h || !h.until || !h.until.task) continue;
+    const u = state.tasks.find(x => x.def.id === h.until.task);
+    if (u && (ST_RANK2[u.status] || 0) >= (ST_RANK2[h.until.status] || 9)) rel.push([p.id, tid, h.from]);
+  }
+  if (!rel.length) return;
+  holdReleasing = true;
+  savePages(doc => { let ch = false; for (const [pid, tid, from] of rel) { const pp = doc.pages.find(x => x.id === pid), h = pp && ((pp.holds || {})[tid] || []).find(x => x.from === from && (!x.to || x.to > today)); if (h) { h.to = today; h.released = "条件がそろった"; ch = true; } } return ch ? undefined : false; })
+    .then(() => { holdReleasing = false; computeTasks(); if (typeof renderDetail === "function" && pg.open) renderDetail(); renderNotice(rel.length + "件のタスクの待機を、条件がそろったので解きました。"); })
+    .catch(() => { holdReleasing = false; });
+}
 /* ───────── 天体制度:タスクを最大8つに分け、水金地火木土天海の印を付けた別々のタスクにする ─────────
    心理的な障壁を減らすため。印は名前の先頭に入れる(行軍表・チェック・国力年報など、どこでもそのまま出る)。
    元のタスクは削除の印を付けて残し(戻せる)、クリア条件で元のタスクを指していたものは天体それぞれの条件に置き換える */
@@ -3063,13 +3109,14 @@ function renderPage(box, p){
       const taskRow = t => '<div class="tk' + (t.waiting ? " waiting" : t.status === "要再設定" ? " fall" : "") + '"><span>' +
           (pg.renaming === t.def.id ? '<span class="tren"><input id="tren-in" value="' + esc(t.def.name) + '"><button type="button" class="btn sm" data-tren-save="' + esc(t.def.id) + '">保存</button><button type="button" class="linkbtn" data-tren-x>やめる</button></span>'
             : tentaiNameHtml(t.def.name) + ' <button type="button" class="linkbtn tren-b" data-tren="' + esc(t.def.id) + '" title="名前を変える">✎</button>') +
-          "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (t.total || 0) + "</span>" +
+          "</span><span>" + (t.waiting ? '<span class="wtag">待機中</span>' + esc(t.status) + "のまま" : esc(t.status)) + " 連続" + t.streak + " 累計" + (Math.round((t.total || 0) * 100) / 100) + "</span>" +
           (t.status === "要再設定" ? '<button type="button" class="btn sm trb" data-ul-one="rebuild:' + esc(t.def.id) + '" title="新規に立て直す(累計・連続は0から)">立て直す</button>' : "") +
+          holdHtml(p, t) +
           '<button type="button" class="linkbtn tunl" data-tunlink="' + esc(t.def.id) + '" title="このページとの結びつきを外す(ほかに結びつきが無ければ待機中になる)">外す</button>' +
           (t.def.celestial ? ""
             : '<button type="button" class="linkbtn tsplit-b" data-tsplit="' + esc(t.def.id) + '" title="水金地火木土天海の、別々のタスクに分ける">天体に分ける</button>') +
           '<button type="button" class="del" data-tdel="' + esc(t.def.id) + '">削除</button>' +
-          (multi ? '<span class="tparts" title="入れる区分(いくつでも)">' + parts.map((pp, i) => '<button type="button" class="tpart-b" data-tpart="' + esc(t.def.id) + ":" + pp.id + '" title="' + esc(pp.name || "") + '" aria-pressed="' + ((pp.taskIds || []).includes(t.def.id)) + '">' + (i + 1) + "</button>").join("") + "</span>" : "") + "</div>" + (pg.splitting === t.def.id ? tentaiFormHtml(t) : "");
+          (multi ? '<span class="tparts" title="入れる区分(いくつでも)">' + parts.map((pp, i) => '<button type="button" class="tpart-b" data-tpart="' + esc(t.def.id) + ":" + pp.id + '" title="' + esc(pp.name || "") + '" aria-pressed="' + ((pp.taskIds || []).includes(t.def.id)) + '">' + (i + 1) + "</button>").join("") + "</span>" : "") + "</div>" + (pg.splitting === t.def.id ? tentaiFormHtml(t) : "") + (pg.holdForm === t.def.id ? holdFormHtml(p, t, ts) : "");
       const linkSel = (() => { const have = new Set(ts.map(t => t.def.id)), tg = rootTag(p);
         if (!state.tasks.some(t => !have.has(t.def.id) && !["アーカイブ", "達成済み"].includes(t.status))) return "";
         pg._link = { have, tg };
@@ -3247,7 +3294,8 @@ function bindMins(){
       const ok = await saveMins(doc => { let m = (doc.ministries || []).find(x => x.tag === tag);
         if (!m) { const g = state.gov.ministries.find(x => x.tag === tag) || {}; m = { tag, progress: g.progress || 0, deadline: g.deadline || "" }; doc.ministries = (doc.ministries || []).concat([m]); }
         m.name = name; });
-      if (ok) { mins.edit = false; renderDetail(); }
+      if (ok) { mins.edit = false; try { renderList(); } catch (err) {} renderDetail(); renderNotice("名前を「" + name + "」にしました。行軍表には、次に開いたときから出ます。"); }
+      else renderNotice("名前を保存できませんでした。つながりを確かめて、もう一度押してください。");
     }
   });
 }
@@ -3291,6 +3339,19 @@ function bindPages(){
     if ((b = q("[data-tlink-scope]"))) { pg.linkScope = b.dataset.tlinkScope; document.querySelectorAll("[data-tlink-scope]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); refreshLinkList(); return; }
     if ((b = q("[data-tlink-add]"))) { const pp0 = pg.open ? pageById(pg.open) : null; if (!pp0) return; b.disabled = true;
       await linkTask(b.dataset.tlinkAdd, pp0, true); computeTasks(); renderDetail(); const qi = document.getElementById("tl-q"); if (qi) { qi.focus(); qi.setSelectionRange(qi.value.length, qi.value.length); } return; }
+    if ((b = q("[data-hold]"))) { pg.holdForm = b.dataset.hold; renderDetail(); return; }
+    if (q("[data-hold-x]")) { pg.holdForm = null; renderDetail(); return; }
+    if ((b = q("[data-hold-save]"))) {
+      const gv = id => ((document.getElementById(id) || {}).value || ""), tid = b.dataset.holdSave, pid = pg.open, today = taskDay(), kind = gv("hold-kind"), why = gv("hold-why").trim(), date = gv("hold-date"), ut = gv("hold-task"), us = gv("hold-st");
+      if (kind === "date" && !(date > today)) { msg("日付は明日以降にしてください。", true); return; }
+      const entry = { from: today, to: kind === "date" ? date : null, reason: why, until: kind === "task" ? { task: ut, status: us } : null };
+      await savePages(doc => { const pp = doc.pages.find(x => x.id === pid); if (!pp) return false; pp.holds = pp.holds || {}; const arr = pp.holds[tid] = (pp.holds[tid] || []).filter(h => !(h.from === today));
+        if (arr.some(h => h.from && (!h.to || h.to > today))) return false; arr.push(Object.assign({}, entry)); });
+      pg.holdForm = null; computeTasks(); renderDetail(); msg("待機させました。"); return; }
+    if ((b = q("[data-hold-off]"))) { const tid = b.dataset.holdOff, pid = pg.open, today = taskDay();
+      await savePages(doc => { const pp = doc.pages.find(x => x.id === pid), arr = pp && pp.holds && pp.holds[tid]; if (!arr) return false; let ch = false;
+        arr.forEach(h => { if (h.from && (!h.to || h.to > today)) { if (h.from === today) { h.to = today; } else h.to = today; ch = true; } }); return ch ? undefined : false; });
+      computeTasks(); renderDetail(); msg("待機を解きました。今日から動きます。"); return; }
     if ((b = q("[data-tgtog]"))) { const k = b.dataset.tgtog; pg.tgOpen = pg.tgOpen || new Set(); pg.tgOpen.has(k) ? pg.tgOpen.delete(k) : pg.tgOpen.add(k); renderDetail(); return; }
     if ((b = q("[data-tsplit]"))) { pg.splitting = b.dataset.tsplit; pg.splitN = 4; pg.splitNotes = []; renderDetail(); return; }
     if (q("[data-tsplit-x]")) { pg.splitting = null; renderDetail(); return; }
