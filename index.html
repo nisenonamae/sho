@@ -475,7 +475,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-14 r78";
+const APP_VERSION = "2026-10-17 r79";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2118,10 +2118,11 @@ function renderStaff(box){
     if (!g) return '<div class="emg"><h4>緊急会議:' + esc(t ? t.name : "") + "の総括</h4><p style=\"margin:.2rem 0;font-size:.86rem\">" + esc(e.reason) +
       "。下の「総括(期を閉じる)」で目標ごとの結果を書けば片付きます。</p></div>";
     return '<div class="emg"><h4>緊急会議:' + esc(g ? g.text : "") + '</h4><p style="margin:.2rem 0;font-size:.86rem">' + esc(e.reason) + "(" + esc(e.createdAt) + ")</p>" +
-      '<div class="f"><label>理由・新しい手段</label><textarea id="em-note-' + esc(e.id) + '" style="min-height:3rem"></textarea></div>' +
-      '<div class="f" style="margin-top:.3rem"><label>目標を下げるときの新しい値(下げる場合だけ)</label><input id="em-val-' + esc(e.id) + '" type="number" step="any"></div>' +
+      '<div class="f"><label>理由・新しい手段(どれを選ぶときも必ず書く)</label><textarea id="em-note-' + esc(e.id) + '" style="min-height:3rem"></textarea></div>' +
+      '<div class="f" style="margin-top:.3rem"><label>目標を下げるときの新しい値(下げる場合だけ)　今の目標:' + esc(String(g.target)) + esc(g.unit || "") + '</label><input id="em-val-' + esc(e.id) + '" type="text" inputmode="decimal" placeholder="今より小さい数"></div>' +
       '<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem">' +
-      ["立て直す", "目標を下げる", "このまま続ける"].map(k => '<button type="button" class="btn sm" data-em="' + esc(e.id) + '" data-em-k="' + k + '">' + k + "</button>").join("") + "</div></div>"; }).join("");
+      ["立て直す", "目標を下げる", "このまま続ける"].map(k => '<button type="button" class="btn sm" data-em="' + esc(e.id) + '" data-em-k="' + k + '">' + k + "</button>").join("") + "</div>" +
+      '<span class="status" id="em-msg-' + esc(e.id) + '"></span></div>'; }).join("");
   if (term && staff.edit && staff.edit.id === term.id) {
     h += termForm(staff.edit, ms);
   } else if (term) {
@@ -2403,15 +2404,23 @@ function bindStaff(){
       return renderDetail();
     }
     if ((b = q("[data-em]"))) {
-      const id = b.dataset.em, kind = b.dataset.emK, note = (document.getElementById("em-note-" + id).value || "").trim(), nv = document.getElementById("em-val-" + id).value;
-      if (!note) return sfMsg("理由を書いてから決めてください。", true);
-      if (kind === "目標を下げる" && !(+nv > 0)) return sfMsg("下げた新しい目標の値を入れてください。", true);
+      const id = b.dataset.em, kind = b.dataset.emK, note = (document.getElementById("em-note-" + id).value || "").trim();
+      // 全角の数字・小数点も読む
+      const raw = (document.getElementById("em-val-" + id).value || "").replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[．。]/g, ".").replace(/[,，\s]/g, ""), nv = raw === "" ? NaN : +raw;
+      // 知らせは、その緊急会議の中に出す(画面の下だと見えない)
+      const emMsg = t => { const el = document.getElementById("em-msg-" + id); if (el) { el.textContent = t; el.classList.add("err"); } else sfMsg(t, true); };
+      if (!note) return emMsg("理由・新しい手段を書いてから決めてください。");
+      if (kind === "目標を下げる") {
+        const em0 = staff.doc.emergencies.find(x => x.id === id), t0 = em0 && staff.doc.terms.find(x => x.id === em0.termId), g0 = t0 && (t0.goals || []).find(x => x.id === em0.goalId);
+        if (!(nv > 0)) return emMsg("下げた新しい目標の値を、数字で入れてください。");
+        if (g0 && +g0.target > 0 && nv >= +g0.target) return emMsg("新しい値が、今の目標(" + g0.target + ")より下がっていません。");
+      }
       await saveStaff(doc => {
         const em = doc.emergencies.find(x => x.id === id); if (!em || em.resolvedAt) return false;
         em.resolvedAt = taskDay(); em.decision = kind; em.note = note;
-        if (kind === "目標を下げる") { const t = doc.terms.find(x => x.id === em.termId), g = t && t.goals.find(x => x.id === em.goalId); if (g) { g.lowered = (g.lowered || []).concat([{ date: taskDay(), from: g.target, to: +nv, why: note }]); g.target = +nv; } }
+        if (kind === "目標を下げる") { const t = doc.terms.find(x => x.id === em.termId), g = t && t.goals.find(x => x.id === em.goalId); if (g) { g.lowered = (g.lowered || []).concat([{ date: taskDay(), from: g.target, to: nv, why: note }]); g.target = nv; } }
       });
-      return renderDetail();
+      renderDetail(); sfMsg(kind === "目標を下げる" ? "目標を " + nv + " に下げて、緊急会議を閉じました。" : "「" + kind + "」で緊急会議を閉じました。"); return;
     }
     if (term && q("[data-midpoint]")) {
       const note = (document.getElementById("mp-note").value || "").trim(); if (!note) return sfMsg("中間点検の内容を書いてください。", true);
