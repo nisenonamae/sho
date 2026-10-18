@@ -321,7 +321,10 @@ a.pk-STAGE b{color:var(--stage)}a.pk-WAVE b{color:var(--wave)}
 .th-row .mv:disabled{opacity:.3}.th-ed .tcol-opt{width:100%;box-sizing:border-box;margin-top:.2rem;font-size:.75rem;border:1px solid var(--rule);border-radius:3px;padding:.1rem .3rem}
 .pt-bar input{flex:1;min-width:8rem}
 .pt-wrap{overflow-x:auto}.ptable table{border-collapse:collapse;width:100%;font-size:.86rem}
-.ptable th,.ptable td{border-top:1px solid var(--rule);padding:.3rem .45rem;text-align:left;white-space:nowrap}
+.ptable th,.ptable td{border-top:1px solid var(--rule);padding:.3rem .45rem;text-align:left;white-space:normal;overflow-wrap:anywhere;vertical-align:top}
+.ptable td.t-text{min-width:6rem;max-width:22rem}.ptable td.t-num,.ptable td.t-date,.ptable td.t-check,.ptable th:not(.th-ed){white-space:nowrap}
+.ptable td[data-tcopy]{cursor:copy}.ptable td[data-tcopy]:active{background:#FFF6DC}
+.ptable td textarea.tcell-ta{width:100%;min-width:8rem;box-sizing:border-box;border:1px solid var(--rule);border-radius:3px;padding:.15rem .3rem;font:inherit;resize:vertical;field-sizing:content;min-height:1.9em;max-height:16em;line-height:1.4}
 .ptable th{cursor:pointer;background:#F6F4EE;font-weight:600}.ptable td.t-num{text-align:right}
 .ptable td input{width:100%;min-width:5rem;border:1px solid var(--rule);border-radius:3px;padding:.15rem .3rem;font:inherit}
 .papp{border:1px solid var(--rule);border-radius:4px;margin:.6rem 0;background:#fff}
@@ -480,7 +483,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-18 r80";
+const APP_VERSION = "2026-10-18 r81";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2727,6 +2730,12 @@ function appHtml(p, url){
   return '<div class="papp"><div class="papp-h"><span>アプリ</span><a href="' + esc(src) + '" target="_blank" rel="noopener">全画面で開く</a></div><iframe src="' + esc(src) + '" loading="lazy" title="アプリ"></iframe></div>';
 }
 // 表:列ごとに種類、並べ替え・絞り込み、行と列の追加、セルの編集
+// コピー(使えないときは、選んだ状態にして手でコピーできるようにする)
+async function copyText(text){
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (e) { const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch (e2) {} ta.remove(); return ok; }
+}
 const COLT = [["text", "文字"], ["num", "数"], ["date", "日付"], ["check", "チェック"], ["select", "選択肢"]];
 function tableHtml(p, tid){
   const t = (p.tables || {})[tid];
@@ -2744,9 +2753,11 @@ function tableHtml(p, tid){
     if (ty === "check") return '<input type="checkbox" data-tcell="' + tid + ":" + ri + ":" + ci + '"' + (v ? " checked" : "") + ">";
     const opts = (t.cols[ci].options || []);
     if (ty === "select") return '<select data-tcell="' + tid + ":" + ri + ":" + ci + '"><option></option>' + opts.map(o => "<option" + (o === v ? " selected" : "") + ">" + esc(o) + "</option>").join("") + "</select>";
-    return '<input data-tcell="' + tid + ":" + ri + ":" + ci + '" type="' + (ty === "num" ? "number" : ty === "date" ? "date" : "text") + '" value="' + esc(v == null ? "" : v) + '">';
+    if (ty === "text") return '<textarea class="tcell-ta" rows="1" data-tcell="' + tid + ":" + ri + ":" + ci + '">' + esc(v == null ? "" : v) + "</textarea>";
+    return '<input data-tcell="' + tid + ":" + ri + ":" + ci + '" type="' + (ty === "num" ? "number" : "date") + '" value="' + esc(v == null ? "" : v) + '">';
   };
   return '<div class="ptable"><div class="pt-bar"><input type="search" data-tfilter="' + tid + '" placeholder="表の中を絞り込む" value="' + esc((pg.tFilter || {})[tid] || "") + '">' +
+    '<button type="button" class="btn ghost sm" data-tcopyall="' + tid + '" data-rows="' + esc(JSON.stringify(rows.map(x => x.i))) + '">表をコピー</button>' +
     '<button type="button" class="btn ghost sm" data-tedit="' + tid + '">' + (editing ? "編集を終える" : "表を編集") + "</button></div>" +
     '<div class="pt-wrap"><table><thead><tr>' + t.cols.map((c, ci) => editing
       ? '<th class="th-ed"><input class="tcol-ren" data-tcol-ren="' + tid + ":" + ci + '" value="' + esc(c.name) + '" aria-label="列の名前">' +
@@ -2755,7 +2766,7 @@ function tableHtml(p, tid){
         '<button type="button" class="del" data-tcol-del="' + tid + ":" + ci + '" aria-label="列を消す">×</button></div>' +
         (c.type === "select" ? '<input class="tcol-opt" data-tcol-optedit="' + tid + ":" + ci + '" value="' + esc((c.options || []).join("、")) + '" placeholder="選択肢(読点で区切る)">' : "") + "</th>"
       : '<th data-tsort="' + tid + ":" + ci + '">' + esc(c.name) + (so && so.col === ci ? (so.dir > 0 ? " ▲" : " ▼") : "") + "</th>").join("") + (editing ? "<th></th>" : "") + "</tr></thead><tbody>" +
-    rows.map(({ r, i }) => "<tr>" + t.cols.map((c, ci) => '<td class="t-' + c.type + '">' + cell(r[ci], c.type, i, ci) + "</td>").join("") +
+    rows.map(({ r, i }) => "<tr>" + t.cols.map((c, ci) => '<td class="t-' + c.type + '"' + (editing ? "" : ' data-tcopy="' + tid + ":" + i + ":" + ci + '" title="押すとコピー"') + ">" + cell(r[ci], c.type, i, ci) + "</td>").join("") +
       (editing ? '<td><button type="button" class="del" data-trow-del="' + tid + ":" + i + '">消す</button></td>' : "") + "</tr>").join("") + "</tbody></table></div>" +
     (editing ? '<div class="pt-add"><button type="button" class="btn ghost sm" data-trow-add="' + tid + '">行を足す</button>' +
       '<span class="pt-add-l">列を足す:</span><input data-tcol-name="' + tid + '" placeholder="新しい列の名前(Enterでも足せる)"><select data-tcol-type="' + tid + '">' + COLT.map(([v, l]) => '<option value="' + v + '">' + l + "</option>").join("") + "</select>" +
@@ -3692,6 +3703,12 @@ function bindPages(){
       computeTasks(); pg.taskForm = false; rerender(); msg("「" + name + "」を行軍表に入れました。"); return;
     }
     // 表
+    if ((b = q("[data-tcopyall]"))) { const tid = b.dataset.tcopyall, t = p.tables[tid], order = JSON.parse(b.dataset.rows || "[]");
+      const cv = (v, ty) => ty === "check" ? (v ? "✓" : "") : String(v == null ? "" : v).replace(/\t/g, " ").replace(/\r?\n/g, " ");
+      const tsv = [t.cols.map(c => cv(c.name)).join("\t")].concat(order.map(i => t.rows[i]).filter(Boolean).map(r => t.cols.map((c, ci) => cv(r[ci], c.type)).join("\t"))).join("\n");
+      copyText(tsv).then(ok => msg(ok ? "表をコピーしました(" + order.length + "行)。スプレッドシートやNotionに貼ると表になります。" : "コピーできませんでした", !ok)); return; }
+    if ((b = q("[data-tcopy]")) && !(window.getSelection && String(window.getSelection())).trim()) { const [tid, ri, ci] = b.dataset.tcopy.split(":"), t = p.tables[tid], v = (t.rows[+ri] || [])[+ci], ty = t.cols[+ci].type;
+      const text = ty === "check" ? (v ? "✓" : "") : String(v == null ? "" : v); if (!text) return; copyText(text).then(ok => msg(ok ? "コピーしました:" + (text.length > 24 ? text.slice(0, 24) + "…" : text) : "コピーできませんでした", !ok)); return; }
     if ((b = q("[data-tedit]"))) { const k = p.id + ":" + b.dataset.tedit; pg.tableEdit = pg.tableEdit === k ? null : k; rerender(); return; }
     if ((b = q("[data-tsort]")) && !q("[data-tcol-del]") && !q("input, select")) { const [tid, ci] = b.dataset.tsort.split(":"); pg.tSort = pg.tSort || {}; const cur = pg.tSort[tid];
       pg.tSort[tid] = cur && cur.col === +ci ? (cur.dir > 0 ? { col: +ci, dir: -1 } : null) : { col: +ci, dir: 1 }; rerender(); return; }
