@@ -99,7 +99,7 @@ textarea{min-height:7rem;line-height:1.6}
 .lb-row{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;border-bottom:1px solid var(--rule)}
 .lb-name{flex:1;min-width:0;word-break:break-word;font-weight:700}.lb-name small{display:block;font-weight:400;color:var(--sub);font-size:.72rem}
 
-.tgrp{display:flex;align-items:center;gap:.45rem;padding:.4rem 0;border-bottom:1px dashed var(--rule);flex-wrap:wrap}
+.tgrp{display:flex;align-items:center;gap:.45rem;padding:.4rem 0;border-bottom:1px dashed var(--rule);flex-wrap:wrap}.tg-fall{color:var(--shu,#b3283c)}
 .tg-tog{border:1px solid var(--rule);background:#fff;border-radius:4px;width:1.8rem;height:1.8rem;cursor:pointer;color:var(--sub);flex:0 0 auto}
 .tg-marks{display:inline-flex;flex-wrap:wrap;gap:.1rem}
 .tmark.mini{margin-right:0;padding:0 .3em 0 .1em;font-size:.7em}
@@ -485,7 +485,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-18 r86";
+const APP_VERSION = "2026-10-18 r87";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -939,7 +939,7 @@ document.addEventListener("click", async e => {
   if ((b = q("[data-ul-many]"))) {
     const v = b.dataset.ulMany, cut = v.indexOf(":"), kind = v.slice(0, cut), ids = v.slice(cut + 1).split(",").filter(Boolean);
     if (!ids.length || !confirm(ids.length + "件の要再設定のタスクを、まとめて立て直しますか(新規に戻り、累計・連続は0から)。")) return;
-    const n = await bulkStatus(ids, kind); computeTasks(); rer(); if (n) renderNotice(n + "件を立て直しました。"); return;
+    const n = await bulkStatus(ids, kind); computeTasks(); rer(); if (n) renderNotice(n + "件を立て直しました(新規に戻り、累計・連続は0から)。"); return;
   }
   if ((b = q("[data-ul-del]"))) {
     const k = b.dataset.ulDel, bx = boxOf(k), ids = bx ? Array.from(bx.querySelectorAll("[data-ul-id]:checked")).map(x => x.dataset.ulId) : [];
@@ -1161,10 +1161,12 @@ function tgRowsSho(ts, row){
     if (!k || cnt[k] < 2) { out += row(t); continue; }
     if (seen.has(k)) continue; seen.add(k);
     const mem = ts.filter(x => key(x) === k).sort((a, b) => a.def.celestial.index - b.def.celestial.index);
-    const open = (pg.tgOpen || new Set()).has(k), live = x => !["達成済み", "アーカイブ"].includes(x.status);
+    const open = (pg.tgOpen || new Set()).has(k), live = x => !["達成済み", "アーカイブ"].includes(x.status), fallen = mem.filter(x => x.status === "要再設定");
     out += '<div class="tgrp"><button type="button" class="tg-tog" data-tgtog="' + esc(k) + '" aria-expanded="' + open + '" aria-label="' + (open ? "たたむ" : "全部の天体を見る") + '">' + (open ? "▾" : "▸") + "</button>" +
       '<span class="tg-marks">' + mem.map(x => tmarkHtml(x.def.celestial.index).replace('class="tmark"', 'class="tmark mini' + (live(x) ? "" : " dim") + '"')).join("") + "</span>" +
-      '<span class="tg-base">' + esc(mem[0].def.celestial.base) + '</span><span class="tg-sum">' + mem.length + "つの天体" + (mem.some(x => x.waiting) ? "・待機中" : "") + "</span>" +
+      '<span class="tg-base">' + esc(mem[0].def.celestial.base) + '</span><span class="tg-sum">' + mem.length + "つの天体" + (mem.some(x => x.waiting) ? "・待機中" : "") +
+        (fallen.length ? '・<b class="tg-fall">要再設定 ' + fallen.length + (fallen.length === mem.length ? "(全部)" : "/" + mem.length) + "</b>" : "") + "</span>" +
+      (fallen.length ? '<button type="button" class="btn sm trb" data-ul-many="rebuild:' + esc(fallen.map(x => x.def.id).join(",")) + '" title="要再設定の天体を、まとめて新規に立て直す">まとめて立て直す</button>' : "") +
       '<button type="button" class="linkbtn tmerge-b" data-tmerge="' + esc(k) + '" title="分けた天体をまとめて、元のタスクに戻す">天体を元に戻す</button></div>';
     if (open) out += '<div class="tg-body">' + mem.map(row).join("") + "</div>";
   }
