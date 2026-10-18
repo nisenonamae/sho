@@ -322,9 +322,11 @@ a.pk-STAGE b{color:var(--stage)}a.pk-WAVE b{color:var(--wave)}
 .pt-bar input{flex:1;min-width:8rem}
 .pt-wrap{overflow-x:auto}.ptable table{border-collapse:collapse;width:100%;font-size:.86rem}
 .ptable th,.ptable td{border-top:1px solid var(--rule);padding:.3rem .45rem;text-align:left;white-space:normal;overflow-wrap:anywhere;vertical-align:top}
-.ptable td.t-text{min-width:6rem;max-width:22rem}.ptable td.t-num,.ptable td.t-date,.ptable td.t-check,.ptable th:not(.th-ed){white-space:nowrap}
+.ptable td.t-text{min-width:6rem;max-width:20rem}
+.ptable .tclamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;white-space:pre-wrap}
+.ptable.expanded .tclamp{display:block;-webkit-line-clamp:unset;line-clamp:unset;overflow:visible}.ptable td.t-num,.ptable td.t-date,.ptable td.t-check,.ptable th:not(.th-ed){white-space:nowrap}
 .ptable td[data-tcopy]{cursor:copy}.ptable td[data-tcopy]:active{background:#FFF6DC}
-.ptable td textarea.tcell-ta{width:100%;min-width:8rem;box-sizing:border-box;border:1px solid var(--rule);border-radius:3px;padding:.15rem .3rem;font:inherit;resize:vertical;field-sizing:content;min-height:1.9em;max-height:16em;line-height:1.4}
+.ptable td textarea.tcell-ta{width:100%;min-width:8rem;box-sizing:border-box;border:1px solid var(--rule);border-radius:3px;padding:.15rem .3rem;font:inherit;resize:vertical;field-sizing:content;min-height:1.9em;max-height:7.2em;overflow-y:auto;line-height:1.4}
 .ptable th{cursor:pointer;background:#F6F4EE;font-weight:600}.ptable td.t-num{text-align:right}
 .ptable td input{width:100%;min-width:5rem;border:1px solid var(--rule);border-radius:3px;padding:.15rem .3rem;font:inherit}
 .papp{border:1px solid var(--rule);border-radius:4px;margin:.6rem 0;background:#fff}
@@ -483,7 +485,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-18 r81";
+const APP_VERSION = "2026-10-18 r82";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2749,14 +2751,16 @@ function tableHtml(p, tid){
     rows.sort((a, b) => { let x = a.r[ci], y = b.r[ci]; if (ty === "num") { x = +x || 0; y = +y || 0; } else if (ty === "check") { x = x ? 1 : 0; y = y ? 1 : 0; } else { x = String(x || ""); y = String(y || ""); }
       return (x < y ? -1 : x > y ? 1 : 0) * dir; }); }
   const cell = (v, ty, ri, ci) => {
-    if (!editing) return ty === "check" ? (v ? "✓" : "") : esc(v == null ? "" : v);
+    if (!editing) return ty === "check" ? (v ? "✓" : "") : ty === "text" ? '<div class="tclamp">' + esc(v == null ? "" : v) + "</div>" : esc(v == null ? "" : v);
     if (ty === "check") return '<input type="checkbox" data-tcell="' + tid + ":" + ri + ":" + ci + '"' + (v ? " checked" : "") + ">";
     const opts = (t.cols[ci].options || []);
     if (ty === "select") return '<select data-tcell="' + tid + ":" + ri + ":" + ci + '"><option></option>' + opts.map(o => "<option" + (o === v ? " selected" : "") + ">" + esc(o) + "</option>").join("") + "</select>";
     if (ty === "text") return '<textarea class="tcell-ta" rows="1" data-tcell="' + tid + ":" + ri + ":" + ci + '">' + esc(v == null ? "" : v) + "</textarea>";
     return '<input data-tcell="' + tid + ":" + ri + ":" + ci + '" type="' + (ty === "num" ? "number" : "date") + '" value="' + esc(v == null ? "" : v) + '">';
   };
-  return '<div class="ptable"><div class="pt-bar"><input type="search" data-tfilter="' + tid + '" placeholder="表の中を絞り込む" value="' + esc((pg.tFilter || {})[tid] || "") + '">' +
+  const expanded = !!((pg.tExpand || {})[p.id + ":" + tid]);
+  return '<div class="ptable' + (expanded ? " expanded" : "") + '"><div class="pt-bar"><input type="search" data-tfilter="' + tid + '" placeholder="表の中を絞り込む" value="' + esc((pg.tFilter || {})[tid] || "") + '">' +
+    (editing ? "" : '<button type="button" class="btn ghost sm" data-texp="' + tid + '">' + (expanded ? "短く見る" : "全部見る") + "</button>") +
     '<button type="button" class="btn ghost sm" data-tcopyall="' + tid + '" data-rows="' + esc(JSON.stringify(rows.map(x => x.i))) + '">表をコピー</button>' +
     '<button type="button" class="btn ghost sm" data-tedit="' + tid + '">' + (editing ? "編集を終える" : "表を編集") + "</button></div>" +
     '<div class="pt-wrap"><table><thead><tr>' + t.cols.map((c, ci) => editing
@@ -3703,6 +3707,7 @@ function bindPages(){
       computeTasks(); pg.taskForm = false; rerender(); msg("「" + name + "」を行軍表に入れました。"); return;
     }
     // 表
+    if ((b = q("[data-texp]"))) { const k = p.id + ":" + b.dataset.texp; pg.tExpand = pg.tExpand || {}; pg.tExpand[k] = !pg.tExpand[k]; rerender(); return; }
     if ((b = q("[data-tcopyall]"))) { const tid = b.dataset.tcopyall, t = p.tables[tid], order = JSON.parse(b.dataset.rows || "[]");
       const cv = (v, ty) => ty === "check" ? (v ? "✓" : "") : String(v == null ? "" : v).replace(/\t/g, " ").replace(/\r?\n/g, " ");
       const tsv = [t.cols.map(c => cv(c.name)).join("\t")].concat(order.map(i => t.rows[i]).filter(Boolean).map(r => t.cols.map((c, ci) => cv(r[ci], c.type)).join("\t"))).join("\n");
