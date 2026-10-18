@@ -485,7 +485,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-18 r83";
+const APP_VERSION = "2026-10-18 r84";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2938,7 +2938,7 @@ function alertRoadHtml(tag){
   const card = p => { const acts = p.actions || [], d = acts.filter(a => a.done).length, dl = daysLeft(p);
     return '<div class="rcard alert-card lv' + (p.level || 1) + (alertActive(p) ? "" : " closed") + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || "") + "</span>" +
       (alertActive(p) ? '<span class="alv">' + esc((ALV.find(x => x[0] === (p.level || 1)) || ALV[0])[1]) + "</span>" : "") + "</a>" +
-      '<div class="rc-meta"><span class="ast">' + esc(p.status) + "</span>" + (alertActive(p) ? '<span class="' + (dl != null && dl < 0 ? "due-over" : "") + '">' + esc(dueText(p)) + "</span>" : "") +
+      '<div class="rc-meta"><span class="ast">' + esc(p.status) + "</span>" + (targetsOf(p).length ? "<span>対象 " + esc(targetNames(p).join("・")) + "</span>" : "") + (alertActive(p) ? '<span class="' + (dl != null && dl < 0 ? "due-over" : "") + '">' + esc(dueText(p)) + "</span>" : "") +
       (acts.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (d / acts.length * 100) + '%"></i></span><b>' + d + "/" + acts.length + "</b>対応</span>" : "") + "</div></div>"; };
   const raids = pages().filter(x => x.parent === "m:" + tag && isRaid(x)), rAct = raids.filter(raidActive).sort(byLabel), rDone = raids.filter(x => !raidActive(x)).sort(byLabel).reverse();
   const cands = raidCandidates().filter(c => !c.busy).slice(0, 4);
@@ -2957,6 +2957,7 @@ function renderAlert(box, p, head){
   if (pg.edit) {
     h += '<div class="pg-edit"><div class="grid2"><div class="f"><label>名前</label><input id="al-title" value="' + esc(p.title || "") + '" placeholder="例:模試前に英語の課題が溜まった"></div>' +
       '<div class="f"><label>気づいた日</label><input id="al-detected" type="date" value="' + esc(p.detected || "") + '"></div><div class="f"><label>期限(いつまでに収束させるか)</label><input id="al-due" type="date" value="' + esc(p.due || "") + '"></div></div>' +
+      '<div class="f"><label>対象の省(何が起きた省。いくつでも)</label>' + targetChips("al-targets", p) + "</div>" +
       '<div class="f"><label>何が起きたか</label><textarea id="al-happened" style="min-height:3rem">' + esc(p.happened || "") + "</textarea></div>" +
       '<div class="f"><label>守るもの(止めてはいけない制度・習慣)</label><textarea id="al-protect" style="min-height:2.6rem">' + esc(p.protect || "") + '</textarea></div><div class="chips">' +
         ms.filter(m => m.tag !== defenseTag()).map(m => '<label class="chip"><input type="checkbox" data-al-pm value="' + esc(m.tag) + '"' + ((p.protectTags || []).includes(m.tag) ? " checked" : "") + "> " + esc(m.name) + "</label>").join("") + "</div>" +
@@ -2975,6 +2976,7 @@ function renderAlert(box, p, head){
   h += failBlockHtml(p);
   h += panel("何が起きたか", '<button type="button" class="linkbtn" data-page-edit>直す</button>',
     (p.happened ? "<p class=\"purpose-text\" style=\"font-size:.95rem\">" + esc(p.happened) + "</p>" : empty("未記入")) +
+    '<div class="frow"><span class="fl">対象の省</span><p>' + (targetsOf(p).length ? esc(targetNames(p).join("・")) : "—") + '</p></div>' +
     '<div class="frow"><span class="fl">気づいた日</span><p>' + esc(p.detected || "—") + '</p></div><div class="frow"><span class="fl">期限</span><p>' + esc(p.due || "—") + "</p></div>");
   h += panel("守るもの", "", (p.protect ? "<p style=\"margin:0;white-space:pre-wrap\">" + esc(p.protect) + "</p>" : "") +
     ((p.protectTags || []).length ? '<div class="deps" style="margin-top:.3rem">' + p.protectTags.map(t => '<span class="dep">' + esc((ms.find(m => m.tag === t) || { name: t }).name) + "</span>").join("") + "</div>" : "") + (!p.protect && !(p.protectTags || []).length ? empty("未記入") : ""));
@@ -3036,7 +3038,7 @@ const raidActive = p => ["計画中", "侵攻中"].includes(p.status);
 // 侵攻の候補:要再設定のタスクが多い省・長く何も済ませていない省
 function raidCandidates(){
   const dt = defenseTag(), ms = ((state.gov && state.gov.ministries) || []).filter(m => m.tag !== dt);
-  const busy = new Set(pages().filter(p => isRaid(p) && raidActive(p)).map(p => p.target));
+  const busy = new Set(pages().filter(p => isRaid(p) && raidActive(p)).flatMap(p => targetsOf(p)));
   const ts0 = state.tideState || {}, cred = ts0.credibility || {}, counted = ts0.counted || {};
   return ms.map(m => {
     const ts = state.tasks.filter(t => (t.def.ministries || []).includes(m.tag) && !["アーカイブ", "達成済み", "休止中"].includes(t.status));
@@ -3053,18 +3055,24 @@ function raidCandidates(){
   }).filter(Boolean).sort((a, b) => b.score - a.score);
 }
 const candWhy = c => [c.stuck ? "要再設定 " + c.fall + "/" + c.all + (c.idle != null ? "・" + c.idle + "日済ませていない" : "・まだ一度も済ませていない") : "", c.gap != null ? "時勢と行動のずれ(信用 " + c.gap.toFixed(2) + ")" : ""].filter(Boolean).join("・");
+// RAID・ALERTの対象の省(複数)。前の形(target が1つ)もそのまま読む
+function targetsOf(p){ const a = Array.isArray(p.targets) ? p.targets : []; return a.length ? a : (p.target ? [p.target] : []); }
+function targetNames(p){ const ms = (state.gov && state.gov.ministries) || []; return targetsOf(p).map(t => (ms.find(m => m.tag === t) || { name: t }).name); }
+function targetChips(id, p){ const ms = ((state.gov && state.gov.ministries) || []).filter(m => m.tag !== defenseTag()), cur = targetsOf(p);
+  return '<div class="chips" id="' + id + '">' + ms.map(m => '<label class="chip"><input type="checkbox" data-tg-pick value="' + esc(m.tag) + '"' + (cur.includes(m.tag) ? " checked" : "") + "> " + esc(m.name) + "</label>").join("") + "</div>"; }
+const pickedTargets = id => Array.from(document.querySelectorAll("#" + id + " [data-tg-pick]:checked")).map(z => z.value);
 function raidCard(p){
   const ms = (state.gov && state.gov.ministries) || [], acts = (p.actions || []).filter(a => !a.rev), d = acts.filter(actDone).length;
-  return '<div class="rcard raid-card' + (raidActive(p) ? "" : " closed") + (p.status === "失敗" ? " failed" : "") + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || ((ms.find(m => m.tag === p.target) || {}).name || "") + "の再始動") + "</span></a>" +
-    '<div class="rc-meta"><span class="ast">' + esc(p.status) + "</span>" + (p.target ? "<span>対象 " + esc((ms.find(m => m.tag === p.target) || { name: p.target }).name) + "</span>" : "") +
+  return '<div class="rcard raid-card' + (raidActive(p) ? "" : " closed") + (p.status === "失敗" ? " failed" : "") + '"><a href="#" data-goto-page="' + p.id + '" class="rc-main"><span class="rc-lab">' + esc(p.label) + '</span><span class="rc-tt">' + esc(p.title || (targetNames(p).join("・") ? targetNames(p).join("・") + "の再始動" : "")) + "</span></a>" +
+    '<div class="rc-meta"><span class="ast">' + esc(p.status) + "</span>" + (targetsOf(p).length ? "<span>対象 " + esc(targetNames(p).join("・")) + "</span>" : "") +
     (acts.length ? '<span class="gauge"><span class="gbar"><i style="width:' + (d / acts.length * 100) + '%"></i></span><b>' + d + "/" + acts.length + "</b>作戦</span>" : "") + "</div></div>";
 }
 function renderRaid(box, p, head){
-  const ms = (state.gov && state.gov.ministries) || [], tm = ms.find(m => m.tag === p.target);
+  const ms = (state.gov && state.gov.ministries) || [], tms = targetsOf(p).map(t => ms.find(m => m.tag === t)).filter(Boolean), tm = tms[0];
   let h = head;
   if (pg.edit) {
     h += '<div class="pg-edit"><div class="grid2"><div class="f"><label>名前</label><input id="rd-title" value="' + esc(p.title || "") + '" placeholder="例:英語省の再始動"></div>' +
-      '<div class="f"><label>対象の省</label><select id="rd-target"><option value="">選ぶ</option>' + ms.filter(m => m.tag !== defenseTag()).map(m => '<option value="' + esc(m.tag) + '"' + (m.tag === p.target ? " selected" : "") + ">" + esc(m.name) + "</option>").join("") + "</select></div>" +
+      '<div class="f" style="grid-column:1/-1"><label>対象の省(いくつでも)</label>' + targetChips("rd-targets", p) + "</div>" +
       '<div class="f"><label>期限(任意)</label><input id="rd-due" type="date" value="' + esc(p.due || "") + '"></div></div>' +
       '<div class="f"><label>今の状態</label><textarea id="rd-now" style="min-height:3rem" placeholder="例:Ankiが800枚溜まり、2週間何もしていない">' + esc(p.now || "") + "</textarea></div>" +
       '<div class="f"><label>目標の状態(再始動できる状態)</label><textarea id="rd-goal" style="min-height:3rem" placeholder="例:1日50枚で回り、STAGE2-1を再開できる">' + esc(p.goal || "") + "</textarea></div>" +
@@ -3081,9 +3089,8 @@ function renderRaid(box, p, head){
     h += '<div class="rplan"><b>再挑戦</b> 前のRAID <a href="#" data-goto-page="' + pv.id + '">' + esc(pv.label) + "</a> は " + esc(pf.date || "") + " に失敗(進み具合 " + (pf.pctAt != null ? pf.pctAt + "%" : "—") + ")" +
       (pf.lesson ? "<small>前の学び:" + esc(pf.lesson) + "</small>" : "") + "</div>"; }
   // 対象の省の今の様子
-  const ts = tm ? state.tasks.filter(t => (t.def.ministries || []).includes(tm.tag) && !["アーカイブ", "達成済み"].includes(t.status)) : [];
-  const fall = ts.filter(t => t.status === "要再設定").length;
-  h += panelHtml("対象の省", "", tm ? '<div class="frow"><span class="fl">省</span><p><b>' + esc(tm.name) + '</b></p></div><div class="frow"><span class="fl">いまの様子</span><p>タスク ' + ts.length + "(要再設定 " + fall + ")</p></div>" : emptyHtml("直すの画面で選びます。"));
+  h += panelHtml("対象の省", "", tms.length ? tms.map(m => { const ts = state.tasks.filter(t => (t.def.ministries || []).includes(m.tag) && !["アーカイブ", "達成済み"].includes(t.status)), fall = ts.filter(t => t.status === "要再設定").length;
+      return '<div class="frow"><span class="fl">' + esc(m.name) + "</span><p>タスク " + ts.length + "(要再設定 " + fall + ")</p></div>"; }).join("") : emptyHtml("直すの画面で選びます。"));
   h += panelHtml("今の状態 → 目標の状態", "", '<div class="frow"><span class="fl">今の状態</span>' + (p.now ? "<p>" + esc(p.now) + "</p>" : emptyHtml("未記入")) + '</div><div class="frow"><span class="fl">目標の状態</span>' + (p.goal ? "<p>" + esc(p.goal) + "</p>" : emptyHtml("未記入")) + "</div>");
   // 目標への進み具合(手で入力)と、期限に間に合うか
   const prog = p.progress || [], pct = prog.length ? +prog[prog.length - 1].pct : 0;
@@ -3135,11 +3142,11 @@ function renderRaid(box, p, head){
       '<input id="act-due" type="date"><button type="button" class="btn sm" data-act-add>足す</button></div>' + (isRaid(p) ? dayPickerHtml("act-days", [], p, false) : "") +
     (p.status === "侵攻中" ? '<div style="margin-top:.5rem"><button type="button" class="btn' + ((an && ad === an) || pct >= 100 ? "" : " ghost") + '" data-raid-status="制圧">制圧にする</button></div>' : ""));
   // 引き渡し:対象の省のどのSTAGE・WAVEを再開させるか
-  const units = tm ? pages().filter(x => rootTag(x) === tm.tag && isUnit(x)).sort(byLabel) : [];
+  const tTags = tms.map(m => m.tag), units = tms.length ? pages().filter(x => tTags.includes(rootTag(x)) && isUnit(x)).sort((a, b) => tTags.indexOf(rootTag(a)) - tTags.indexOf(rootTag(b)) || byLabel(a, b)) : [];
   const ho = p.handover || {};
-  h += panelHtml("引き渡し(任意)", "", (tm ? (units.length ? '<p class="panel-e" style="margin-top:0">制圧したら、' + esc(tm.name) + "のどのSTAGE・WAVEを再開させるかを選びます。引き渡すと、選んだものが「進行中」に戻ります。</p>" +
-      '<div class="chips">' + units.map(u => '<label class="chip"><input type="checkbox" data-ho-unit value="' + u.id + '"' + ((ho.units || []).includes(u.id) ? " checked" : "") + (p.status === "引き渡し済み" ? " disabled" : "") + "> " + esc(u.label) + (u.title ? " " + esc(u.title) : "") + "(" + esc(stOf(u)) + ")</label>").join("") + "</div>"
-      : emptyHtml(tm.name + "には、まだSTAGE・WAVEの中身がありません。")) : emptyHtml("対象の省を選ぶと出ます。")) +
+  h += panelHtml("引き渡し(任意)", "", (tm ? (units.length ? '<p class="panel-e" style="margin-top:0">制圧したら、' + esc(tms.map(m => m.name).join("・")) + "のどのSTAGE・WAVEを再開させるかを選びます。引き渡すと、選んだものが「進行中」に戻ります。</p>" +
+      '<div class="chips">' + units.map(u => '<label class="chip"><input type="checkbox" data-ho-unit value="' + u.id + '"' + ((ho.units || []).includes(u.id) ? " checked" : "") + (p.status === "引き渡し済み" ? " disabled" : "") + "> " + (tms.length > 1 ? esc((ms.find(m => m.tag === rootTag(u)) || {}).name || "") + " " : "") + esc(u.label) + (u.title ? " " + esc(u.title) : "") + "(" + esc(stOf(u)) + ")</label>").join("") + "</div>"
+      : emptyHtml(tms.map(m => m.name).join("・") + "には、まだSTAGE・WAVEの中身がありません。")) : emptyHtml("対象の省を選ぶと出ます。")) +
     (p.status === "制圧" ? '<div class="row-btns" style="margin-top:.5rem"><button type="button" class="btn" data-raid-handover>引き渡す</button><button type="button" class="btn ghost" data-raid-finish>引き渡さずに終える</button></div>' : "") +
     (p.status === "引き渡し済み" ? '<p class="ph-n">' + esc(ho.date || "") + (ho.none ? " に終えました(引き渡しなし)。" : " に引き渡しました。") + "</p>" : ""));
   if (String(p.body || "").trim()) h += panelHtml("メモ", "", '<div class="pbody">' + renderPageBody(p) + "</div>");
@@ -3528,7 +3535,7 @@ function bindPages(){
     if ((b = q("[data-raid-new]"))) {
       const dtg = defenseTag(); if (!dtg) return;
       const target = b.dataset.raidNew || "", c = raidCandidates().find(x => x.m.tag === target), rid = "pg" + uid(), rl = nextLabel("RAID", "m:" + dtg, dtg);
-      await savePages(doc => { doc.pages.push({ id: rid, parent: "m:" + dtg, kind: "RAID", label: rl, title: c ? c.m.name + "の再始動" : "", target,
+      await savePages(doc => { doc.pages.push({ id: rid, parent: "m:" + dtg, kind: "RAID", label: rl, title: c ? c.m.name + "の再始動" : "", target, targets: target ? [target] : [],
         now: c ? candWhy(c) : "", goal: "", actions: [], handover: {}, due: "",
         status: "計画中", statusLog: [{ date: taskDay(), status: "計画中" }], body: "", tables: {}, created: taskDay(), updated: taskDay() }); });
       pg.edit = true; openPage(rid); return;
@@ -3542,9 +3549,10 @@ function bindPages(){
     if (q("[data-page-cancel]")) { pg.edit = false; rerender(); return; }
     if (q("[data-page-save]")) {
       const v = id => (document.getElementById(id) || {}).value;
-      const rdF = document.getElementById("rd-title") ? { title: v("rd-title").trim(), target: v("rd-target"), due: v("rd-due"), now: v("rd-now"), goal: v("rd-goal") } : null;
+      const rdTg = document.getElementById("rd-targets") ? pickedTargets("rd-targets") : null;
+      const rdF = document.getElementById("rd-title") ? Object.assign({ title: v("rd-title").trim(), due: v("rd-due"), now: v("rd-now"), goal: v("rd-goal") }, rdTg ? { targets: rdTg, target: rdTg[0] || "" } : {}) : null;
       const alF = document.getElementById("al-title") ? { title: v("al-title").trim(), detected: v("al-detected"), due: v("al-due"), happened: v("al-happened"), protect: v("al-protect"), degrade: v("al-degrade"),
-        protectTags: Array.from(document.querySelectorAll("[data-al-pm]:checked")).map(z => z.value) } : null;
+        protectTags: Array.from(document.querySelectorAll("[data-al-pm]:checked")).map(z => z.value), targets: pickedTargets("al-targets") } : null;
       // 入力欄の中身は、押した瞬間にすべて読み取っておく。書き込みがぶつかって変更をかけ直すときには、入力欄はもう閉じているため
       const has = id => !!document.getElementById(id);
       const F = { title: has("pg-title") ? (v("pg-title") || "").trim() : null, body: v("pg-body") || "",
@@ -3638,7 +3646,7 @@ function bindPages(){
         const carry = (p.actions || []).filter(a => !a.rev && !actDone(a)).map(a => Object.assign({ id: uid(), text: a.text, due: "", done: false, mode: a.mode || "once" }, a.mode === "days" ? { days: [] , mode: "once" } : {}));
         await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.retriedBy = nid;
           doc.pages.push({ id: nid, parent: p.parent, kind: "RAID", label: nl, title: (p.title || "") + "(再挑戦)", status: "計画中", statusLog: [{ date: taskDay(), status: "計画中" }],
-            created: taskDay(), target: p.target || "", now: p.now || "", goal: p.goal || "", actions: carry, progress: [], prevId: p.id }); });
+            created: taskDay(), target: p.target || "", targets: targetsOf(p), now: p.now || "", goal: p.goal || "", actions: carry, progress: [], prevId: p.id }); });
         logPlan([dtg], "RAIDを作った", nid, nl);
         pg.open = nid; computeTasks(); rerender(); msg("同じ目標で、もう一度RAIDを立てました。済んでいない作戦を引き継いでいます(期限と日にちは決め直してください)。"); return;
       }
@@ -4039,7 +4047,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { targetsOf, importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
