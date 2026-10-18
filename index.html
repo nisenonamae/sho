@@ -485,7 +485,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-18 r85";
+const APP_VERSION = "2026-10-18 r86";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2084,7 +2084,7 @@ function bindGov(){
 
 /* ───────── 参謀本部(作戦期・目標・緊急会議) ───────── */
 const STAFF = "roadmap/gov/staff.json";
-const MAX_GOALS = 3, BEHIND = 0.2;
+const MAX_GOALS = 50, BEHIND = 0.2;   // 目標は細かく分けられるよう、実質いくつでも(念のため50まで)
 const staff = { doc: { terms: [], emergencies: [] }, sha: null, draft: null };
 async function loadStaff(){ const r = await readJson(STAFF); staff.doc = Object.assign({ terms: [], emergencies: [] }, r.data || {}); staff.sha = r.sha; }
 async function saveStaff(mutate, msgId){
@@ -2269,7 +2269,7 @@ function termForm(d, ms){
     '<div class="f" style="margin-top:.4rem"><label>スローガンの概要</label><textarea id="tf-note" style="min-height:3rem">' + esc(d.slogan.note) + "</textarea></div>" +
     (edit ? (d.focusUsed ? '<p class="panel-e" style="font-size:.8rem">重点と抑制の変更は、この期ではもう使いました(期に1回まで)。</p>'
         : focusPicker(ms, d.focus, d.restrain) + '<div class="f"><label>重点・抑制を変えたときの理由(変えたときだけ。変えると「期に1回」の1回として数えます)</label><input id="tf-fwhy" value="' + esc(d.fwhy || "") + '"></div>') : focusPicker(ms, d.focus, d.restrain)) + g +
-    ((d.goals || []).length < MAX_GOALS ? '<button type="button" class="btn ghost sm" data-g-add>目標を足す(3つまで)</button>' : "") +
+    ((d.goals || []).length < MAX_GOALS ? '<button type="button" class="btn ghost sm" data-g-add>＋ 目標を足す(いま' + (d.goals || []).length + 'つ)</button>' : "") +
     (edit ? '<div class="f" style="margin-top:.6rem"><label>直す理由</label><input id="tf-why" placeholder="例:目標を足し忘れた"></div>' +
         '<div style="margin-top:.8rem;display:flex;gap:.5rem"><button type="button" class="btn" data-term-edit-save>直したことを保存</button><button type="button" class="btn ghost" data-term-edit-cancel>やめる</button></div></div>'
       : '<div style="margin-top:.8rem;display:flex;gap:.5rem"><button type="button" class="btn" data-term-issue>発令する</button><button type="button" class="btn ghost" data-term-cancel>やめる</button></div></div>');
@@ -2289,7 +2289,7 @@ function issueProblems(d){
   if (!d.name) p.push("名前"); if (!d.start || !d.end || d.end <= d.start) p.push("期間");
   if (!d.slogan.text) p.push("スローガン");
   if (!(d.goals || []).length) p.push("目標(1つ以上)");
-  if ((d.goals || []).length > MAX_GOALS) p.push("目標は3つまで");
+  if ((d.goals || []).length > MAX_GOALS) p.push("目標は" + MAX_GOALS + "個まで");
   (d.goals || []).forEach((g, i) => {
     const miss = [];
     if (!g.text) miss.push("目標"); if (!g.criterion) miss.push("測れる基準"); if (!(+g.target > 0)) miss.push("目標の値");
