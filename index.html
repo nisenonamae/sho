@@ -313,7 +313,12 @@ a.pk-STAGE b{color:var(--stage)}a.pk-WAVE b{color:var(--wave)}
 .ptree li{margin:.25rem 0}.ptree a{text-decoration:none;color:var(--ink)}
 .pt-new{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.5rem}
 .ptable{margin:.6rem 0;border:1px solid var(--rule);border-radius:4px;background:#fff}
-.pt-bar,.pt-add{display:flex;gap:.35rem;flex-wrap:wrap;padding:.4rem}
+.pt-bar,.pt-add{display:flex;gap:.35rem;flex-wrap:wrap;padding:.4rem;align-items:center}
+.pt-add{border-top:1px dashed var(--rule)}.pt-add input,.pt-add select{min-width:0;flex:1 1 8rem;padding:.25rem .35rem;border:1px solid var(--rule);border-radius:3px;font:inherit;font-size:.85rem}
+.pt-add-l{font-size:.82rem;font-weight:600;flex:0 0 auto}.pt-note{flex:1 1 100%;margin:0;font-size:.78rem;color:var(--sub,#777)}
+.ptable th.th-ed{cursor:default;vertical-align:top;min-width:8.5rem}.th-ed .tcol-ren{width:100%;box-sizing:border-box;font:inherit;font-weight:600;border:1px solid var(--rule);border-radius:3px;padding:.15rem .3rem}
+.th-row{display:flex;gap:.2rem;margin-top:.2rem;align-items:center}.th-row select{flex:1;min-width:0;font-size:.78rem}.th-row .mv{padding:0 .35rem;border:1px solid var(--rule);border-radius:3px;background:#fff;font-size:.8rem}
+.th-row .mv:disabled{opacity:.3}.th-ed .tcol-opt{width:100%;box-sizing:border-box;margin-top:.2rem;font-size:.75rem;border:1px solid var(--rule);border-radius:3px;padding:.1rem .3rem}
 .pt-bar input{flex:1;min-width:8rem}
 .pt-wrap{overflow-x:auto}.ptable table{border-collapse:collapse;width:100%;font-size:.86rem}
 .ptable th,.ptable td{border-top:1px solid var(--rule);padding:.3rem .45rem;text-align:left;white-space:nowrap}
@@ -475,7 +480,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-17 r79";
+const APP_VERSION = "2026-10-18 r80";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2743,13 +2748,19 @@ function tableHtml(p, tid){
   };
   return '<div class="ptable"><div class="pt-bar"><input type="search" data-tfilter="' + tid + '" placeholder="表の中を絞り込む" value="' + esc((pg.tFilter || {})[tid] || "") + '">' +
     '<button type="button" class="btn ghost sm" data-tedit="' + tid + '">' + (editing ? "編集を終える" : "表を編集") + "</button></div>" +
-    '<div class="pt-wrap"><table><thead><tr>' + t.cols.map((c, ci) => '<th data-tsort="' + tid + ":" + ci + '">' + esc(c.name) + (so && so.col === ci ? (so.dir > 0 ? " ▲" : " ▼") : "") +
-      (editing ? '<button type="button" class="del" data-tcol-del="' + tid + ":" + ci + '" aria-label="列を消す">×</button>' : "") + "</th>").join("") + (editing ? "<th></th>" : "") + "</tr></thead><tbody>" +
+    '<div class="pt-wrap"><table><thead><tr>' + t.cols.map((c, ci) => editing
+      ? '<th class="th-ed"><input class="tcol-ren" data-tcol-ren="' + tid + ":" + ci + '" value="' + esc(c.name) + '" aria-label="列の名前">' +
+        '<div class="th-row"><select data-tcol-ty="' + tid + ":" + ci + '" aria-label="列の種類">' + COLT.map(([v, l]) => '<option value="' + v + '"' + (v === c.type ? " selected" : "") + ">" + l + "</option>").join("") + "</select>" +
+        '<button type="button" class="mv" data-tcol-mv="' + tid + ":" + ci + ':-1"' + (ci === 0 ? " disabled" : "") + ' aria-label="左へ">←</button><button type="button" class="mv" data-tcol-mv="' + tid + ":" + ci + ':1"' + (ci === t.cols.length - 1 ? " disabled" : "") + ' aria-label="右へ">→</button>' +
+        '<button type="button" class="del" data-tcol-del="' + tid + ":" + ci + '" aria-label="列を消す">×</button></div>' +
+        (c.type === "select" ? '<input class="tcol-opt" data-tcol-optedit="' + tid + ":" + ci + '" value="' + esc((c.options || []).join("、")) + '" placeholder="選択肢(読点で区切る)">' : "") + "</th>"
+      : '<th data-tsort="' + tid + ":" + ci + '">' + esc(c.name) + (so && so.col === ci ? (so.dir > 0 ? " ▲" : " ▼") : "") + "</th>").join("") + (editing ? "<th></th>" : "") + "</tr></thead><tbody>" +
     rows.map(({ r, i }) => "<tr>" + t.cols.map((c, ci) => '<td class="t-' + c.type + '">' + cell(r[ci], c.type, i, ci) + "</td>").join("") +
       (editing ? '<td><button type="button" class="del" data-trow-del="' + tid + ":" + i + '">消す</button></td>' : "") + "</tr>").join("") + "</tbody></table></div>" +
     (editing ? '<div class="pt-add"><button type="button" class="btn ghost sm" data-trow-add="' + tid + '">行を足す</button>' +
-      '<input data-tcol-name="' + tid + '" placeholder="新しい列の名前"><select data-tcol-type="' + tid + '">' + COLT.map(([v, l]) => '<option value="' + v + '">' + l + "</option>").join("") + "</select>" +
-      '<input data-tcol-opts="' + tid + '" placeholder="選択肢(読点で区切る)"><button type="button" class="btn ghost sm" data-tcol-add="' + tid + '">列を足す</button></div>' : "") + "</div>";
+      '<span class="pt-add-l">列を足す:</span><input data-tcol-name="' + tid + '" placeholder="新しい列の名前(Enterでも足せる)"><select data-tcol-type="' + tid + '">' + COLT.map(([v, l]) => '<option value="' + v + '">' + l + "</option>").join("") + "</select>" +
+      '<input data-tcol-opts="' + tid + '" placeholder="選択肢(読点で区切る)"><button type="button" class="btn sm" data-tcol-add="' + tid + '">＋ 列を足す</button>' +
+      '<p class="pt-note">見出しの名前を書き換えると、その場で保存。種類と順番(←→)も見出しで変えられる</p></div>' : "") + "</div>";
 }
 
 
@@ -3502,7 +3513,9 @@ function bindPages(){
     if (q("[data-page-addtable]") || q("[data-page-addapp]")) {
       const ta = document.getElementById("pg-body");
       if (q("[data-page-addtable]")) { const tid = "t" + uid().slice(-6);
-        p.tables = Object.assign({}, p.tables || {}, { [tid]: { cols: [{ name: "名前", type: "text" }, { name: "メモ", type: "text" }], rows: [["", ""]] } });
+        const ans = prompt("表の列の名前を、読点(、)で区切って入れてください。種類はあとで見出しから変えられます。", "名前、メモ"); if (ans === null) return;
+        const names = String(ans).split(/[、,]/).map(x => x.trim()).filter(Boolean), cols = (names.length ? names : ["名前", "メモ"]).map(n => ({ name: n, type: "text" }));
+        p.tables = Object.assign({}, p.tables || {}, { [tid]: { cols, rows: [cols.map(() => "")] } });
         ta.value = ta.value.replace(/\s*$/, "") + "\n{{表:" + tid + "}}\n"; pg.tableEdit = p.id + ":" + tid; }
       else { const url = prompt("置くアプリのURL(演習範囲なら、このまま)", "https://nisenonamae.github.io/math-range/"); if (!url) return; ta.value = ta.value.replace(/\s*$/, "") + "\n{{アプリ:" + url.trim() + "}}\n"; }
       return;
@@ -3680,11 +3693,13 @@ function bindPages(){
     }
     // 表
     if ((b = q("[data-tedit]"))) { const k = p.id + ":" + b.dataset.tedit; pg.tableEdit = pg.tableEdit === k ? null : k; rerender(); return; }
-    if ((b = q("[data-tsort]")) && !q("[data-tcol-del]")) { const [tid, ci] = b.dataset.tsort.split(":"); pg.tSort = pg.tSort || {}; const cur = pg.tSort[tid];
+    if ((b = q("[data-tsort]")) && !q("[data-tcol-del]") && !q("input, select")) { const [tid, ci] = b.dataset.tsort.split(":"); pg.tSort = pg.tSort || {}; const cur = pg.tSort[tid];
       pg.tSort[tid] = cur && cur.col === +ci ? (cur.dir > 0 ? { col: +ci, dir: -1 } : null) : { col: +ci, dir: 1 }; rerender(); return; }
     const tsave = async f => { await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); f(x); x.updated = taskDay(); }); rerender(); };
     if ((b = q("[data-trow-add]"))) { const tid = b.dataset.trowAdd; return tsave(x => { const t = x.tables[tid]; t.rows.push(t.cols.map(c => c.type === "check" ? false : "")); }); }
     if ((b = q("[data-trow-del]"))) { const [tid, ri] = b.dataset.trowDel.split(":"); return tsave(x => { x.tables[tid].rows.splice(+ri, 1); }); }
+    if ((b = q("[data-tcol-mv]"))) { const [tid, ci, dd] = b.dataset.tcolMv.split(":"), i = +ci, j = i + (+dd);
+      return tsave(x => { const t = x.tables[tid]; if (j < 0 || j >= t.cols.length) return; const sw = a => { const v = a[i]; a[i] = a[j]; a[j] = v; }; sw(t.cols); t.rows.forEach(r => sw(r)); }); }
     if ((b = q("[data-tcol-del]"))) { const [tid, ci] = b.dataset.tcolDel.split(":"); if (!confirm("この列を消しますか。")) return; return tsave(x => { const t = x.tables[tid]; t.cols.splice(+ci, 1); t.rows.forEach(r => r.splice(+ci, 1)); }); }
     if ((b = q("[data-tcol-add]"))) { const tid = b.dataset.tcolAdd, nm = (box.querySelector('[data-tcol-name="' + tid + '"]').value || "").trim(); if (!nm) return;
       const ty = box.querySelector('[data-tcol-type="' + tid + '"]').value, op = (box.querySelector('[data-tcol-opts="' + tid + '"]').value || "").split(/[、,]/).map(x => x.trim()).filter(Boolean);
@@ -3705,10 +3720,29 @@ function bindPages(){
     if (tp) { const tid = tp.dataset.taskPart, pid = tp.value; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); ensureParts(x).forEach(pp => { pp.taskIds = (pp.taskIds || []).filter(z => z !== tid); if (pp.id === pid) pp.taskIds.push(tid); }); }); renderDetail(); return; }
     const pc = e.target.closest("[data-pcl]");
     if (pc) { const i = +pc.dataset.pcl, on = pc.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const ls = x.body.split("\n"); ls[i] = ls[i].replace(/- \[( |x)\]/, on ? "- [x]" : "- [ ]"); x.body = ls.join("\n"); }); return; }
+    const rn = e.target.closest("[data-tcol-ren]");
+    if (rn) { const [tid, ci] = rn.dataset.tcolRen.split(":"), nm = rn.value.trim(); if (!nm) { rn.value = p.tables[tid].cols[+ci].name; return; }
+      await savePages(doc => { doc.pages.find(y => y.id === p.id).tables[tid].cols[+ci].name = nm; }); msg("列の名前を「" + nm + "」にしました。"); return; }
+    const ct = e.target.closest("[data-tcol-ty]");
+    if (ct) { const [tid, ci] = ct.dataset.tcolTy.split(":"), ty = ct.value;
+      await savePages(doc => { const t = doc.pages.find(y => y.id === p.id).tables[tid], c = t.cols[+ci], k = +ci;
+        // 中身は、新しい種類に合わせて直す(読めないものは空に)
+        t.rows.forEach(r => { const v = r[k];
+          r[k] = ty === "check" ? (v === true || v === "✓" || v === "1" || v === 1 || v === "true") : ty === "num" ? (v === "" || v == null || isNaN(+v) ? "" : +v) : ty === "date" ? (/^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? v : "") : (v === true ? "✓" : v === false ? "" : (v == null ? "" : String(v))); });
+        if (ty === "select") c.options = Array.from(new Set(t.rows.map(r => r[k]).filter(v => v !== "" && v != null).map(String))); else delete c.options;
+        c.type = ty; });
+      renderDetail(); return; }
+    const co = e.target.closest("[data-tcol-optedit]");
+    if (co) { const [tid, ci] = co.dataset.tcolOptedit.split(":"), op = co.value.split(/[、,]/).map(x => x.trim()).filter(Boolean);
+      await savePages(doc => { doc.pages.find(y => y.id === p.id).tables[tid].cols[+ci].options = op; }); renderDetail(); return; }
     const tc = e.target.closest("[data-tcell]");
     if (tc) { const [tid, ri, ci] = tc.dataset.tcell.split(":"), t = p.tables[tid], ty = t.cols[+ci].type;
       const val = ty === "check" ? tc.checked : (ty === "num" ? (tc.value === "" ? "" : +tc.value) : tc.value);
       await savePages(doc => { doc.pages.find(y => y.id === p.id).tables[tid].rows[+ri][+ci] = val; }); return; }
+  });
+  box.addEventListener("keydown", e => {
+    const n = e.target.closest && e.target.closest("[data-tcol-name]"); if (!n || e.key !== "Enter" || e.isComposing) return;
+    e.preventDefault(); const b = box.querySelector('[data-tcol-add="' + n.dataset.tcolName + '"]'); if (b) b.click();
   });
   box.addEventListener("input", e => {
     const f = e.target.closest("[data-tfilter]"); if (!f) return;
