@@ -485,7 +485,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-18 r82";
+const APP_VERSION = "2026-10-18 r83";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2732,6 +2732,35 @@ function appHtml(p, url){
   return '<div class="papp"><div class="papp-h"><span>アプリ</span><a href="' + esc(src) + '" target="_blank" rel="noopener">全画面で開く</a></div><iframe src="' + esc(src) + '" loading="lazy" title="アプリ"></iframe></div>';
 }
 // 表:列ごとに種類、並べ替え・絞り込み、行と列の追加、セルの編集
+// 表の取り込み:CSV(Notionの書き出し)・TSV・JSON を { cols, rows } にする。セルの中の改行も崩さない
+function parseDelim(text, sep){
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; continue; }
+    if (ch === '"' && cell === "") { q = true; continue; }
+    if (ch === sep) { row.push(cell); cell = ""; continue; }
+    if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; continue; }
+    cell += ch;
+  }
+  if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => String(c).trim() !== ""));
+}
+function importTableText(text){
+  text = String(text || "").replace(/^\uFEFF/, "");
+  const clean = v => String(v == null ? "" : v).replace(/<br\s*\/?>/gi, "\n");
+  const t = text.trim();
+  if (t.startsWith("{") || t.startsWith("[")) {
+    const j = JSON.parse(t);
+    if (Array.isArray(j)) { const names = Array.from(new Set(j.flatMap(o => Object.keys(o || {})))); return { cols: names.map(n => ({ name: n, type: "text" })), rows: j.map(o => names.map(n => clean((o || {})[n]))) }; }
+    const cols = (j.cols || []).map(c => typeof c === "string" ? { name: c, type: "text" } : Object.assign({ type: "text" }, c));
+    return { cols, rows: (j.rows || []).map(r => cols.map((c, i) => Array.isArray(r) ? clean(r[i]) : clean((r || {})[c.name]))) };
+  }
+  const first = t.split(/\r?\n/)[0], sep = first.includes("\t") ? "\t" : ",";
+  const all = parseDelim(t, sep); if (!all.length) throw new Error("中身がありません");
+  const head = all[0].map((h, i) => String(h).trim() || "列" + (i + 1));
+  return { cols: head.map(n => ({ name: n, type: "text" })), rows: all.slice(1).map(r => head.map((_, i) => clean(r[i]))) };
+}
 // コピー(使えないときは、選んだ状態にして手でコピーできるようにする)
 async function copyText(text){
   try { await navigator.clipboard.writeText(text); return true; }
@@ -3136,7 +3165,8 @@ function renderPage(box, p){
       '<div class="f"><label>' + (isSW || isG ? "メモ(自由に。" : "本文(") + '# 見出し・- 箇条書き・- [ ] チェック・[[ページの名前]]・URL)</label><textarea id="pg-body" style="min-height:12rem">' + esc(p.body || "") + "</textarea></div>" +
       '<div class="row-btns"><button type="button" class="btn" data-page-save>保存</button><button type="button" class="btn ghost" data-page-cancel>やめる</button>' +
       '<button type="button" class="btn ghost sm" data-page-del style="margin-left:auto;border-color:var(--shu);color:var(--shu)">このページを消す</button>' +
-      '<button type="button" class="btn ghost sm" data-page-addtable>表を足す</button><button type="button" class="btn ghost sm" data-page-addapp>アプリを置く</button></div></div>';
+      '<button type="button" class="btn ghost sm" data-page-addtable>表を足す</button><button type="button" class="btn ghost sm" data-page-importtable>表を取り込む(CSV・JSON)</button><button type="button" class="btn ghost sm" data-page-addapp>アプリを置く</button>' +
+      '<input type="file" id="pg-import" accept=".csv,.tsv,.txt,.json,text/csv,application/json" hidden></div></div>';
   } else {
     const kids = childrenOf(p.id);
     const panel = (title, right, body) => '<section class="panel"><div class="panel-h"><span>' + title + "</span><span class=\"ph-r\">" + right + '</span></div><div class="panel-b">' + body + "</div></section>";
@@ -3524,6 +3554,19 @@ function bindPages(){
         if (x.kind !== "page") { if (F.theme !== null) { if (x.parts && x.parts.length) { x.parts[0].theme = F.theme; x.parts[0].content = F.content; } else { x.theme = F.theme; x.content = F.content; } } if (F.status && F.status !== stOf(x) && isUnit(x)) { setStatus(x, F.status); syncGroup(doc, x); }
           if (F.analysis) x.analysis = Object.assign({}, F.analysis); } x.updated = taskDay(); });
       pg.edit = false; rerender(); return;
+    }
+    if (q("[data-page-importtable]")) {
+      const fi = document.getElementById("pg-import"); if (!fi) return;
+      fi.value = ""; fi.onchange = async () => {
+        const f = fi.files && fi.files[0]; if (!f) return;
+        try {
+          const tb = importTableText(await f.text()), tid = "t" + uid().slice(-6), ta = document.getElementById("pg-body");
+          p.tables = Object.assign({}, p.tables || {}, { [tid]: tb });
+          ta.value = ta.value.replace(/\s*$/, "") + "\n{{表:" + tid + "}}\n";
+          msg("「" + f.name + "」を取り込みました(" + tb.cols.length + "列・" + tb.rows.length + "行)。「保存」で表になります。");
+        } catch (e) { msg("取り込めませんでした:" + e.message, true); }
+      };
+      fi.click(); return;
     }
     if (q("[data-page-addtable]") || q("[data-page-addapp]")) {
       const ta = document.getElementById("pg-body");
@@ -3996,7 +4039,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
