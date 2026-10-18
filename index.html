@@ -485,7 +485,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-18 r84";
+const APP_VERSION = "2026-10-18 r85";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -493,8 +493,8 @@ const PERIODS = [["日", "1日"], ["週", "1週間"], ["月", "1ヶ月"], ["季"
 const NOTES = "roadmap/gov/notes.json";          // アプリで書くもの(目的・スローガン)
 // 体制全体。省と同じ首脳を持ち、スローガンを掲げる。旧「総合的分析と戦略」の役割
 const ALL = { tag: "全体", name: "参謀本部" };
-const DEFAULT_SLOGANS = [{ title: "第一次スローガン", text: "狂気の時代!全方向へ全力に拡大しろ!",
-  note: "ほとんどの活動の基礎となる学力(受験に使う科目)、身体能力、経済能力などの能力を向上する。よってこのような省に重要度を重めに設定し、その他の文化的な省庁の重要度を低めに設定する。", from: "2026-08-01" }];
+// 仮のスローガンは置かない(作戦期も、保存したスローガンもなければ「まだありません」と出す)
+const DEFAULT_SLOGANS = [];
 const slogans = () => (state.notes.slogans && state.notes.slogans.length) ? state.notes.slogans : DEFAULT_SLOGANS;
 // 省の色。紙の地で見分けやすい落ち着いた色を、省の名前の順に割り当てる
 const COLORS = ["#B5432F","#2F4F8A","#3D7A55","#8A5A9E","#B07D2A","#2C7F8C","#A8476F","#5B6E2E","#7A4E2D","#3E5FA8","#B06A3B","#4D7F6E","#8C3A3A","#6A5A9E","#4F6D8A","#8A7A2E"];
@@ -1296,10 +1296,10 @@ function renderList(){
   const box = document.getElementById("list");
   const ms = (state.gov && state.gov.ministries) || [];
   box.hidden = !!state.open;
-  const term = currentTerm(), sl = term ? term.slogan : slogans()[slogans().length - 1], openAll = openOrders(ALL.tag).length + openEmergencies().length;
+  const term = currentTerm(), sl = (term ? term.slogan : slogans()[slogans().length - 1]) || null, openAll = openOrders(ALL.tag).length + openEmergencies().length;
   box.innerHTML = '<button type="button" class="allcard" data-open="' + ALL.tag + '"><div class="an">参謀本部' +
       (openAll ? ' <span class="badge">' + openAll + "</span>" : "") + (openEmergencies().length ? '　<b style="color:#F0A090">緊急会議 ' + openEmergencies().length + "</b>" : "") +
-      '</div><div class="as">' + esc(sl.text) + '</div><div class="an">' + (term ? esc(term.name) + "　残り" + Math.max(0, daysBetween(taskDay(), term.end)) + "日" : "作戦期はまだありません") + "</div></button>" +
+      '</div><div class="as">' + (sl && sl.text ? esc(sl.text) : '<span style="opacity:.7">掲げているスローガンはまだありません</span>') + '</div><div class="an">' + (term ? esc(term.name) + "　残り" + Math.max(0, daysBetween(taskDay(), term.end)) + "日" : "作戦期はまだありません") + "</div></button>" +
     '<div class="mlist-bar"><span class="status" id="order-status"></span><button type="button" class="linkbtn" data-reorder>' + (state.reorder ? "並べ替えを終える" : "並べ替える") + "</button></div>" +
     '<ul class="mlist' + (state.reorder ? " reorder" : "") + '">' + orderedMinistries(ms).map((m, i, arr) => {
     const p = powerOf(m.tag), open = openOrders(m.tag).length;
@@ -1387,7 +1387,7 @@ function currentMinistry(){
   return state.open && state.gov && state.gov.ministries.find(x => x.tag === state.open);
 }
 function renderAll(box){
-  const list = slogans(), cur = list[list.length - 1], past = list.slice(0, -1).reverse();
+  const list = slogans(), cur = list[list.length - 1] || { title: "", text: "", note: "" }, past = list.slice(0, -1).reverse();
   box.style.setProperty("--mc", colorOf(ALL.tag));
   const edit = state.editSlogan;
   box.innerHTML = '<button type="button" class="back" data-back>‹ 省の一覧</button>' +
@@ -1397,7 +1397,7 @@ function renderAll(box){
         '<div class="f" style="margin-top:.4rem"><label style="color:var(--paper)">スローガン</label><input id="sl-text" value="' + esc(edit === "new" ? "" : cur.text) + '"></div>' +
         '<div class="f" style="margin-top:.4rem"><label style="color:var(--paper)">概要</label><textarea id="sl-note">' + esc(edit === "new" ? "" : cur.note) + '</textarea></div>' +
         '<div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center"><button type="button" class="btn sm" data-sl-save>保存する</button><button type="button" class="btn sm" data-sl-cancel>やめる</button><span class="status" id="pp-status"></span></div>'
-      : '<div class="gen">' + esc(cur.title) + (cur.from ? "　" + esc(cur.from) + "から" : "") + '</div><div class="txt">' + esc(cur.text) + "</div>" +
+      : (list.length ? '<div class="gen">' + esc(cur.title) + (cur.from ? "　" + esc(cur.from) + "から" : "") + '</div><div class="txt">' + esc(cur.text) + "</div>" : '<div class="txt" style="opacity:.75">掲げているスローガンはまだありません</div>') +
         (cur.note ? "<p>" + esc(cur.note) + "</p>" : "") +
         '<div style="margin-top:.6rem;display:flex;gap:.5rem"><button type="button" class="btn sm" data-sl-edit>直す</button><button type="button" class="btn sm" data-sl-new>新しいスローガンにする</button></div>') +
     "</div>" +
@@ -3983,8 +3983,8 @@ function bind(){
       if (!item.text) { const st = document.getElementById("pp-status"); st.textContent = "スローガンを入れてください。"; st.classList.add("err"); return; }
       const mode = state.editSlogan;
       const ok = await saveNotes(n => {
-        const list = (n.slogans && n.slogans.length) ? n.slogans.slice() : DEFAULT_SLOGANS.map(x => Object.assign({}, x));
-        if (mode === "new") list.push(item);
+        const list = (n.slogans && n.slogans.length) ? n.slogans.slice() : [];
+        if (mode === "new" || !list.length) list.push(item);
         else list[list.length - 1] = Object.assign({}, list[list.length - 1], { title: item.title, text: item.text, note: item.note });
         n.slogans = list;
       });
