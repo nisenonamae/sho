@@ -170,6 +170,10 @@ textarea{min-height:7rem;line-height:1.6}
 .t-a{background:#D9534F}.t-p{background:#4A7FC1}.t-r{background:#4FA36B}
 .a-k{background:#C0503A}.a-s{background:#3E5FA8}.a-c{background:#A8A196}
 .amb-list{padding-top:.1rem}
+.amb-links{display:flex;flex-direction:column;gap:.3rem;flex:1;min-width:0}.amb-links input{border:1px solid var(--rule);border-radius:4px;padding:.25rem .45rem;font:inherit;font-size:.84rem}
+.amb-lk{display:flex;flex-wrap:wrap;gap:.3rem .5rem;align-items:baseline;margin:.35rem 0;font-size:.82rem}.amb-lkh{font-weight:700}.amb-lkn{color:var(--sub);flex:1;min-width:0}
+.amb-end{border:1px dashed var(--rule);border-radius:5px;padding:.45rem .55rem;margin:.3rem 0;display:flex;flex-direction:column;gap:.35rem}.amb-end b{font-size:.85rem}
+.amb-part{font-size:.82rem;display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}.amb-part input{width:4.5rem;border:1px solid var(--rule);border-radius:4px;padding:.15rem .35rem;font:inherit}
 .amb-row{border-top:1px dashed var(--rule)}.amb-row:first-child{border-top:0}
 .amb-line{display:grid;grid-template-columns:minmax(0,1fr) 5.5rem 4.2rem;gap:.55rem;align-items:center;width:100%;border:none;background:none;padding:.45rem 0;font:inherit;text-align:left;cursor:pointer}
 .amb-nm{min-width:0;display:block}
@@ -507,7 +511,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-20 r90";
+const APP_VERSION = "2026-10-20 r92";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -877,7 +881,15 @@ function readTideForm(){
    付け方は時勢と同じ:プラス(強まった)= 熱量 × 色(渇望 ↔ 憧憬)、漠然さ、しんどさ。マイナス(冷めてきた)= 熱量・確かさ・漠然さ。打ち消しもある。
    偉業そのものは、栄典ができたら栄典に移す(それまではここで名前と期日だけ持つ)。記録は roadmap/gov/ambition.json */
 const AMB = "roadmap/gov/ambition.json";
-const amb = { doc: { version: 1, feats: [], entries: [] }, sha: null, form: null, draft: {}, period: "1週間", cancel: null, featForm: false, open: new Set(), quietOpen: false, pickQ: "" };
+const amb = { doc: { version: 1, feats: [], entries: [] }, sha: null, form: null, draft: {}, period: "1週間", cancel: null, featForm: false, open: new Set(), quietOpen: false, pickQ: "", linkFor: null, linkQ: "", endFor: null };
+// 結びつくタスクを選ぶ欄(偉業を足すとき・あとから直すとき)
+function ambLinkHtml(sel, prefix){
+  const q = (amb.linkQ || "").trim().toLowerCase(), all = (state.tasks || []).filter(t => !["アーカイブ"].includes(t.status)).map(t => t.def).sort((a, b) => (sel.includes(b.id) - sel.includes(a.id)) || a.name.localeCompare(b.name, "ja"));
+  const shown = all.filter(d => !q || d.name.toLowerCase().includes(q) || sel.includes(d.id)).slice(0, q ? 60 : 12);
+  return '<div class="amb-links"><input id="' + prefix + '-q" data-amb-linkq placeholder="タスクを名前で探す" value="' + esc(amb.linkQ || "") + '">' +
+    '<div class="achips">' + shown.map(d => '<button type="button" data-amb-link="' + esc(d.id) + '" aria-pressed="' + sel.includes(d.id) + '">' + esc(d.name) + "</button>").join("") + "</div>" +
+    (!q && all.length > 12 ? '<small class="panel-e">ほか' + (all.length - 12) + "件は、名前で探してください</small>" : "") + "</div>";
+}
 async function loadAmb(){ const r = await readJson(AMB); amb.doc = Object.assign({ version: 1, feats: [], entries: [] }, r.data || {}); amb.sha = r.sha; }
 async function saveAmb(mutate){
   mutate(amb.doc); renderList();
@@ -936,13 +948,19 @@ function ambViewHtml(){
       '<span class="amb-v"><b>' + sign(r.heat) + '</b><small class="' + (r.mv > 0 ? "up" : r.mv < 0 ? "down" : "") + '">' + amb.period + " " + sign(r.mv) + "</small></span></button>" +
       (opened ? '<div class="amb-body"><div class="amb-acts"><button type="button" class="btn sm" data-amb-new="plus" data-feat="' + esc(f.id) + '">+ この偉業に記録</button><button type="button" class="btn ghost sm" data-amb-new="minus" data-feat="' + esc(f.id) + '">− 冷めてきた</button>' +
         (r.burden ? '<span class="ph-n">しんどさ ' + r.burden.toFixed(1) + "</span>" : "") + '<button type="button" class="linkbtn" data-amb-end="' + esc(f.id) + '">終える</button></div>' +
+        (amb.endFor === f.id ? '<div class="amb-end"><b>この挑戦の結果</b><div class="achips"><button type="button" data-amb-result="' + esc(f.id) + ':1">成功</button><button type="button" data-amb-result="' + esc(f.id) + ':0">失敗</button></div>' +
+          '<div class="amb-part">途中まで <input type="number" id="ae-pct" min="0" max="100" step="5" placeholder="%"> % <button type="button" class="btn ghost sm" data-amb-result-pct="' + esc(f.id) + '">これで終える</button> <button type="button" class="linkbtn" data-amb-end-x>やめる</button></div>' +
+          '<small class="panel-e">結果は威信の計算に使われます。期日を過ぎても終えていない偉業は、まだ結果が出ていない扱いです。</small></div>' : "") +
+        '<div class="amb-lk"><span class="amb-lkh">結びつくタスク ' + (f.links || []).length + '件</span>' + (amb.linkFor === f.id ? ambLinkHtml(f.links || [], "al-" + f.id) + '<button type="button" class="linkbtn" data-amb-link-done>閉じる</button>'
+          : '<span class="amb-lkn">' + ((f.links || []).map(id => { const t = (state.tasks || []).find(x => x.def.id === id); return t ? esc(t.def.name) : ""; }).filter(Boolean).join("・") || "まだありません") + '</span><button type="button" class="linkbtn" data-amb-link-edit="' + esc(f.id) + '">直す</button>') + "</div>" +
         (r.inPeriod.length ? r.inPeriod.map(e => ambRowHtml(e)).join("") : '<div class="panel-e">この期間の記録はありません。</div>') + "</div>" : "") + "</div>";
   };
   if (rows.length) h += '<section class="panel"><div class="panel-h"><span>挑戦中の偉業 ' + rows.length + '件</span><span class="ph-r"><span class="ph-n">熱い順 ・ 折れ線は直近30日の熱量 ・ 押すと開く</span></span></div><div class="panel-b amb-list">' + live.map(row).join("") +
     (quiet.length ? '<button type="button" class="amb-quiet" data-amb-quiet>' + (amb.quietOpen ? "▾" : "▸") + " 静かな偉業 " + quiet.length + "件<small>この期間に記録がなく、熱もほとんど残っていない</small></button>" + (amb.quietOpen ? quiet.map(row).join("") : "") : "") + "</div></section>";
   h += amb.featForm ? '<section class="panel tide-form"><div class="panel-h"><span>偉業を足す</span><button type="button" class="linkbtn" data-amb-feat-x>やめる</button></div><div class="panel-b">' +
-      '<div class="frow"><span class="fl">偉業</span><input id="af-name" placeholder="例:模試で偏差値70を取る"></div><div class="frow"><span class="fl">期日</span><input id="af-due" type="date"></div>' +
-      '<div class="row-btns"><button type="button" class="btn" data-amb-feat-save>足す</button></div><p class="panel-e">偉業そのものは、栄典ができたら栄典に移ります。ここでは気持ちを記録するために、名前と期日だけを持ちます。</p></div></section>'
+      '<div class="frow"><span class="fl">偉業</span><input id="af-name" placeholder="例:模試で偏差値70を取る" value="' + esc((amb.newFeat || {}).name || "") + '"></div><div class="frow"><span class="fl">期日</span><input id="af-due" type="date" value="' + esc((amb.newFeat || {}).due || "") + '"></div>' +
+      '<div class="frow"><span class="fl">結びつく<br>タスク</span>' + ambLinkHtml((amb.newFeat || {}).links || [], "af-link") + "</div>" +
+      '<div class="row-btns"><button type="button" class="btn" data-amb-feat-save>足す</button></div><p class="panel-e">結びつくタスクは、この偉業の規模・成功の見込み・裏付けを測るのに使います(あとからでも直せます)。偉業そのものは、栄典ができたら栄典に移ります。</p></div></section>'
     : '<p style="margin:.5rem 0"><button type="button" class="linkbtn" data-amb-feat-new>+ 偉業を足す</button></p>';
   h += '<p class="panel-e">赤は渇望(足りないものを埋めたい、取りに行きたい)、藍は憧憬(その姿に引き寄せられる)、灰は冷め。付け方は時勢と同じで、記録はこの偉業に懸ける気持ちの強さとして、威信の計算に使われます。</p>';
   return h;
@@ -1001,12 +1019,25 @@ function bindAmb(){
       await saveAmb(doc => { doc.entries.push({ id: "am" + uid(), type: "cancel", date: taskDay(), target: id, frac, note: "" }); }); return; }
     if ((b = e.target.closest("[data-amb-del]"))) { if (!confirm("この記録を消しますか。")) return; const id = b.dataset.ambDel; await saveAmb(doc => { const x = doc.entries.find(z => z.id === id); if (x) x.deleted = taskDay(); }); return; }
     if (e.target.closest("[data-amb-feat-new]")) { amb.featForm = true; renderList(); return; }
-    if (e.target.closest("[data-amb-feat-x]")) { amb.featForm = false; renderList(); return; }
+    if (e.target.closest("[data-amb-feat-x]")) { amb.featForm = false; amb.newFeat = null; renderList(); return; }
     if (e.target.closest("[data-amb-feat-save]")) { const name = document.getElementById("af-name").value.trim(), due = document.getElementById("af-due").value; if (!name) { renderNotice("偉業の名前を入れてください。"); return; }
-      amb.featForm = false; await saveAmb(doc => { doc.feats.push({ id: "ft" + uid(), name, due: due || "", created: taskDay(), status: "挑戦中" }); }); return; }
-    if ((b = e.target.closest("[data-amb-end]"))) { if (!confirm("この偉業への挑戦を終えますか(気持ちの記録は残ります)。")) return; const id = b.dataset.ambEnd; await saveAmb(doc => { const x = doc.feats.find(z => z.id === id); if (x) { x.status = "終わり"; x.ended = taskDay(); } }); return; }
+      const links = ((amb.newFeat || {}).links || []).slice(); amb.featForm = false; amb.newFeat = null; amb.linkQ = "";
+      await saveAmb(doc => { doc.feats.push({ id: "ft" + uid(), name, due: due || "", created: taskDay(), status: "挑戦中", links }); }); return; }
+    if ((b = e.target.closest("[data-amb-end]"))) { amb.endFor = b.dataset.ambEnd; renderList(); return; }
+    if (e.target.closest("[data-amb-end-x]")) { amb.endFor = null; renderList(); return; }
+    const finish = async (id, result) => { amb.endFor = null; await saveAmb(doc => { const x = doc.feats.find(z => z.id === id); if (x) { x.status = "終わり"; x.ended = taskDay(); x.result = Math.max(0, Math.min(1, result)); } }); };
+    if ((b = e.target.closest("[data-amb-result]"))) { const [id, v] = b.dataset.ambResult.split(":"); if (!confirm(v === "1" ? "成功として終えますか。" : "失敗として終えますか。")) return; await finish(id, +v); return; }
+    if ((b = e.target.closest("[data-amb-result-pct]"))) { const v = +(document.getElementById("ae-pct") || {}).value; if (!(v >= 0 && v <= 100) || document.getElementById("ae-pct").value === "") { renderNotice("途中までの割合(0〜100)を入れてください。"); return; } await finish(b.dataset.ambResultPct, v / 100); return; }
+    if ((b = e.target.closest("[data-amb-link-edit]"))) { amb.linkFor = b.dataset.ambLinkEdit; amb.linkQ = ""; renderList(); return; }
+    if (e.target.closest("[data-amb-link-done]")) { amb.linkFor = null; amb.linkQ = ""; renderList(); return; }
+    if ((b = e.target.closest("[data-amb-link]"))) { const tid = b.dataset.ambLink;
+      if (amb.featForm) { const nf = amb.newFeat = Object.assign({ links: [] }, amb.newFeat || {}, { name: (document.getElementById("af-name") || {}).value || "", due: (document.getElementById("af-due") || {}).value || "" }); nf.links = nf.links.includes(tid) ? nf.links.filter(x => x !== tid) : nf.links.concat([tid]); renderList(); return; }
+      if (amb.linkFor) { const fid = amb.linkFor; await saveAmb(doc => { const x = doc.feats.find(z => z.id === fid); if (x) { x.links = x.links || []; x.links = x.links.includes(tid) ? x.links.filter(y => y !== tid) : x.links.concat([tid]); } }); return; }
+    }
   });
   box.addEventListener("input", e => {
+    if (e.target.matches && e.target.matches("[data-amb-linkq]")) { amb.linkQ = e.target.value; if (amb.featForm) amb.newFeat = Object.assign({ links: [] }, amb.newFeat || {}, { name: (document.getElementById("af-name") || {}).value || "", due: (document.getElementById("af-due") || {}).value || "" });
+      const id = e.target.id, pos = e.target.selectionStart; renderList(); const el = document.getElementById(id); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) {} } return; }
     if (e.target.id === "af-pickq") { amb.pickQ = e.target.value; amb.draft = Object.assign(amb.draft || {}, readAmbForm()); const pos = e.target.selectionStart; renderList(); const el = document.getElementById("af-pickq"); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) {} } return; }
     if (e.target.id === "af-mix") { const v = +e.target.value, l = document.getElementById("af-mixv"); if (l) l.textContent = "渇望" + v + ":憧憬" + (10 - v); } });
 }
@@ -3951,7 +3982,7 @@ function bindPages(){
     if (e.target.id === "cf-metric") { const keep = Array.from(document.querySelectorAll("[data-cf-task]:checked")).map(x => x.value); pg.condMetric = e.target.value; renderDetail();
       keep.forEach(v => { const el = Array.from(document.querySelectorAll("[data-cf-task]")).find(x => x.value === v); if (el) el.checked = true; }); return; }
     const ac = e.target.closest("[data-act-check]");
-    if (ac) { const id = ac.dataset.actCheck, on = ac.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const a = (x.actions || []).find(z => z.id === id); if (a) a.done = on; }); renderDetail(); return; }
+    if (ac) { const id = ac.dataset.actCheck, on = ac.checked; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const a = (x.actions || []).find(z => z.id === id); if (a) { a.done = on; a.doneAt = on ? (a.doneAt || taskDay()) : null; } }); renderDetail(); return; }
     const tp = e.target.closest("[data-task-part]");
     if (tp) { const tid = tp.dataset.taskPart, pid = tp.value; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); ensureParts(x).forEach(pp => { pp.taskIds = (pp.taskIds || []).filter(z => z !== tid); if (pp.id === pid) pp.taskIds.push(tid); }); }); renderDetail(); return; }
     const pc = e.target.closest("[data-pcl]");
