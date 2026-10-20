@@ -168,6 +168,27 @@ textarea{min-height:7rem;line-height:1.6}
 .tide-m .tm-n{color:var(--mc)}.tmv{font-weight:700;font-variant-numeric:tabular-nums}.tmv.up{color:#B3283C}.tmv.down{color:#3D8A5A}
 .tbar{display:flex;height:9px;border-radius:5px;overflow:hidden;background:var(--rule);margin:.1rem 0 .35rem}.tbar i{display:block;height:100%}
 .t-a{background:#D9534F}.t-p{background:#4A7FC1}.t-r{background:#4FA36B}
+.a-k{background:#C0503A}.a-s{background:#3E5FA8}.a-c{background:#A8A196}
+.amb-list{padding-top:.1rem}
+.amb-row{border-top:1px dashed var(--rule)}.amb-row:first-child{border-top:0}
+.amb-line{display:grid;grid-template-columns:minmax(0,1fr) 5.5rem 4.2rem;gap:.55rem;align-items:center;width:100%;border:none;background:none;padding:.45rem 0;font:inherit;text-align:left;cursor:pointer}
+.amb-nm{min-width:0;display:block}
+.amb-t{font-weight:700;font-size:.88rem;line-height:1.35;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+svg.spark.amb-sp{width:100%;max-width:100%;height:28px;display:block;overflow:hidden}.amb-sp0{color:var(--rule);text-align:center}
+.amb-v{text-align:right;line-height:1.2}.amb-v b{display:block;font-size:.95rem}.amb-v small{font-size:.7rem;color:var(--sub);white-space:nowrap}.amb-v small.up{color:var(--ok, #3D7A55)}.amb-v small.down{color:var(--shu)}
+.amb-nm small{display:block;font-weight:400;font-size:.7rem;color:var(--sub)}
+.amb-bar{margin:.25rem 0 0;height:5px;max-width:9rem}
+.amb-row.open{background:#FBF9F4;margin:0 -.75rem;padding:0 .75rem}
+.amb-body{padding:.1rem 0 .5rem}.amb-acts{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin-bottom:.3rem}.amb-acts .linkbtn{margin-left:auto}
+.amb-quiet{display:block;width:100%;border:none;border-top:1px solid var(--rule);background:none;padding:.5rem 0 .3rem;font:inherit;font-size:.84rem;color:var(--sub);text-align:left;cursor:pointer}
+.amb-quiet small{margin-left:.5rem;font-size:.7rem}
+.amb-pick{display:flex;flex-direction:column;gap:.3rem;min-width:0;flex:1}.amb-pick input{border:1px solid var(--rule);border-radius:4px;padding:.25rem .45rem;font:inherit;font-size:.84rem}
+.amb-f .panel-h{flex-wrap:wrap;row-gap:.15rem}
+.amb-f .tm-n{flex:1 1 100%;min-width:0}
+.amb-due{display:block;font-weight:400;font-size:.72rem;color:var(--sub)}
+.amb-f .ph-r{flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:baseline;gap:.15rem .8rem}
+.amb-f .ph-r>*{white-space:nowrap}
+.amb-f .ph-r .linkbtn{margin-left:auto;font-size:.78rem}
 .tev{display:block;font-size:.76rem;color:var(--sub);margin-bottom:.3rem}
 .trow{display:grid;grid-template-columns:3rem 1fr auto auto;gap:.5rem;align-items:center;padding:.3rem 0;border-top:1px dashed var(--rule);font-size:.86rem}
 .trow .tt small{display:block;font-size:.72rem;color:var(--sub)}.trow .td{color:var(--sub)}.t-done{opacity:.5}.t-cancel{color:var(--sub);grid-template-columns:3rem 1fr}
@@ -175,6 +196,7 @@ textarea{min-height:7rem;line-height:1.6}
 .tide-form .frow{align-items:center}.tchips{display:inline-flex;flex-wrap:wrap;gap:.25rem}
 .tchips button{border:1px solid var(--rule);background:#fff;border-radius:12px;padding:.05rem .55rem;font:inherit;font-size:.8rem;cursor:pointer}
 .tchips button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.achips{display:inline-flex;flex-wrap:wrap;gap:.25rem}.achips button{border:1px solid var(--rule);background:#fff;border-radius:12px;padding:.05rem .55rem;font:inherit;font-size:.8rem;cursor:pointer}.achips button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
 .tmix{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}.tmix input{flex:1;min-width:8rem}.tmix b{font-size:.8rem}
 .lvsw{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden;margin-left:auto}
 .lvsw button{border:none;background:#fff;padding:.25rem .65rem;font:inherit;font-size:.82rem;cursor:pointer;color:var(--sub)}
@@ -442,7 +464,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
     <header class="head"><h1>省</h1><div class="date" id="stamp">—</div></header>
     <div id="notices"></div>
     <div id="min-form"></div>
-    <div class="syncbar"><button type="button" class="btn ghost sm" id="add-ministry">省を足す</button><span class="lvsw" role="tablist"><button type="button" data-lv="一覧">一覧</button><button type="button" data-lv="依存の図">依存の図</button><button type="button" data-lv="重要度">重要度</button><button type="button" data-lv="時勢">時勢</button></span><span class="status" id="sync-status"></span></div>
+    <div class="syncbar"><button type="button" class="btn ghost sm" id="add-ministry">省を足す</button><span class="lvsw" role="tablist"><button type="button" data-lv="一覧">一覧</button><button type="button" data-lv="依存の図">依存の図</button><button type="button" data-lv="重要度">重要度</button><button type="button" data-lv="時勢">時勢</button><button type="button" data-lv="偉業">偉業</button></span><span class="status" id="sync-status"></span></div>
     <div id="list"></div>
     <div id="detail" hidden></div>
   </section>
@@ -485,7 +507,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-18 r87";
+const APP_VERSION = "2026-10-20 r90";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -628,6 +650,7 @@ async function loadAll(){
     if (!pgQ.pending.length) await loadPages().catch(() => {});
     await loadMins().catch(() => {});
     await loadTide().catch(() => {});
+    await loadAmb().catch(() => {});
     state.tideState = ((await readJson("roadmap/gov/tide_state.json").catch(() => ({}))) || {}).data || null;
     try { const dr = JSON.parse(localStorage.getItem(KEY_DRAFT) || "null"); if (dr && !staff.draft && !currentTerm()) staff.draft = dr; } catch (err) {}
     state.depsAuto = ((await readJson("roadmap/gov/deps_auto.json").catch(() => ({}))) || {}).data || null;
@@ -849,6 +872,144 @@ function readTideForm(){
   return { tags: list, mix: +g("tf-mix").value, note: g("tf-note").value.trim() };
 }
 
+
+/* ───────── 偉業への気持ち(時勢の隣。時勢には手を加えない) ─────────
+   付け方は時勢と同じ:プラス(強まった)= 熱量 × 色(渇望 ↔ 憧憬)、漠然さ、しんどさ。マイナス(冷めてきた)= 熱量・確かさ・漠然さ。打ち消しもある。
+   偉業そのものは、栄典ができたら栄典に移す(それまではここで名前と期日だけ持つ)。記録は roadmap/gov/ambition.json */
+const AMB = "roadmap/gov/ambition.json";
+const amb = { doc: { version: 1, feats: [], entries: [] }, sha: null, form: null, draft: {}, period: "1週間", cancel: null, featForm: false, open: new Set(), quietOpen: false, pickQ: "" };
+async function loadAmb(){ const r = await readJson(AMB); amb.doc = Object.assign({ version: 1, feats: [], entries: [] }, r.data || {}); amb.sha = r.sha; }
+async function saveAmb(mutate){
+  mutate(amb.doc); renderList();
+  for (let i = 0; i < 3; i++) {
+    try { amb.sha = await writeJson(AMB, amb.doc, amb.sha); return true; }
+    catch (e) { if ((e.status === 409 || e.status === 422) && i < 2) { await loadAmb(); mutate(amb.doc); continue; } renderNotice("偉業への気持ちを保存できませんでした:" + e.message); return false; }
+  }
+}
+function ambRemain(e, day){ let r = 1; amb.doc.entries.filter(x => x.type === "cancel" && x.target === e.id && !x.deleted && (!day || x.date <= day)).forEach(c => { r *= (1 - (TIDE_RULES.frac[c.frac] || 0.5)); }); return r; }
+function ambParts(e){
+  if (e.type === "plus") { const m = (e.mix ?? 5) / 10; return { 渇望: e.heat * m, 憧憬: e.heat * (1 - m), 冷め: 0 }; }
+  if (e.type === "minus") return { 渇望: 0, 憧憬: 0, 冷め: -e.heat * (TIDE_RULES.sure[e.sure] || 1) };
+  return { 渇望: 0, 憧憬: 0, 冷め: 0 };
+}
+function ambAt(e, day){
+  if (e.deleted || e.type === "cancel" || day < e.date) return { 渇望: 0, 憧憬: 0, 冷め: 0 };
+  const D = TIDE_RULES.days[e.vague] || 1, k = Math.min(1, (dayDiff(e.date, day) + 1) / D), r = ambRemain(e, day), p = ambParts(e);
+  return { 渇望: p.渇望 * k * r, 憧憬: p.憧憬 * k * r, 冷め: p.冷め * k };
+}
+const ambSum = ps => ps.reduce((a, p) => ({ 渇望: a.渇望 + p.渇望, 憧憬: a.憧憬 + p.憧憬, 冷め: a.冷め + p.冷め }), { 渇望: 0, 憧憬: 0, 冷め: 0 });
+const ambNet = p => p.渇望 + p.憧憬 + p.冷め;
+function ambStats(f, today, from, prevTo){
+  const es = amb.doc.entries.filter(e => !e.deleted), mine = es.filter(e => (e.type === "cancel" ? (es.find(x => x.id === e.target) || {}).feat : e.feat) === f.id);
+  const now = ambSum(mine.filter(e => e.type !== "cancel").map(e => ambAt(e, today))), then = ambSum(mine.filter(e => e.type !== "cancel").map(e => ambAt(e, prevTo)));
+  const inPeriod = mine.filter(e => e.date >= from && e.date <= today).sort((a, b) => a.date < b.date ? 1 : -1);
+  const burden = mine.filter(e => e.type === "plus").reduce((a, e) => a + (e.burden || 0) * ambRemain(e), 0);
+  // 直近30日の熱量の動き(重要度の折れ線と同じ形で出す)
+  const live = mine.filter(e => e.type !== "cancel"), series = Array.from({ length: 30 }, (_, k) => ambNet(ambSum(live.map(e => ambAt(e, addDays(today, k - 29))))));
+  return { f, now, mv: ambNet(now) - ambNet(then), inPeriod, burden, heat: ambNet(now), series, quiet: !inPeriod.length && Math.abs(ambNet(now)) < 0.5 };
+}
+function ambSpark(vs){
+  if (!vs.length || vs.every(v => Math.abs(v) < 1e-9)) return '<span class="amb-sp0">—</span>';
+  const lo = Math.min(0, ...vs), hi = Math.max(...vs), rg = hi - lo || 1, y = v => (26 - (v - lo) / rg * 22).toFixed(1);
+  const pts = vs.map((v, i) => (i / (vs.length - 1) * 120).toFixed(1) + "," + y(v)).join(" ");
+  return '<svg viewBox="0 0 120 28" class="spark amb-sp" preserveAspectRatio="none"><polyline points="' + pts + '"></polyline></svg>';
+}
+function ambOrdered(){
+  const today = taskDay(), P = TPERIODS[amb.period], from = addDays(today, -(P - 1)), prevTo = addDays(from, -1);
+  return amb.doc.feats.filter(f => !f.deleted && f.status !== "終わり").map(f => ambStats(f, today, from, prevTo)).sort((a, b) => b.heat - a.heat || Math.abs(b.mv) - Math.abs(a.mv));
+}
+function ambViewHtml(){
+  const today = taskDay(), P = TPERIODS[amb.period], from = addDays(today, -(P - 1)), prevTo = addDays(from, -1);
+  const feats = amb.doc.feats.filter(f => !f.deleted && f.status !== "終わり"), es = amb.doc.entries.filter(e => !e.deleted);
+  let h = '<div class="tide-top"><button type="button" class="btn sm" data-amb-new="plus"' + (feats.length ? "" : " disabled") + '>+ 強まった</button><button type="button" class="btn ghost sm" data-amb-new="minus"' + (feats.length ? "" : " disabled") + '>− 冷めてきた</button>' +
+    '<span class="tperiod">' + Object.keys(TPERIODS).map(k => '<button type="button" data-amb-period="' + k + '" aria-pressed="' + (k === amb.period) + '">' + k + "</button>").join("") + "</span></div>";
+  if (amb.form) h += ambFormHtml(amb.form, feats);
+  if (!feats.length && !amb.featForm) h += '<div class="panel-e" style="margin:.4rem 0">まだ偉業がありません。下の「偉業を足す」から、挑みたい偉業を足してください。</div>';
+  const rows = ambOrdered(), live = rows.filter(r => !r.quiet), quiet = rows.filter(r => r.quiet);
+  const sign = x => (x > 0 ? "+" : "") + x.toFixed(1);
+  const row = r => {
+    const f = r.f, now = r.now, tot = Math.abs(now.渇望) + Math.abs(now.憧憬) + Math.abs(now.冷め) || 1, opened = amb.open.has(f.id);
+    const bar = '<span class="tbar amb-bar">' + (now.渇望 ? '<i class="a-k" style="width:' + (now.渇望 / tot * 100) + '%"></i>' : "") + (now.憧憬 ? '<i class="a-s" style="width:' + (now.憧憬 / tot * 100) + '%"></i>' : "") + (now.冷め ? '<i class="a-c" style="width:' + (Math.abs(now.冷め) / tot * 100) + '%"></i>' : "") + "</span>";
+    return '<div class="amb-row' + (opened ? " open" : "") + '"><button type="button" class="amb-line" data-amb-open="' + esc(f.id) + '" aria-expanded="' + opened + '">' +
+      '<span class="amb-nm"><span class="amb-t">' + esc(f.name) + "</span>" + (f.due ? "<small>期日 " + esc(f.due) + "</small>" : "") + bar + "</span>" +
+      ambSpark(r.series) +
+      '<span class="amb-v"><b>' + sign(r.heat) + '</b><small class="' + (r.mv > 0 ? "up" : r.mv < 0 ? "down" : "") + '">' + amb.period + " " + sign(r.mv) + "</small></span></button>" +
+      (opened ? '<div class="amb-body"><div class="amb-acts"><button type="button" class="btn sm" data-amb-new="plus" data-feat="' + esc(f.id) + '">+ この偉業に記録</button><button type="button" class="btn ghost sm" data-amb-new="minus" data-feat="' + esc(f.id) + '">− 冷めてきた</button>' +
+        (r.burden ? '<span class="ph-n">しんどさ ' + r.burden.toFixed(1) + "</span>" : "") + '<button type="button" class="linkbtn" data-amb-end="' + esc(f.id) + '">終える</button></div>' +
+        (r.inPeriod.length ? r.inPeriod.map(e => ambRowHtml(e)).join("") : '<div class="panel-e">この期間の記録はありません。</div>') + "</div>" : "") + "</div>";
+  };
+  if (rows.length) h += '<section class="panel"><div class="panel-h"><span>挑戦中の偉業 ' + rows.length + '件</span><span class="ph-r"><span class="ph-n">熱い順 ・ 折れ線は直近30日の熱量 ・ 押すと開く</span></span></div><div class="panel-b amb-list">' + live.map(row).join("") +
+    (quiet.length ? '<button type="button" class="amb-quiet" data-amb-quiet>' + (amb.quietOpen ? "▾" : "▸") + " 静かな偉業 " + quiet.length + "件<small>この期間に記録がなく、熱もほとんど残っていない</small></button>" + (amb.quietOpen ? quiet.map(row).join("") : "") : "") + "</div></section>";
+  h += amb.featForm ? '<section class="panel tide-form"><div class="panel-h"><span>偉業を足す</span><button type="button" class="linkbtn" data-amb-feat-x>やめる</button></div><div class="panel-b">' +
+      '<div class="frow"><span class="fl">偉業</span><input id="af-name" placeholder="例:模試で偏差値70を取る"></div><div class="frow"><span class="fl">期日</span><input id="af-due" type="date"></div>' +
+      '<div class="row-btns"><button type="button" class="btn" data-amb-feat-save>足す</button></div><p class="panel-e">偉業そのものは、栄典ができたら栄典に移ります。ここでは気持ちを記録するために、名前と期日だけを持ちます。</p></div></section>'
+    : '<p style="margin:.5rem 0"><button type="button" class="linkbtn" data-amb-feat-new>+ 偉業を足す</button></p>';
+  h += '<p class="panel-e">赤は渇望(足りないものを埋めたい、取りに行きたい)、藍は憧憬(その姿に引き寄せられる)、灰は冷め。付け方は時勢と同じで、記録はこの偉業に懸ける気持ちの強さとして、威信の計算に使われます。</p>';
+  return h;
+}
+function ambRowHtml(e){
+  if (e.type === "cancel") { const t = amb.doc.entries.find(x => x.id === e.target);
+    return '<div class="trow t-cancel"><span class="td">' + esc(e.date.slice(5).replace("-", "/")) + '</span><span>打ち消し「' + esc(t ? t.note || "(メモなし)" : "?") + "」を" + esc(e.frac) + "</span></div>"; }
+  const r = ambRemain(e), done = e.type === "plus" && r < 0.12;
+  const tag = e.type === "plus" ? '<span class="tk-p">渇望' + (e.mix ?? 5) + ":憧憬" + (10 - (e.mix ?? 5)) + "</span>" : '<span class="tk-r">' + esc(e.sure || "はっきり") + "</span>";
+  return '<div class="trow' + (done ? " t-done" : "") + '"><span class="td">' + esc(e.date.slice(5).replace("-", "/")) + '</span><span class="tt">' + (e.type === "plus" ? "▲" : "▼") + " " + esc(e.note || "(メモなし)") +
+    "<small>熱量" + e.heat + "・" + tag + "・" + esc(e.vague) + (e.burden ? "・しんどさ" + e.burden : "") + (e.type === "plus" && r < 1 ? "・残り" + Math.round(r * 100) + "%" : "") + "</small></span>" +
+    (e.type === "plus" && !done ? (amb.cancel === e.id ? '<span class="tcx">' + Object.keys(TIDE_RULES.frac).map(f => '<button type="button" class="btn ghost sm" data-amb-cancel-do="' + e.id + ":" + f + '">' + f + "</button>").join("") + '<button type="button" class="linkbtn" data-amb-cancel-x>やめる</button></span>'
+      : '<button type="button" class="linkbtn" data-amb-cancel="' + e.id + '">打ち消す</button>') : (done ? '<span class="ph-n">解消</span>' : "")) +
+    '<button type="button" class="del" data-amb-del="' + e.id + '" aria-label="記録を消す">×</button></div>';
+}
+function ambFormHtml(type, feats){
+  const plus = type === "plus", f = amb.draft || {}, cur = f.feat || (ambOrdered()[0] || {}).f && ambOrdered()[0].f.id;
+  const chips = (name, opts, v) => '<span class="achips" data-af="' + name + '">' + opts.map(o => '<button type="button" data-v="' + o + '" aria-pressed="' + (String(o) === String(v)) + '">' + o + "</button>").join("") + "</span>";
+  return '<section class="panel tide-form"><div class="panel-h"><span>' + (plus ? "偉業への気持ちが強まった" : "偉業への気持ちが冷めてきた") + '</span><button type="button" class="linkbtn" data-amb-close>やめる</button></div><div class="panel-b">' +
+    (() => { const ord = ambOrdered().map(r => r.f), q = (amb.pickQ || "").trim().toLowerCase(), shown = ord.filter(x => !q || x.name.toLowerCase().includes(q) || x.id === cur);
+      return '<div class="frow"><span class="fl">偉業</span><div class="amb-pick">' + (ord.length > 6 ? '<input id="af-pickq" placeholder="偉業を名前で探す" value="' + esc(amb.pickQ || "") + '">' : "") +
+        '<span class="achips" data-af="feat">' + shown.slice(0, q ? 50 : 8).map(x => '<button type="button" data-v="' + esc(x.id) + '" aria-pressed="' + (x.id === cur) + '">' + esc(x.name) + "</button>").join("") + "</span>" +
+        (!q && shown.length > 8 ? '<small class="panel-e">ほか' + (shown.length - 8) + "件は、名前で探してください</small>" : "") + "</div></div>"; })() +
+    '<div class="frow"><span class="fl">熱量</span>' + chips("heat", [1, 2, 3, 4, 5], f.heat || 3) + "</div>" +
+    (plus ? '<div class="frow"><span class="fl">色</span><div class="tmix"><span>渇望</span><input type="range" id="af-mix" min="0" max="10" step="1" value="' + (f.mix ?? 5) + '"><span>憧憬</span><b id="af-mixv">渇望' + (f.mix ?? 5) + ":憧憬" + (10 - (f.mix ?? 5)) + "</b></div></div>" : "") +
+    '<div class="frow"><span class="fl">漠然さ</span>' + chips("vague", Object.keys(TIDE_RULES.days), f.vague || "1週間") + "</div>" +
+    (plus ? '<div class="frow"><span class="fl">しんどさ</span>' + chips("burden", [0, 1, 2, 3, 4, 5], f.burden ?? 0) + "</div>"
+      : '<div class="frow"><span class="fl">確かさ</span>' + chips("sure", Object.keys(TIDE_RULES.sure), f.sure || "はっきり") + "</div>") +
+    '<div class="frow"><span class="fl">メモ</span><input id="af-note" placeholder="' + (plus ? "例:先輩の合格体験記を読んで、自分もああなりたいと思った" : "例:最近あまり考えなくなった") + '" value="' + esc(f.note || "") + '"></div>' +
+    '<div class="row-btns"><button type="button" class="btn" data-amb-save="' + type + '">記録する</button></div></div></section>';
+}
+function readAmbForm(){ const g = id => document.getElementById(id); return { mix: g("af-mix") ? +g("af-mix").value : (amb.draft || {}).mix, note: g("af-note") ? g("af-note").value.trim() : "" }; }
+function bindAmb(){
+  const box = document.getElementById("list");
+  box.addEventListener("click", async e => {
+    if ((state.listView || "") !== "偉業") return;
+    let b;
+    if ((b = e.target.closest("[data-amb-new]"))) { amb.form = b.dataset.ambNew; amb.draft = b.dataset.feat ? { feat: b.dataset.feat } : {}; amb.pickQ = ""; renderList(); window.scrollTo && window.scrollTo(0, 0); return; }
+    if ((b = e.target.closest("[data-amb-open]"))) { const id = b.dataset.ambOpen; amb.open.has(id) ? amb.open.delete(id) : amb.open.add(id); renderList(); return; }
+    if (e.target.closest("[data-amb-quiet]")) { amb.quietOpen = !amb.quietOpen; renderList(); return; }
+    if (e.target.closest("[data-amb-close]")) { amb.form = null; renderList(); return; }
+    if ((b = e.target.closest("[data-amb-period]"))) { amb.period = b.dataset.ambPeriod; renderList(); return; }
+    if ((b = e.target.closest("[data-af] [data-v]"))) { const g = b.closest("[data-af]").dataset.af; amb.draft = Object.assign(amb.draft || {}, readAmbForm(), { [g]: isNaN(+b.dataset.v) || g === "feat" ? b.dataset.v : +b.dataset.v }); renderList(); return; }
+    if ((b = e.target.closest("[data-amb-save]"))) {
+      const feats = amb.doc.feats.filter(f => !f.deleted && f.status !== "終わり");
+      const f = Object.assign({ heat: 3, mix: 5, vague: "1週間", burden: 0, sure: "はっきり", feat: (feats[0] || {}).id }, amb.draft || {}, readAmbForm()), type = b.dataset.ambSave;
+      if (!f.feat) { renderNotice("偉業を選んでください。"); return; }
+      const ent = { id: "am" + uid(), type, date: taskDay(), feat: f.feat, heat: +f.heat, vague: f.vague, note: f.note || "" };
+      if (type === "plus") { ent.mix = +f.mix; ent.burden = +f.burden || 0; } else ent.sure = f.sure;
+      amb.form = null; amb.draft = {};
+      await saveAmb(doc => { doc.entries.push(ent); }); return;
+    }
+    if ((b = e.target.closest("[data-amb-cancel]"))) { amb.cancel = b.dataset.ambCancel; renderList(); return; }
+    if (e.target.closest("[data-amb-cancel-x]")) { amb.cancel = null; renderList(); return; }
+    if ((b = e.target.closest("[data-amb-cancel-do]"))) { const [id, frac] = b.dataset.ambCancelDo.split(":"); amb.cancel = null;
+      await saveAmb(doc => { doc.entries.push({ id: "am" + uid(), type: "cancel", date: taskDay(), target: id, frac, note: "" }); }); return; }
+    if ((b = e.target.closest("[data-amb-del]"))) { if (!confirm("この記録を消しますか。")) return; const id = b.dataset.ambDel; await saveAmb(doc => { const x = doc.entries.find(z => z.id === id); if (x) x.deleted = taskDay(); }); return; }
+    if (e.target.closest("[data-amb-feat-new]")) { amb.featForm = true; renderList(); return; }
+    if (e.target.closest("[data-amb-feat-x]")) { amb.featForm = false; renderList(); return; }
+    if (e.target.closest("[data-amb-feat-save]")) { const name = document.getElementById("af-name").value.trim(), due = document.getElementById("af-due").value; if (!name) { renderNotice("偉業の名前を入れてください。"); return; }
+      amb.featForm = false; await saveAmb(doc => { doc.feats.push({ id: "ft" + uid(), name, due: due || "", created: taskDay(), status: "挑戦中" }); }); return; }
+    if ((b = e.target.closest("[data-amb-end]"))) { if (!confirm("この偉業への挑戦を終えますか(気持ちの記録は残ります)。")) return; const id = b.dataset.ambEnd; await saveAmb(doc => { const x = doc.feats.find(z => z.id === id); if (x) { x.status = "終わり"; x.ended = taskDay(); } }); return; }
+  });
+  box.addEventListener("input", e => {
+    if (e.target.id === "af-pickq") { amb.pickQ = e.target.value; amb.draft = Object.assign(amb.draft || {}, readAmbForm()); const pos = e.target.selectionStart; renderList(); const el = document.getElementById("af-pickq"); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) {} } return; }
+    if (e.target.id === "af-mix") { const v = +e.target.value, l = document.getElementById("af-mixv"); if (l) l.textContent = "渇望" + v + ":憧憬" + (10 - v); } });
+}
 
 /* ───────── タスクの削除・復元(追加と削除は省アプリだけで行う) ───────── */
 async function overlayWrite(mutate){
@@ -1292,7 +1453,7 @@ function renderList(){
   document.querySelectorAll(".lvsw [data-lv]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lv === lv)));
   if (lv !== "一覧" && state.gov) {
     const box = document.getElementById("list");
-    box.innerHTML = lv === "依存の図" ? depGraphHtml() : lv === "時勢" ? tideViewHtml() : weightChartHtml();
+    box.innerHTML = lv === "依存の図" ? depGraphHtml() : lv === "時勢" ? tideViewHtml() : lv === "偉業" ? ambViewHtml() : weightChartHtml();
     return;
   }
   const box = document.getElementById("list");
@@ -3972,6 +4133,7 @@ function bind(){
   bindMins();
   bindViews();
   bindTide();
+  bindAmb();
   try { state.listView = localStorage.getItem("sho-listview") || "一覧"; state.depFilter = localStorage.getItem("sho-depfilter") || "上位3本ずつ"; } catch (err) {}
 
   document.getElementById("detail").addEventListener("click", async e => {
@@ -4049,7 +4211,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { targetsOf, importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { ambReload: async () => { await loadAmb(); renderList(); }, targetsOf, importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
