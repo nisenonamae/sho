@@ -1,6 +1,6 @@
 // 省アプリのサービスワーカー:つながるときは必ず最新を取りに行き、つながらないときだけ手元の保存を使う
 // 同じ nisenonamae.github.io のほかのアプリの保存には手を出さない(自分の場所の古い保存だけを消す)
-const CACHE = "sho-r79";
+const CACHE = "sho-r90";
 self.addEventListener("install", e => { self.skipWaiting(); });
 self.addEventListener("activate", e => {
   e.waitUntil((async () => {
