@@ -511,7 +511,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-20 r92";
+const APP_VERSION = "2026-10-21 r94";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -641,7 +641,7 @@ async function loadAll(){
                                                      listDir(P.log), listDir(P.applog), readJson(NOTES)]);
     state.notes = (nt.data && nt.data.purposes) ? nt.data : { purposes: {} }; state.notesSha = nt.sha;
     state.gov = g.data; state.stats = st.data || null; state.defs = d.data;
-    state.overlay = o.data || { tasks: {}, newTasks: [] };
+    state.overlay = o.data || { tasks: {}, newTasks: [] }; state.overlaySha = o.sha || null;
     state.logs = await readMonths(P.log, lf);
     state.applogs = await readMonths(P.applog, af);
     state.reviews = {}; state.reviewShas = {}; state.loadedMonths = new Set();
@@ -1043,14 +1043,82 @@ function bindAmb(){
 }
 
 /* ───────── タスクの削除・復元(追加と削除は省アプリだけで行う) ───────── */
-async function overlayWrite(mutate){
-  for (let i = 0; i < 3; i++) {
-    const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] };
-    ov.tasks = ov.tasks || {}; mutate(ov);
-    try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); state.overlay = ov; computeTasks(); return true; }
-    catch (err) { if (err.status !== 409 && err.status !== 422) { renderNotice("保存できませんでした:" + err.message); return false; } }
+const SHARED_WAITS = [0, 400, 800, 1200, 1600, 2400];   // 書き込みがぶつかったときに、読み直すまで待つ時間(ミリ秒)
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// 共有ファイルを読み直して、変更を当てて書く。ぶつかったら間をあけてやり直す。成功したら書いた中身を返し、だめなら null
+async function sharedWrite(path, mutate, fallback){
+  let lastErr = null;
+  for (const w of SHARED_WAITS) {
+    if (w) await sleep(w);
+    let r; try { r = await readJson(path); } catch (err) { lastErr = err; continue; }
+    const doc = r.data || (fallback ? fallback() : null); if (!doc) return null;
+    if (mutate(doc) === false) return doc;
+    try { await writeJson(path, doc, r.sha); return doc; }
+    catch (err) { lastErr = err; if (err.status !== 409 && err.status !== 422 && !(err.status >= 500)) break; }
   }
-  return false;
+  renderNotice("保存できませんでした(" + ((lastErr && lastErr.message) || "書き込みがぶつかりました") + ")。少し待ってから、もう一度押してください。");
+  return null;
+}
+// タスク(overlay)の保存:手元のものに先に当てて、すぐ表示する。書き込みは後ろで1つずつ順番に流す(続けて押してもぶつからない)。
+// ぶつかったとき(行軍表など別の場所で書かれていたとき)は、自分が書いた版(rev)以上の新しい内容を読み直し、まだ書けていない変更を当て直す
+const ovQ = { pending: [], busy: false, again: false, running: null, lastRev: 0, failed: false };
+// 流している書き込みがすべて終わるまで待つ。保存できたら true、できなかったら false
+async function overlaySaved(){
+  for (let g = 0; g < 50 && (ovQ.busy || ovQ.pending.length); g++) { if (ovQ.busy) { try { await ovQ.running; } catch (e) {} } else await flushOverlay(); await sleep(0); }
+  const ok = !ovQ.failed; ovQ.failed = false; return ok;
+}
+function overlayWrite(mutate){
+  const ov = state.overlay = state.overlay || { version: 1, tasks: {}, newTasks: [] };
+  ov.tasks = ov.tasks || {}; ov.newTasks = ov.newTasks || [];
+  if (mutate(ov) === false) return Promise.resolve(true);
+  computeTasks();
+  ovQ.pending.push(mutate);
+  ovQ.done = flushOverlay();
+  return Promise.resolve(true);
+}
+async function readOverlayFresh(minRev){
+  const waits = window.__shoFreshWaits || [0, 700, 1200, 2000, 3000, 4000];
+  let r = null;
+  for (const w of waits) {
+    if (w) await sleep(w);
+    r = await readJson(P.overlay);
+    if (!minRev || ((r.data && r.data.rev) || 0) >= minRev) return r;
+  }
+  return r;
+}
+async function flushOverlay(){
+  if (ovQ.busy) { ovQ.again = true; return ovQ.running; }
+  ovQ.busy = true;
+  ovQ.running = (async () => {
+    for (let guard = 0; guard < 8 && ovQ.pending.length; guard++) {
+      const n = ovQ.pending.length;
+      try { state.overlay.rev = (state.overlay.rev || 0) + 1; state.overlaySha = await writeJson(P.overlay, state.overlay, state.overlaySha); ovQ.lastRev = state.overlay.rev; ovQ.pending = ovQ.pending.slice(n); }
+      catch (e) {
+        if (e.status === 409 || e.status === 422) {
+          if (guard) await sleep(300 * guard);   // 続けてぶつかるときは、少しずつ間をあける
+          const r = await readOverlayFresh(ovQ.lastRev || 0), ov = Object.assign({ version: 1, tasks: {}, newTasks: [] }, (r && r.data) || {});
+          ov.tasks = ov.tasks || {}; ov.newTasks = ov.newTasks || [];
+          state.overlay = ov; state.overlaySha = r ? r.sha : null;
+          ovQ.pending.forEach(m => { try { m(state.overlay); } catch (err) {} });
+          computeTasks(); try { renderDetail(); } catch (x) {} continue;
+        }
+        ovQ.lastErr = e.message; break;
+      }
+    }
+    if (ovQ.pending.length) {
+      // 保存できなかった:手元の表示を、GitHubにある本当の内容に戻す(保存されていないものを、あるように見せない)
+      ovQ.pending = []; ovQ.failed = true;
+      renderNotice("タスクの変更を保存できませんでした(" + (ovQ.lastErr || "書き込みが何度もぶつかりました") + ")。表示を保存されている内容に戻しました。もう一度やってください。"); ovQ.lastErr = null;
+      try { const r = await readJson(P.overlay); state.overlay = Object.assign({ version: 1, tasks: {}, newTasks: [] }, r.data || {}); state.overlaySha = r.sha; } catch (x) {}
+      computeTasks(); try { renderDetail(); } catch (x) {}
+    }
+  })();
+  try { await ovQ.running; } finally { ovQ.busy = false; if (ovQ.again && ovQ.pending.length) { ovQ.again = false; flushOverlay(); } }
+}
+// 新しいタスクの番号。消したタスクや分けたタスクと重ならないようにする(同じ日に同じ名前で作り直しても、別のタスクになる)
+function freshTaskId(base){
+  const used = new Set(((state.defs && state.defs.tasks) || []).map(x => x.id).concat(((state.overlay && state.overlay.newTasks) || []).map(x => x.id), Object.keys((state.overlay && state.overlay.tasks) || {})));
+  let id = base, k = 2; while (used.has(id)) id = base + "-" + (k++); return id;
 }
 function deletedTasks(tag){
   const E = window.TaskEngine; if (!E || !state.defs) return [];
@@ -3494,10 +3562,9 @@ function taskFormHtml(p){
   return '<div class="tform"><p style="font-size:.84rem;color:var(--sub);margin:.2rem 0 .5rem">続けやすいタスクにするための問いに答えてください。省と' + esc(p.label) + "は最初から結びつきます。</p>" +
     '<div class="f"><label>何をする?(タスクの名前)</label><input id="tf-name" placeholder="例:青チャート例題を3題"></div>' +
     '<div class="f"><label>最初の一歩は?(これだけはやる、という小さな行動)</label><input id="tf-step" placeholder="例:例題を1題だけ開く"></div>' +
-    '<div class="grid2"><div class="f"><label>1回何分?</label><input id="tf-min" type="number" min="1" value="15"></div>' +
-    '<div class="f"><label>いつ?</label><select id="tf-slot"><option>朝</option><option>昼</option><option>夜</option><option>一日中</option></select></div>' +
-    '<div class="f"><label>どこで?</label><input id="tf-place" placeholder="机"></div>' +
+    '<div class="grid2"><div class="f"><label>いつ?</label><select id="tf-slot"><option selected>一日中</option><option>朝</option><option>昼</option><option>夜</option></select></div>' +
     '<div class="f"><label>どのくらいの間隔?</label><input id="tf-interval" placeholder="空欄なら毎日(例:月水金)"></div></div>' +
+    '<p style="font-size:.76rem;color:var(--sub);margin:.1rem 0 .4rem">何分かかるか・どこでやるかは、行軍表の設定のタブで決めます(作ったタスクは「未設定」として上に出ます)。</p>' +
     (() => {
       // ほかのSTAGE・WAVEにも結びつける:全部の省のSTAGE・WAVEの中身を、省ごとにチェックで
       const ms = (state.gov && state.gov.ministries) || [];
@@ -3873,12 +3940,11 @@ function bindPages(){
       if ((b = q("[data-act-del]"))) { const id = b.dataset.actDel; await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); x.actions = (x.actions || []).filter(a => a.id !== id); }); rerender(); return; }
       if ((b = q("[data-act-task]"))) {
         const a = (p.actions || []).find(z => z.id === b.dataset.actTask); if (!a) return;
-        const tag = rootTag(p), day = taskDay(), tid = "t" + (await sha1Hex(a.text + "|" + day)).slice(0, 10);
+        const tag = rootTag(p), day = taskDay(), tid = freshTaskId("t" + (await sha1Hex(a.text + "|" + day)).slice(0, 10));
         const mt = isRaid(p) ? modeTask(a) : { kind: "習慣型", interval: "" };   // 1回だけ=完了型、毎日=侵攻中のあいだ毎日、日にち=選んだ日にだけ
         const def = { id: tid, name: a.text, aliases: [], ministries: [tag], waves: [{ label: p.label, url: pageUrl(p.id) }], slot: "一日中", stance: "守", kind: mt.kind, interval: mt.interval, weight: null, quota: null,
           requirement: p.label + (isRaid(p) ? "の作戦" : "の対応") + (a.due ? "(" + a.due.slice(5).replace("-", "/") + "まで)" : ""), created: day, initial: { status: "新規" }, generations: [{ gen: 1, from: day, target: null }], events: [] };
-        for (let i = 0; i < 3; i++) { const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] }; ov.newTasks = (ov.newTasks || []).concat([def]);
-          try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); state.overlay = ov; break; } catch (err) { if (err.status !== 409 && err.status !== 422) { msg(err.message, true); return; } } }
+        await overlayWrite(ov => { if (ov.newTasks.some(x => x.id === def.id)) return false; ov.newTasks.push(def); });
         await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const z = (x.actions || []).find(k => k.id === a.id); if (z) z.taskId = tid; });
         logPlan([rootTag(p)], "タスクを作った", tid, a.text);
         computeTasks(); rerender(); msg("「" + a.text + "」を行軍表に出しました(" + (isRaid(p) ? (a.mode === "daily" ? "侵攻中のあいだ毎日出て、制圧すると外れます" : a.mode === "days" ? "選んだ日にだけ出ます" : "済ませるまで毎日出て、1回済ませたら達成済みで消えます") : "収束すると外れます") + ")。"); return;
@@ -3928,28 +3994,30 @@ function bindPages(){
       const v = id => (document.getElementById(id).value || "").trim();
       const name = v("tf-name"); if (!name) { msg("タスクの名前を入れてください。", true); return; }
       if (state.tasks.some(t => t.def.name === name)) { msg("同じ名前のタスクがもうあります。", true); return; }
-      const tag = rootTag(p), day = taskDay(), id = "t" + (await sha1Hex(name + "|" + day)).slice(0, 10);
+      const tag = rootTag(p), day = taskDay(), id = freshTaskId("t" + (await sha1Hex(name + "|" + day)).slice(0, 10));
       const extra = Array.from(document.querySelectorAll("[data-tf-wave]:checked")).map(x => pageById(x.value)).filter(Boolean);
       const mins = [tag].concat(Array.from(document.querySelectorAll("[data-tf-min]:checked")).map(x => x.value), extra.map(u => rootTag(u))).filter((x, i, a) => x && a.indexOf(x) === i);
       const def = { id, name, aliases: [], ministries: mins, waves: [{ label: p.label, url: pageUrl(p.id) }].concat(extra.map(u => ({ label: u.label, url: pageUrl(u.id) }))), slot: v("tf-slot") || "一日中", stance: "攻", kind: "習慣型",
         interval: v("tf-interval"), weight: null, quota: null, requirement: v("tf-step") ? "最初の一歩:" + v("tf-step") : "", created: day, initial: { status: "新規" },
         generations: [{ gen: 1, from: day, target: null }], events: [] };
-      for (let i = 0; i < 3; i++) {
-        const r = await readJson("roadmap/tasks/overlay.json"), ov = r.data || { version: 1, tasks: {}, newTasks: [] };
-        ov.newTasks = (ov.newTasks || []).concat([def]);
-        try { await writeJson("roadmap/tasks/overlay.json", ov, r.sha); state.overlay = ov; break; } catch (err) { if (err.status !== 409 && err.status !== 422) { msg(err.message, true); return; } }
-      }
-      // 行軍表の組み立てに使う設定(所要時間・場所)も入れておく
-      for (let i = 0; i < 3; i++) {
-        const r = await readJson("roadmap/settings.json"); if (!r.data) break;
-        const st = r.data; st.tasks = st.tasks || {};
-        st.tasks[name] = Object.assign({ min: Math.max(1, +v("tf-min") || 15), place: v("tf-place") || "どこでも", organs: ["目", "手"], mode: "", priority: 0, fixed: "", next: "" }, st.tasks[name] || {});
-        try { await writeJson("roadmap/settings.json", st, r.sha); break; } catch (err) { if (err.status !== 409 && err.status !== 422) break; }
-      }
+      const btn = q("[data-task-add]"); if (btn) { btn.disabled = true; btn.textContent = "保存しています…"; }
+      // 1) タスク本体。書き直しても二重に入らないよう、同じ id があれば足さない
+      const formWas = pg.taskForm, draft = { name, step: v("tf-step"), slot: v("tf-slot"), interval: v("tf-interval") };
+      await overlayWrite(ov => { if (ov.newTasks.some(x => x.id === def.id)) return false; ov.newTasks.push(def); });
+      // すぐに表示する(書き込みは後ろで流れる)。保存が終わるまでは「保存しています」
       const partFor = typeof pg.taskForm === "string" ? pg.taskForm : null;
-      if (partFor) await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const pp = ensureParts(x).find(z => z.id === partFor); if (pp) pp.taskIds = (pp.taskIds || []).concat([id]); });
+      pg.taskForm = false; rerender(); msg("「" + name + "」を保存しています…");
+      if (!(await overlaySaved())) {
+        pg.taskForm = formWas; rerender();
+        const f = id2 => document.getElementById(id2); if (f("tf-name")) { f("tf-name").value = draft.name; f("tf-step").value = draft.step; f("tf-slot").value = draft.slot || "一日中"; f("tf-interval").value = draft.interval; }
+        msg("「" + name + "」を保存できませんでした。書いた内容はそのまま残しています。もう一度押してください。", true); return;
+      }
+      msg("「" + name + "」を行軍表に入れました。");
+      // 2) ページの区切りへの結びつけ。所要時間・場所などの組み立ての設定は、行軍表の設定のタブで決める(未設定として上に出る)
+      if (partFor) await savePages(doc => { const x = doc.pages.find(y => y.id === p.id); const pp = ensureParts(x).find(z => z.id === partFor); if (!pp || (pp.taskIds || []).includes(id)) return false; pp.taskIds = (pp.taskIds || []).concat([id]); });
       logPlan(mins, "タスクを作った", id, name);
-      computeTasks(); pg.taskForm = false; rerender(); msg("「" + name + "」を行軍表に入れました。"); return;
+      if (partFor) rerender();
+      return;
     }
     // 表
     if ((b = q("[data-texp]"))) { const k = p.id + ":" + b.dataset.texp; pg.tExpand = pg.tExpand || {}; pg.tExpand[k] = !pg.tExpand[k]; rerender(); return; }
@@ -4242,7 +4310,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { ambReload: async () => { await loadAmb(); renderList(); }, targetsOf, importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { flushOverlayDone: () => ovQ.done, ambReload: async () => { await loadAmb(); renderList(); }, targetsOf, importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
