@@ -170,6 +170,13 @@ textarea{min-height:7rem;line-height:1.6}
 .t-a{background:#D9534F}.t-p{background:#4A7FC1}.t-r{background:#4FA36B}
 .a-k{background:#C0503A}.a-s{background:#3E5FA8}.a-c{background:#A8A196}
 .amb-list{padding-top:.1rem}
+.sec-need{border:1px solid var(--shu);background:#FBF0EC;border-radius:5px;padding:.45rem .6rem;margin:0 0 .6rem;font-size:.84rem}
+.sec-tbl{font-size:.84rem}.sec-tr{display:grid;grid-template-columns:minmax(0,1fr) 2.6rem 2.6rem 3.4rem 2.8rem;gap:.3rem;padding:.3rem 0;border-top:1px dashed var(--rule);align-items:center}
+.sec-tr span:not(:first-child){text-align:center}.sec-th{color:var(--sub);font-size:.74rem;border-top:0}.sec-tr .down{color:var(--shu);font-weight:700}
+.sec-th-row{padding:.5rem 0;border-top:1px dashed var(--rule)}.sec-th-row:first-child{border-top:0}
+.sec-th-h{display:flex;justify-content:space-between;align-items:center;gap:.5rem}.sec-th-h span{display:flex;gap:.6rem;align-items:center}
+.sec-kv{display:grid;grid-template-columns:3.2rem 1fr;gap:.4rem;font-size:.84rem;margin-top:.2rem}.sec-kv>span{color:var(--sub);font-size:.76rem}
+.sec-links{margin-top:.3rem}
 .amb-links{display:flex;flex-direction:column;gap:.3rem;flex:1;min-width:0}.amb-links input{border:1px solid var(--rule);border-radius:4px;padding:.25rem .45rem;font:inherit;font-size:.84rem}
 .amb-lk{display:flex;flex-wrap:wrap;gap:.3rem .5rem;align-items:baseline;margin:.35rem 0;font-size:.82rem}.amb-lkh{font-weight:700}.amb-lkn{color:var(--sub);flex:1;min-width:0}
 .amb-end{border:1px dashed var(--rule);border-radius:5px;padding:.45rem .55rem;margin:.3rem 0;display:flex;flex-direction:column;gap:.35rem}.amb-end b{font-size:.85rem}
@@ -511,7 +518,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-21 r94";
+const APP_VERSION = "2026-10-21 r95";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -642,6 +649,7 @@ async function loadAll(){
     state.notes = (nt.data && nt.data.purposes) ? nt.data : { purposes: {} }; state.notesSha = nt.sha;
     state.gov = g.data; state.stats = st.data || null; state.defs = d.data;
     state.overlay = o.data || { tasks: {}, newTasks: [] }; state.overlaySha = o.sha || null;
+    try { await loadSec(); } catch (e) {}
     state.logs = await readMonths(P.log, lf);
     state.applogs = await readMonths(P.applog, af);
     state.reviews = {}; state.reviewShas = {}; state.loadedMonths = new Set();
@@ -1041,6 +1049,74 @@ function bindAmb(){
     if (e.target.id === "af-pickq") { amb.pickQ = e.target.value; amb.draft = Object.assign(amb.draft || {}, readAmbForm()); const pos = e.target.selectionStart; renderList(); const el = document.getElementById("af-pickq"); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) {} } return; }
     if (e.target.id === "af-mix") { const v = +e.target.value, l = document.getElementById("af-mixv"); if (l) l.textContent = "渇望" + v + ":憧憬" + (10 - v); } });
 }
+
+/* ───────── 安全保障(防衛省):脅威の台帳と崩れの集計 ─────────
+   台帳は roadmap/gov/security.json(行軍表の偵察・崩れの記録と同じファイル)。脅威 = 名前・合図(偵察で確かめること)・備え(分かれ道つき)・関わるタスク */
+const SEC = "roadmap/gov/security.json";
+const sec = { doc: { version: 1, threats: [], days: {} }, sha: null, edit: null, linkQ: "", draft: null };
+const isDefense = m => m && (m.tag === "防衛" || /防衛/.test(m.name || ""));
+async function loadSec(){ const r = await readJson(SEC); sec.doc = Object.assign({ version: 1, threats: [], days: {} }, r.data || {}); sec.sha = r.sha; }
+async function saveSec(mutate){
+  mutate(sec.doc); renderDetail();
+  const doc = await sharedWrite(SEC, d => { d.threats = d.threats || []; d.days = d.days || {}; return mutate(d); }, () => ({ version: 1, threats: [], days: {} }));
+  if (doc) sec.doc = Object.assign({ version: 1, threats: [], days: {} }, doc); else { try { await loadSec(); } catch (e) {} }
+  renderDetail();
+}
+function secStats(days){
+  const out = {}, from = addDays(taskDay(), -(days - 1)), ds = (sec.doc && sec.doc.days) || {};
+  Object.keys(ds).filter(d => d >= from).forEach(d => { const x = ds[d] || {};
+    (x.came || []).forEach(id => { const o = out[id] = out[id] || { came: 0, hits: 0, fore: 0 }; o.came++; if ((x.scout || []).includes(id)) o.fore++; });
+    (x.hits || []).forEach(h => { const o = out[h.threat] = out[h.threat] || { came: 0, hits: 0, fore: 0 }; o.hits++; }); });
+  return out;
+}
+function secHtml(){
+  const th = ((sec.doc && sec.doc.threats) || []).filter(x => !x.deleted), st = secStats(30), taskName = id => { const t = (state.tasks || []).find(x => x.def.id === id); return t ? t.def.name : null; };
+  const need = th.filter(x => ((st[x.id] || {}).hits || 0) >= 2 && !String(x.prep || "").trim());
+  let h = '<p style="font-size:.84rem;color:var(--sub);margin:.4rem 0 .6rem">脅威の台帳は、行軍表の「偵察」と「崩れの記録」に使われます。ここで足した脅威は、行軍表の偵察にそのまま並びます。</p>';
+  if (need.length) h += '<div class="sec-need">崩れが2回以上あって、備えがまだない脅威:' + need.map(x => '<button type="button" class="linkbtn" data-sec-edit="' + esc(x.id) + '">' + esc(x.name) + "の備えを作る</button>").join("・") + "</div>";
+  // 崩れの集計
+  const rows = th.map(x => Object.assign({ x }, st[x.id] || { came: 0, hits: 0, fore: 0 })).sort((a, b) => b.hits - a.hits || b.came - a.came);
+  const none = ((st.none || {}).hits || 0);
+  h += panelHtml("崩れの集計(直近30日)", "", rows.length ? '<div class="sec-tbl"><div class="sec-tr sec-th"><span>脅威</span><span>来た</span><span>崩れ</span><span>先回り</span><span>備え</span></div>' +
+      rows.map(r => '<div class="sec-tr"><span>' + esc(r.x.name) + "</span><span>" + r.came + '</span><span class="' + (r.hits >= 2 ? "down" : "") + '">' + r.hits + "</span><span>" + (r.came ? Math.round(r.fore / r.came * 100) + "%" : "—") + "</span><span>" + (String(r.x.prep || "").trim() ? "✓" : '<button type="button" class="linkbtn" data-sec-edit="' + esc(r.x.id) + '">作る</button>') + "</span></div>").join("") + "</div>" +
+      (none ? '<p class="panel-e">「脅威ではない」とした崩れ:' + none + "件</p>" : "") : '<div class="panel-e">まだ記録がありません。行軍表の偵察で「来た」を押したり、崩れの記録を付けたりすると、ここに集まります。</div>');
+  // 台帳
+  const ed = sec.edit, e0 = ed && ed !== "new" ? th.find(x => x.id === ed) : null, dr = sec.draft || {}, val = k => esc(dr[k] != null ? dr[k] : ((e0 || {})[k] || ""));
+  const links = dr.tasks || (e0 && e0.tasks) || [];
+  const form = ed ? '<div class="tform"><div class="f"><label>脅威の名前</label><input id="sec-name" value="' + val("name") + '" placeholder="例:家族がうるさい"></div>' +
+      '<div class="f"><label>合図(朝の偵察で確かめること)</label><input id="sec-signal" value="' + val("signal") + '" placeholder="例:家族の今日の予定(家にいるか)"></div>' +
+      '<div class="f"><label>備え(1行に1つ。「条件 → すること」で分かれ道を書く)</label><textarea id="sec-prep" style="min-height:5rem" placeholder="例:晴れ → 公園のベンチ&#10;雨 → 図書館(閉まっている日は駅前のカフェ)&#10;荷物 → 出撃セットを玄関から持って出る">' + val("prep") + "</textarea></div>" +
+      '<div class="f"><label>関わるタスク(この脅威にさらされやすいもの)</label><input id="sec-linkq" data-sec-linkq placeholder="タスクを名前で探す" value="' + esc(sec.linkQ || "") + '"><div class="achips sec-links">' +
+        (state.tasks || []).filter(t => !["アーカイブ"].includes(t.status)).map(t => t.def).filter(d => links.includes(d.id) || !sec.linkQ || d.name.includes(sec.linkQ)).slice(0, sec.linkQ ? 60 : 12)
+          .map(d => '<button type="button" data-sec-link="' + esc(d.id) + '" aria-pressed="' + links.includes(d.id) + '">' + esc(d.name) + "</button>").join("") + "</div></div>" +
+      '<div class="row-btns"><button type="button" class="btn sm" data-sec-save>' + (e0 ? "保存する" : "足す") + '</button><button type="button" class="btn ghost sm" data-sec-cancel>やめる</button></div></div>' : "";
+  h += panelHtml("脅威の台帳", ed ? "" : '<button type="button" class="linkbtn" data-sec-edit="new">+ 脅威を足す</button>',
+    (ed === "new" ? form : "") + (th.length ? th.map(x => (ed === x.id ? form : '<div class="sec-th-row"><div class="sec-th-h"><b>' + esc(x.name) + '</b><span><button type="button" class="linkbtn" data-sec-edit="' + esc(x.id) + '">直す</button><button type="button" class="del" data-sec-del="' + esc(x.id) + '" aria-label="消す">×</button></span></div>' +
+      (x.signal ? '<div class="sec-kv"><span>合図</span>' + esc(x.signal) + "</div>" : "") +
+      (String(x.prep || "").trim() ? '<div class="sec-kv"><span>備え</span><div>' + String(x.prep).split("\n").filter(l => l.trim()).map(l => "<div>" + esc(l) + "</div>").join("") + "</div></div>" : '<div class="sec-kv"><span>備え</span><i class="panel-e">まだありません</i></div>') +
+      ((x.tasks || []).length ? '<div class="sec-kv"><span>タスク</span>' + x.tasks.map(taskName).filter(Boolean).map(esc).join("・") + "</div>" : "") + "</div>")).join("")
+      : (ed === "new" ? "" : '<div class="panel-e">まだ脅威がありません。「+ 脅威を足す」から足してください。</div>')));
+  return h;
+}
+document.addEventListener("click", async e => {
+  const q = sel => e.target.closest && e.target.closest(sel); let b;
+  const readForm = () => { const g = id => (document.getElementById(id) || {}).value; return { name: g("sec-name"), signal: g("sec-signal"), prep: g("sec-prep") }; };
+  if ((b = q("[data-sec-edit]"))) { sec.edit = b.dataset.secEdit; sec.draft = null; sec.linkQ = ""; renderDetail(); return; }
+  if (q("[data-sec-cancel]")) { sec.edit = null; sec.draft = null; renderDetail(); return; }
+  if ((b = q("[data-sec-link]"))) { const id = b.dataset.secLink, ed = sec.edit, e0 = ((sec.doc.threats || []).find(x => x.id === ed)) || {};
+    const d = sec.draft = Object.assign({ tasks: (e0.tasks || []).slice() }, sec.draft || {}, readForm()); d.tasks = d.tasks.includes(id) ? d.tasks.filter(x => x !== id) : d.tasks.concat([id]); renderDetail(); return; }
+  if (q("[data-sec-save]")) { const f = readForm(), ed = sec.edit, tasks = (sec.draft && sec.draft.tasks) || (((sec.doc.threats || []).find(x => x.id === ed)) || {}).tasks || [];
+    if (!String(f.name || "").trim()) { renderNotice("脅威の名前を入れてください。"); return; }
+    const item = { name: f.name.trim(), signal: (f.signal || "").trim(), prep: (f.prep || "").trim(), tasks };
+    sec.edit = null; sec.draft = null;
+    await saveSec(d => { d.threats = d.threats || []; if (ed && ed !== "new") { const x = d.threats.find(y => y.id === ed); if (x) Object.assign(x, item); } else if (!d.threats.some(y => y.name === item.name && !y.deleted)) d.threats.push(Object.assign({ id: "th" + Date.now().toString(36), created: taskDay() }, item)); }); return; }
+  if ((b = q("[data-sec-del]"))) { if (!confirm("この脅威を台帳から消しますか(これまでの記録は残ります)。")) return; const id = b.dataset.secDel;
+    await saveSec(d => { const x = (d.threats || []).find(y => y.id === id); if (x) x.deleted = taskDay(); }); return; }
+});
+document.addEventListener("input", e => { if (!(e.target.matches && e.target.matches("[data-sec-linkq]"))) return;
+  sec.linkQ = e.target.value; const ed = sec.edit, e0 = ((sec.doc.threats || []).find(x => x.id === ed)) || {}, g = id => (document.getElementById(id) || {}).value;
+  sec.draft = Object.assign({ tasks: (e0.tasks || []).slice() }, sec.draft || {}, { name: g("sec-name"), signal: g("sec-signal"), prep: g("sec-prep") });
+  const pos = e.target.selectionStart; renderDetail(); const el = document.getElementById("sec-linkq"); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) {} } });
 
 /* ───────── タスクの削除・復元(追加と削除は省アプリだけで行う) ───────── */
 const SHARED_WAITS = [0, 400, 800, 1200, 1600, 2400];   // 書き込みがぶつかったときに、読み直すまで待つ時間(ミリ秒)
@@ -1692,7 +1768,7 @@ function renderDetail(){
     '<div class="mh"><h2>' + esc(m.name) + "</h2>" + (p ? '<span>国力 <b>' + Number(p.power).toFixed(1) + "</b>　支配 " + Math.round(p.dominance) + "　領土 " + p.territory + "</span>" : "") + "</div>" +
     ((nowS || nowW) ? '<div class="nowline">' + (nowS ? '<a href="#" data-goto-page="' + nowS.id + '" class="nl-s">いまここ ' + esc(nowS.label) + (nowS.title ? " " + esc(nowS.title) : "") + "</a>" : "") +
       (nowW ? '<a href="#" data-goto-page="' + nowW.id + '" class="nl-w">いまここ ' + esc(nowW.label) + (nowW.title ? " " + esc(nowW.title) : "") + "</a>" : "") + "</div>" : "") +
-    '<div class="mtabs" role="tablist">' + ["地図", "首脳", "この省について"].map(t => '<button type="button" role="tab" data-mtab="' + t + '" aria-selected="' + (t === tab) + '">' + t + "</button>").join("") + "</div>";
+    '<div class="mtabs" role="tablist">' + ["地図", "首脳"].concat(isDefense(m) ? ["安全保障"] : [], ["この省について"]).map(t => '<button type="button" role="tab" data-mtab="' + t + '" aria-selected="' + (t === tab) + '">' + t + "</button>").join("") + "</div>";
   const purposeBody = state.editPurpose
     ? '<textarea id="pp-text" placeholder="この省は何のためにあるか">' + esc(ptext) + '</textarea><div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center">' +
       '<button type="button" class="btn sm" data-pp-save>保存する</button><button type="button" class="btn ghost sm" data-pp-cancel>やめる</button><span class="status" id="pp-status"></span></div>'
@@ -1737,6 +1813,7 @@ function renderDetail(){
   box.innerHTML = head +
     '<div class="mpane" data-pane="地図"' + (tab === "地図" ? "" : " hidden") + ">" + pageTreeHtml(m.tag) + "</div>" +
     '<div class="mpane" data-pane="首脳"' + (tab === "首脳" ? "" : " hidden") + '><div class="sec" id="review"><h3>首脳</h3>' + reviewHtml(m) + "</div></div>" +
+    (isDefense(m) ? '<div class="mpane" data-pane="安全保障"' + (tab === "安全保障" ? "" : " hidden") + ">" + secHtml() + "</div>" : "") +
     '<div class="mpane" data-pane="この省について"' + (tab === "この省について" ? "" : " hidden") + ">" + about + delMin + "</div>";
 }
 function renderOrders(){
@@ -4310,7 +4387,7 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { flushOverlayDone: () => ovQ.done, ambReload: async () => { await loadAmb(); renderList(); }, targetsOf, importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+window.__sho = { sec, loadSec, flushOverlayDone: () => ovQ.done, ambReload: async () => { await loadAmb(); renderList(); }, targetsOf, importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
