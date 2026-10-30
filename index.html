@@ -257,6 +257,10 @@ svg.spark.amb-sp{width:100%;max-width:100%;height:28px;display:block;overflow:hi
 .u-meta{grid-column:2/4;font-size:.76rem;color:var(--sub)}
 .mlist-bar{display:flex;justify-content:flex-end;align-items:center;gap:.6rem;margin:.2rem 0 .3rem}
 .mlist.reorder li{display:flex;align-items:stretch;gap:.3rem}.mlist.reorder li>button{flex:1}
+/* 大計(長期計画)へ */
+.mlist li{display:flex;align-items:stretch}.mlist li>button[data-open]{flex:1;min-width:0}
+.plan-go{flex:none;display:flex;align-items:center;padding:0 .85rem;border-left:1px solid var(--rule);color:var(--mc,var(--ink));font-size:.82rem;font-weight:700;text-decoration:none;letter-spacing:.08em}
+.plan-go-h{font-size:.82rem;font-weight:700;color:var(--mc,var(--ink));margin-left:auto;white-space:nowrap}
 .mv{display:flex;flex-direction:column;gap:2px}.mv button{border:1px solid var(--rule);background:#fff;border-radius:3px;padding:0 .45rem;cursor:pointer;font-size:.7rem;flex:1}
 .mv button:disabled{opacity:.3;cursor:default}
 .now-s{color:var(--stage);font-weight:700}.now-w{color:var(--wave);font-weight:700}
@@ -521,7 +525,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-30 r98";
+const APP_VERSION = "2026-10-30 r99";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1657,7 +1661,8 @@ function renderList(){
       '<button type="button" data-open="' + esc(m.tag) + '"><span class="mn">' + esc(m.name) +
       (open ? ' <span class="badge">' + open + "</span>" : "") + '</span><span class="mp">' + (p ? Number(p.power).toFixed(1) : "—") + "</span>" +
       '<span class="mm"><span class="now-s">' + (nS ? esc(nS.label) : "STAGE —") + '</span><span class="now-w">' + (nW ? esc(nW.label) : "WAVE —") + "</span>" +
-      (p ? "<span>支配 " + Math.round(p.dominance) + "</span><span>領土 " + p.territory + "</span>" : "") + "</span></button></li>";
+      (p ? "<span>支配 " + Math.round(p.dominance) + "</span><span>領土 " + p.territory + "</span>" : "") + "</span></button>" +
+      (state.reorder ? "" : '<a class="plan-go" href="' + TAIKEI_APP + "#sho=" + encodeURIComponent(m.name) + '" title="大計で' + esc(m.name) + 'の計画を開く">計画</a>') + "</li>";
   }).join("") + "</ul>";
   const orph = orphanTasks();
   if (orph.length) box.insertAdjacentHTML("beforeend", '<div class="orphan-box">' + unlinkedBlockHtml(orph, "orphan", "どの省にも属していないタスク", "省が無い(消した省・名前の変わった省を含む)ので、どの省の地図にも出ないタスクです。要らないものは、チェックを付けてまとめて削除できます。") + "</div>");
@@ -1775,7 +1780,7 @@ function renderDetail(){
   const nowS = nowOf(pages().filter(x => x.parent === "m:" + m.tag && x.kind === "STAGE").sort(byLabel));
   const nowW = nowOf(pages().filter(x => x.parent === "m:" + m.tag && x.kind === "WAVE").sort(byLabel));
   const head = '<button type="button" class="back" data-back>‹ 省の一覧</button>' +
-    '<div class="mh"><h2>' + esc(m.name) + "</h2>" + (p ? '<span>国力 <b>' + Number(p.power).toFixed(1) + "</b>　支配 " + Math.round(p.dominance) + "　領土 " + p.territory + "</span>" : "") + "</div>" +
+    '<div class="mh"><h2>' + esc(m.name) + "</h2>" + '<a class="plan-go-h" href="' + TAIKEI_APP + "#sho=" + encodeURIComponent(m.name) + '">この省の計画 ↗</a>' + (p ? '<span>国力 <b>' + Number(p.power).toFixed(1) + "</b>　支配 " + Math.round(p.dominance) + "　領土 " + p.territory + "</span>" : "") + "</div>" +
     ((nowS || nowW) ? '<div class="nowline">' + (nowS ? '<a href="#" data-goto-page="' + nowS.id + '" class="nl-s">いまここ ' + esc(nowS.label) + (nowS.title ? " " + esc(nowS.title) : "") + "</a>" : "") +
       (nowW ? '<a href="#" data-goto-page="' + nowW.id + '" class="nl-w">いまここ ' + esc(nowW.label) + (nowW.title ? " " + esc(nowW.title) : "") + "</a>" : "") + "</div>" : "") +
     '<div class="mtabs" role="tablist">' + ["地図", "首脳"].concat(isDefense(m) ? ["安全保障"] : [], ["この省について"]).map(t => '<button type="button" role="tab" data-mtab="' + t + '" aria-selected="' + (t === tab) + '">' + t + "</button>").join("") + "</div>";
@@ -1855,6 +1860,7 @@ const gov = { archive: null, cons: null, consSha: null, amend: { items: [] }, am
 const nowIso = () => new Date(window.__shoNow || Date.now()).toISOString();
 // 本物の憲法と改憲案は、憲政院アプリが持つ。ここにあるのは見るための写し
 const KENSEIIN_APP = "https://nisenonamae.github.io/kenseiin/";
+const TAIKEI_APP = "https://nisenonamae.github.io/taikei/";   // 大計(長期計画)。省の名前で絞って開く
 const movedToKenseiin = () => !!((gov.amend && gov.amend.movedTo) || (gov.cons && gov.cons.copyOf === "kenseiin"));
 const kenseiinNote = what => '<div class="lock" style="margin:.4rem 0">' + what + '<a href="' + KENSEIIN_APP + '" target="_blank" rel="noopener">憲政院アプリを開く</a></div>';
 
@@ -4204,7 +4210,13 @@ function openPage(id){
   if (history.replaceState) history.replaceState(null, "", "#page=" + id);
   window.scrollTo && window.scrollTo(0, 0);
 }
-function fromHash(){ const m = /^#page=(.+)$/.exec(location.hash || ""); if (m && pageById(m[1])) openPage(m[1]); }
+function fromHash(){ const m = /^#page=(.+)$/.exec(location.hash || ""); if (m && pageById(m[1])) { openPage(m[1]); return; }
+  // 大計の「〇〇省を開く」から来たとき:#min=省の名前(タグでもよい)
+  const mm = /^#min=(.+)$/.exec(location.hash || ""); if (!mm) return;
+  let key = mm[1]; try { key = decodeURIComponent(key); } catch (e) {}
+  const min = ((state.gov && state.gov.ministries) || []).find(x => x.name === key || x.tag === key); if (!min) return;
+  pg.open = null; pg.box = null; pg.edit = false; state.listView = "一覧"; state.open = min.tag; showView("list"); render();
+  if (history.replaceState) history.replaceState(null, "", location.pathname); window.scrollTo && window.scrollTo(0, 0); }
 
 /* ───── 保存 ───── */
 async function commitReview(month, mutate){
