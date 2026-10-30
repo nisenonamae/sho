@@ -521,7 +521,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-30 r97";
+const APP_VERSION = "2026-10-30 r98";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2131,7 +2131,8 @@ function renderAmendSession(box, a){
       (over ? "" : '<div style="margin-top:.4rem"><button type="button" class="btn ghost sm" data-ss-save>書いたところまで保存</button></div>') +
       '<div style="margin-top:.8rem;display:flex;gap:.8rem;align-items:center;flex-wrap:wrap"><label><input type="radio" name="ss-dec" value="可決"> 可決</label><label><input type="radio" name="ss-dec" value="否決"> 否決</label>' +
       '<button type="button" class="btn" data-ss-close>議会終了を宣言する</button></div>' : "") +
-    '<span class="status" id="gov-msg"></span>';
+    '<span class="status" id="gov-msg"></span>' +
+    (st === "可決" ? "" : '<div class="danger-zone"><button type="button" class="btn ghost sm" data-amend-del="' + esc(a.id) + '">この改憲案を消す</button><span>審議の記録も一緒に消えます。可決した改憲案は、憲法の履歴なので消せません。</span></div>');
   startTimer(sess);
 }
 
@@ -2145,7 +2146,8 @@ function renderPolicySession(box, p){
     (live ? '<div class="f" style="margin-top:.5rem"><label>審議の記録</label><textarea id="ps-notes"' + (over ? " disabled" : "") + ">" + esc(p.notes || "") + "</textarea></div>" +
       '<div class="f" style="margin-top:.5rem"><label>議決(決めたこと)</label><textarea id="ps-dec">' + esc(p.decision || "") + "</textarea></div>" +
       '<div style="margin-top:.6rem;display:flex;gap:.5rem"><button type="button" class="btn ghost sm" data-ps-save>保存</button><button type="button" class="btn" data-ps-close>議会終了を宣言する</button></div>' : "") +
-    '<span class="status" id="gov-msg"></span>';
+    '<span class="status" id="gov-msg"></span>' +
+    '<div class="danger-zone"><button type="button" class="btn ghost sm" data-pol-del="' + esc(p.id) + '">この議題を消す</button><span>' + (p.closedAt ? "議決も一緒に消えます。" : "審議の記録も一緒に消えます。") + "</span></div>";
   startTimer(p);
 }
 
@@ -2274,6 +2276,21 @@ function bindGov(){
       const t = (document.getElementById("pol-title").value || "").trim(); if (!t) return;
       await saveGov("council", () => { gov.council.supreme.push({ id: uid(), title: t, created: taskDay() }); });
       return renderGov();
+    }
+    if ((b = q("[data-pol-del]"))) {
+      const id = b.dataset.polDel, it = gov.council.supreme.find(x => x.id === id); if (!it) return;
+      if (!confirm("「" + it.title + "」を消しますか。" + (it.closedAt ? "議決済みの議題です。議決も一緒に消え、元には戻せません。" : "審議の記録も一緒に消え、元には戻せません。"))) return;
+      const ok = await saveGov("council", () => { const n = gov.council.supreme.length; gov.council.supreme = gov.council.supreme.filter(x => x.id !== id); if (gov.council.supreme.length === n) return false; });
+      if (ok !== false) { gov.open = null; renderGov(); govMsg("「" + it.title + "」を消しました"); }
+      return;
+    }
+    if ((b = q("[data-amend-del]"))) {
+      const id = b.dataset.amendDel, it = gov.amend.items.find(x => x.id === id); if (!it) return;
+      if (amendStatus(it) === "可決") return govMsg("可決した改憲案は、憲法の履歴なので消せません。", true);
+      if (!confirm("改憲案「" + it.title + "」を消しますか。審議の記録も一緒に消え、元には戻せません。")) return;
+      const ok = await saveGov("amend", () => { const n = gov.amend.items.length; gov.amend.items = gov.amend.items.filter(x => x.id !== id); if (gov.amend.items.length === n) return false; });
+      if (ok !== false) { gov.open = null; renderGov(); govMsg("改憲案「" + it.title + "」を消しました"); }
+      return;
     }
     const target = gov.open && (gov.open.kind === "amend" ? gov.amend.items.find(x => x.id === gov.open.id) : gov.open.kind === "policy" ? gov.council.supreme.find(x => x.id === gov.open.id) : null);
     if (target && q("[data-ss-start]")) {
@@ -4526,7 +4543,7 @@ SE.init([
   ["[data-tide-save]", "swell"], ["[data-tide-cancel-do]", "unswell"],
   ["[data-cond-check], [data-act-check], [data-cc-check], [data-st-check]", el => el.checked ? "done" : "toggleOff"],
   ["[data-dpick]", el => el.getAttribute("aria-pressed") === "true" ? "toggleOff" : "toggleOn"],
-  ["[data-tdel], [data-del], [data-page-del], [data-act-del], [data-cond-del], [data-tide-del], [data-tcol-del], [data-trow-del], [data-g-del], [data-issue-del], [data-cd-del], [data-st-del], [data-box-del], [data-ch-del], [data-tunlink], [data-min-del]", "remove"],
+  ["[data-tdel], [data-del], [data-page-del], [data-act-del], [data-cond-del], [data-tide-del], [data-tcol-del], [data-trow-del], [data-g-del], [data-issue-del], [data-cd-del], [data-st-del], [data-pol-del], [data-amend-del], [data-box-del], [data-ch-del], [data-tunlink], [data-min-del]", "remove"],
   ["[data-act-task]", "send"],
   ["[data-tsplit-do]", "levelup"], ["[data-tmerge]", "down"],
   ["[data-fail-save]", "down"],
