@@ -525,7 +525,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-30 r99";
+const APP_VERSION = "2026-10-31 r100";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -3635,6 +3635,7 @@ function renderPage(box, p){
       const an = p.analysis || {};
       h += panel("タスク分析", "", '<div class="agrid">' + ANALYSIS.map(([k, l, q]) => '<div class="abox' + (an[k] ? "" : " empty") + '" data-an-edit="' + k + '"><span class="al">' + l + "</span>" +
         (an[k] ? "<p>" + esc(an[k]) + "</p>" : '<p class="aq">' + q + "</p>") + "</div>").join("") + "</div>");
+      h += tjsPanel(p, ts);   // 手順書(手順録とのつながり)
     }
     const hasBody = String(p.body || "").trim();
     if (isSW || isG) { if (hasBody) h += panelHtml("メモ", '<button type="button" class="linkbtn" data-page-edit>直す</button>', '<div class="pbody">' + renderPageBody(p) + "</div>"); }
@@ -4432,7 +4433,89 @@ function boot(){
                Object.keys(state.reviews).forEach(m => state.loadedMonths.add(m)); render(); }
   if (c && c.token) { state.conn = c; loadAll(); } else showView("settings");
 }
-window.__sho = { sec, loadSec, flushOverlayDone: () => ovQ.done, ambReload: async () => { await loadAmb(); renderList(); }, targetsOf, importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus };
+/* ───────── 手順書(手順録とのつながり) ─────────
+   手順書を作るのは手順録。省は notion-daily の roadmap/apps/tejunroku/data.json を読むだけ。
+   STAGE・WAVE(STAGEn-n)のページに手順書をつなぎ、手順録と同じ形で見られる。
+   この STAGE・WAVE のタスクが手順録で手順書と結びついていれば、それも並ぶ */
+const TJS_PATH = "roadmap/apps/tejunroku/data.json", TJS_APP = "https://nisenonamae.github.io/tejunroku/", TJS_CACHE = "sho-tejun";
+const tjs = { data: null, state: "", open: {}, pick: {}, checks: {} };
+try { const c = JSON.parse(localStorage.getItem(TJS_CACHE) || "null"); if (c && c.data) { tjs.data = c.data; tjs.state = "控え"; } } catch (e) {}
+const tjsC = () => (window.TJCore && typeof window.TJCore.numbering === "function") ? window.TJCore : null;
+let tjsCoreP = null;
+function tjsCore(){ if (tjsC()) return Promise.resolve(true); if (tjsCoreP) return tjsCoreP;
+  tjsCoreP = new Promise(res => { const sc = document.createElement("script"); sc.src = new URL("../tejunroku/core.js", location.href).href; sc.onload = () => res(!!tjsC()); sc.onerror = () => { tjsCoreP = null; res(false); }; document.head.appendChild(sc); });
+  return tjsCoreP; }
+async function tjsLoad(){
+  if (tjs.state === "読み込み中") return; const had = tjs.state; tjs.state = "読み込み中";
+  try { const r = await (tjs.reader || readJson)(TJS_PATH); const raw = r.data || { version: 1, procs: [], ranges: [], parts: [], cycles: [], links: {} };
+    await tjsCore(); tjs.data = tjsC() ? tjsC().normalize(raw) : raw; tjs.state = "読めた";
+    try { localStorage.setItem(TJS_CACHE, JSON.stringify({ data: tjs.data, at: Date.now() })); } catch (e) {}
+  } catch (e) { tjs.state = tjs.data ? "控え" : "失敗"; }
+  if (!tjsC()) await tjsCore();
+  if (pg.open) renderDetail();
+}
+const tjsProcs = () => (tjs.data && Array.isArray(tjs.data.procs)) ? tjs.data.procs : [];
+const tjsProc = id => tjsProcs().find(p => p.id === id) || null;
+const tjsPart = id => ((tjs.data && tjs.data.parts) || []).find(p => p.id === id) || null;
+const tjsRange = name => ((tjs.data && tjs.data.ranges) || []).find(r => r.name === name) || null;
+function tjsRangeChip(name){ const C = tjsC(), r = tjsRange(name); if (!r) return '<span class="rng missing">' + esc(name) + "</span>"; let t = ""; try { t = C.rangeText(r, C.rangeState(r, {})); } catch (e) {} return '<span class="rng">' + esc(name) + " " + esc(t) + "</span>"; }
+function tjsRich(t){ const C = tjsC(); t = String(t || ""); if (!C || !C.RANGE_RE) return esc(t); let out = "", last = 0; t.replace(C.RANGE_RE, (m, name, idx) => { out += esc(t.slice(last, idx)) + tjsRangeChip(name); last = idx + m.length; return m; }); return out + esc(t.slice(last)); }
+function tjsAlways(rules, label){ const rs = tjsC().liveRules(rules); if (!rs.length) return "";
+  return '<div class="pv-alw"><div class="pv-alw-h">' + esc(label) + "</div><ul>" + rs.map(r => "<li>" + (r.when.trim() ? '<span class="aw-when">' + tjsRich(r.when) + '</span><span class="aw-arrow">→</span>' : '<span class="aw-always">常に</span>') +
+    '<span class="aw-text">' + (r.text.trim() ? tjsRich(r.text) : '<span class="pv-blank">(することを書いていません)</span>') + "</span></li>").join("") + "</ul></div>"; }
+function tjsList(steps, labels, inner){ return '<ol class="pv-list' + (inner ? " inner " + inner : "") + '">' + steps.map((s, i) => s.type === "section" ? tjsSection(steps, i) : tjsStep(s, labels)).join("") + "</ol>"; }
+function tjsSection(steps, i){ const C = tjsC(), s = steps[i], t = C.fmtSpan(C.sectionSpan(steps, i, tjs.data));
+  return '<li class="pv-sec lv' + (+s.level || 1) + '"><span class="pv-sec-t">' + (s.title ? esc(s.title) : '<span class="pv-blank">(区切りの名前なし)</span>') + "</span>" + (t ? '<span class="pv-sec-m">' + t + "</span>" : "") + "</li>" +
+    (C.liveRules(s.always).length ? '<li class="pv-alw-li">' + tjsAlways(s.always, "「" + (s.title || "区切り") + "」のあいだ") + "</li>" : ""); }
+function tjsStep(s, labels){ const C = tjsC(), num = '<span class="pv-num">' + (labels[s.id] || "") + "</span>";
+  if (s.type === "branch") { const o = s.options.find(o => o.id === tjs.pick[s.id]);
+    return '<li class="pv-step br"><span class="pv-mark"></span><div class="pv-body">' + num + '<span class="pv-q">' + (s.question ? tjsRich(s.question) : '<span class="pv-blank">(問いを書いていません)</span>') + "</span></div>" +
+      '<div class="pv-opts">' + s.options.map(x => '<button type="button" data-tjs-pick="' + s.id + "|" + x.id + '" aria-pressed="' + (o === x) + '">' + esc(x.label || "名前なし") + "</button>").join("") + "</div>" +
+      (o ? (o.steps.length ? tjsList(o.steps, labels, "fork") : '<p class="pv-hint">この道には手順がありません。そのまま次へ進みます。</p>') : '<p class="pv-hint">選ぶと、その先の手順が出ます。</p>') + "</li>"; }
+  if (s.type === "part") { const pt = tjsPart(s.partId), inner = C.expandPart(s, tjs.data);
+    return '<li class="pv-step pt"><span class="pv-mark"></span><div class="pv-body">' + num + '<span class="pv-q">' + esc(pt ? pt.name || "名前なし" : "見つからない部品") + "</span></div>" +
+      (pt ? tjsAlways(pt.always, "「" + (pt.name || "部品") + "」のあいだ") : "") + (inner.length ? tjsList(inner, labels, "part") : "") + "</li>"; }
+  const done = !!tjs.checks[s.id];
+  return '<li class="pv-step do' + (done ? " done" : "") + '"><button type="button" class="pv-check" data-tjs-check="' + s.id + '" aria-pressed="' + done + '" aria-label="済みの印"></button>' +
+    '<div class="pv-body">' + num + '<span class="pv-text">' + (s.text ? tjsRich(s.text) : '<span class="pv-blank">(まだ書いていません)</span>') + "</span>" + (C.fmtStep(s) ? '<span class="pv-min">' + C.fmtStep(s) + "</span>" : "") + "</div></li>"; }
+function tjsProcHtml(p){ const C = tjsC(); if (!C) return '<p class="pv-hint">手順の描き方(手順録の core.js)を読み込めていない。電波を確かめて開き直してください。</p>';
+  const whole = C.fmtSpan(C.span(p.steps, tjs.data)); let chosen = "";
+  if (C.hasBranch(p.steps, tjs.data) && C.allPicked(p.steps, tjs.pick, tjs.data)) { const c = C.fmtSpan(C.span(p.steps, tjs.data, tjs.pick)); chosen = c ? "選んだ道では " + c : ""; }
+  return '<div class="tj-card"><div class="sh-title"><b>' + esc(p.name || "名前なし") + '</b><span class="pvTotal">' + (whole ? "合計 " + whole : "") + (chosen ? "(" + chosen + ")" : "") + "</span></div>" +
+    '<p class="sh-note">丸を押すと済みの印、分かれ道は選ぶと先が出る(どちらも保存はしない)。手順書を直すのは手順録で。</p>' +
+    tjsAlways(p.always, "この手順書のあいだ") + (p.steps.length ? tjsList(p.steps, C.numbering(p.steps, tjs.data), "") : '<p class="pv-hint">この手順書には、まだ手順がない。</p>') + "</div>"; }
+/* STAGEn-n のページの「手順書」の欄 */
+function tjsPanel(p, ts){
+  if (tjs.state === "" && state.conn && state.conn.token) setTimeout(tjsLoad, 0);
+  const manual = (p.procs || []).slice(), auto = [];
+  (ts || []).forEach(t => { const id = t && t.def && t.def.id, pid = id && tjs.data && tjs.data.links && tjs.data.links[id]; if (pid && !manual.includes(pid) && !auto.some(a => a.pid === pid)) auto.push({ pid, task: (t.def && t.def.name) || "" }); });
+  const C = tjsC(), row = (pid, from) => { const pr = tjsProc(pid), open = !!tjs.open[pid], span = pr && C ? C.fmtSpan(C.span(pr.steps, tjs.data)) : "";
+    return '<div class="tjs-row"><button type="button" class="tjs-name" data-tjs-open="' + pid + '">' + (pr ? esc(pr.name || "名前なし") : '<span style="color:var(--shu)">手順録に見つからない手順書</span>') + "<small>" + (span ? "合計 " + span + "・" : "") + (open ? "畳む ▴" : "見る ▾") + "</small></button>" +
+      (from ? '<span class="tjs-from">タスク「' + esc(from) + "」</span>" : '<button type="button" class="linkbtn" data-tjs-unlink="' + pid + '" style="color:var(--shu)">外す</button>') + "</div>" +
+      (open && pr ? '<div class="tjv">' + tjsProcHtml(pr) + "</div>" : ""); };
+  const list = manual.map(pid => row(pid, "")).join("") + auto.map(a => row(a.pid, a.task)).join("");
+  const cand = tjsProcs().filter(x => !manual.includes(x.id));
+  const msg = tjs.state === "読み込み中" && !tjs.data ? '<p class="empty" style="padding:.3rem 0">手順録を読み込み中…</p>'
+    : tjs.state === "失敗" ? '<p class="empty" style="padding:.3rem 0">手順録を読めなかった。<button type="button" class="linkbtn" data-tjs-reload>読み直す</button></p>' : "";
+  const add = tjs.data ? (cand.length ? '<div class="tjs-add"><select id="tjs-sel">' + cand.map(x => '<option value="' + x.id + '">' + esc(x.name || "名前なし") + "</option>").join("") + '</select><button type="button" class="btn ghost sm" data-tjs-link>つなぐ</button></div>'
+      : '<p class="empty" style="padding:.3rem 0">' + (tjsProcs().length ? "手順録の手順書は、全部つないである。" : "手順録に手順書がまだない。") + "</p>") : "";
+  return panelHtml("手順書", '<a class="linkbtn" href="' + TJS_APP + '" target="_blank" rel="noopener">手順録 ↗</a>',
+    msg + (list || (tjs.data ? '<p class="empty" style="padding:.3rem 0">この' + esc(p.kind) + "には、まだ手順書がつながっていない。</p>" : "")) + add);
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-tjs-open],[data-tjs-pick],[data-tjs-check],[data-tjs-link],[data-tjs-unlink],[data-tjs-reload]"); if (!b) return; const d = b.dataset;
+  if (d.tjsOpen) { tjs.open[d.tjsOpen] = !tjs.open[d.tjsOpen]; renderDetail(); return; }
+  if (d.tjsPick) { const [sid, oid] = d.tjsPick.split("|"); if (tjs.pick[sid] === oid) delete tjs.pick[sid]; else tjs.pick[sid] = oid; renderDetail(); return; }
+  if (d.tjsCheck) { tjs.checks[d.tjsCheck] = !tjs.checks[d.tjsCheck]; renderDetail(); return; }
+  if (b.hasAttribute("data-tjs-reload")) { tjs.state = ""; tjsLoad(); return; }
+  const id = pg.open; if (!id) return;
+  if (b.hasAttribute("data-tjs-link")) { const pid = (document.getElementById("tjs-sel") || {}).value; if (!pid) return;
+    savePages(doc => { const q = doc.pages.find(x => x.id === id); if (!q) return false; q.procs = (q.procs || []).filter(x => x !== pid).concat(pid); }); tjs.open[pid] = true; renderDetail(); return; }
+  if (d.tjsUnlink) { const pid = d.tjsUnlink, pr = tjsProc(pid); if (!confirm("手順書「" + (pr ? pr.name : "") + "」とのつながりを外す?(手順書そのものは手順録に残る)")) return;
+    savePages(doc => { const q = doc.pages.find(x => x.id === id); if (!q) return false; q.procs = (q.procs || []).filter(x => x !== pid); }); renderDetail(); return; }
+});
+
+window.__sho = { sec, loadSec, flushOverlayDone: () => ovQ.done, ambReload: async () => { await loadAmb(); renderList(); }, targetsOf, importTableText, taskById: id => state.tasks.find(x => x.def.id === id), unlinkedTasks, orphanTasks, nameHtml, splitTask, mergeTentai, tentaiRanges, tentaiNameHtml, loadPages, renameTask, raidCandidates, tideShares, shareOf, linkTask, genQ, flushGen, tide, tideAt, actQ, pgQ, pg, pages, nextLabel, condMet, openPage, staff, currentTerm, goalLine, issueProblems, state, periodStart, periodPrev, loadAll, colorOf, gov, amendStatus, standingStatus, tjs, renderDetail };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
@@ -4566,5 +4649,67 @@ SE.init([
 (function(){ const go = () => { const a = document.getElementById("ver"); SE.mount(a ? (a.closest("p, div, .f, .row") || a) : null); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", go); else go(); })();
 </script>
+<style>
+/* 手順書(手順録とのつながり)。手順の見た目は手順録と同じ */
+.tjv{--line:var(--rule);--fork:#9A5B12;--forkbg:#F5ECDF;--accent:var(--wave);--bg:var(--paper);--warn:var(--shu);margin:.4rem 0 .2rem}
+.tjv .tj-card{background:#fff;border:1px solid var(--rule);border-radius:4px;padding:12px 14px 14px}
+.tjv .tj-card .sh-title{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px}
+.tjv .tj-card .sh-title b{font-size:1.0625rem}
+.tjv .tj-card .sh-title span{font-size:.8125rem;color:var(--sub)}
+.tjv .tj-card .sh-note{font-size:.75rem;color:var(--sub);margin:0 0 8px}
+.tjv .pv-list{list-style:none;margin:0;padding:0 0 0 26px;position:relative}
+.tjv .pv-list::before{content:"";position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:var(--ink)}
+.tjv .pv-list.inner{margin:6px 0 2px;padding-left:24px}
+.tjv .pv-list.inner::before{background:var(--fork)}
+.tjv .pv-step{position:relative;padding:4px 0 14px}
+.tjv .pv-num{font-weight:700;font-variant-numeric:tabular-nums}
+.tjv .pv-check{position:absolute;left:-26px;top:4px;width:20px;height:20px;border-radius:50%;border:2px solid var(--ink);background:var(--sheet);padding:0}
+.tjv .pv-list.inner > .pv-step > .pv-check{left:-24px;border-color:var(--fork)}
+.tjv .pv-step.done > .pv-check{background:var(--ok);border-color:var(--ok)}
+.tjv .pv-step.done > .pv-body .pv-text{color:var(--sub);text-decoration:line-through;text-decoration-color:var(--line)}
+.tjv .pv-body{cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:8px;align-items:baseline;line-height:1.65}
+.tjv .pv-text,.tjv .pv-q{white-space:pre-wrap;word-break:break-word}
+.tjv .pv-sec{margin:6px 0 12px -26px;padding:5px 10px;background:var(--ink);color:#fff;border-radius:4px;display:flex;justify-content:space-between;gap:10px;align-items:baseline;cursor:pointer;position:relative;z-index:1}
+.tjv .pv-list.inner > .pv-sec{margin-left:-24px;background:var(--sub)}
+.tjv .pv-list .pv-sec.lv2{background:#EFE9DD;color:var(--ink);margin-left:-12px;border-left:4px solid var(--ink);border-radius:0 4px 4px 0;padding:3px 10px}
+.tjv .pv-list .pv-sec.lv2 .pv-sec-m{color:var(--sub)}
+.tjv .pv-list .pv-sec.lv3{background:transparent;color:var(--ink);margin-left:0;border-radius:0;border-bottom:1px dashed var(--sub);padding:1px 2px;font-size:.9375rem}
+.tjv .pv-list .pv-sec.lv3 .pv-sec-m{color:var(--sub)}
+.tjv .pv-list .pv-sec.lv2 .pv-sec-t .pv-blank,.tjv .pv-list .pv-sec.lv3 .pv-sec-t .pv-blank{color:var(--sub)}
+.tjv .pv-alw{margin:0 0 12px;padding:6px 10px;border:1px solid #9CC9B0;border-left:4px solid var(--ok);background:#EDF6F0;border-radius:4px;font-size:.875rem;line-height:1.55}
+.tjv .pv-alw-h{font-size:.75rem;color:var(--ok);font-weight:700;margin-bottom:2px}
+.tjv .pv-alw ul{margin:0;padding:0;list-style:none}
+.tjv .pv-alw li{display:flex;flex-wrap:wrap;gap:2px 6px;align-items:baseline;padding:2px 0}
+.tjv .aw-always{font-size:.6875rem;font-weight:700;background:var(--ok);color:#fff;border-radius:3px;padding:0 5px}
+.tjv .aw-when{font-weight:700;white-space:pre-wrap}
+.tjv .aw-text{white-space:pre-wrap;word-break:break-word}
+.tjv .aw-arrow{color:var(--sub)}
+.tjv .pv-alw-li{list-style:none;position:relative;z-index:1}
+.tjv .pv-sec-t{font-weight:700;letter-spacing:.04em}
+.tjv .pv-sec-t .pv-blank{color:#C9C0B2}
+.tjv .pv-sec-m{font-size:.8125rem;color:#E7E0D3;white-space:nowrap}
+.tjv .pv-min{font-size:.8125rem;color:var(--sub);white-space:nowrap;background:var(--bg);border-radius:3px;padding:0 6px}
+.tjv .pv-blank{color:var(--sub)}
+.tjv .pv-step.br > .pv-mark{position:absolute;left:-23px;top:7px;width:14px;height:14px;background:var(--fork);transform:rotate(45deg)}
+.tjv .pv-q{font-weight:700}
+.tjv .pv-opts{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.tjv .pv-opts button{border:1.5px solid var(--fork);color:var(--fork);background:#fff;border-radius:999px;padding:2px 12px;font-size:.9375rem}
+.tjv .pv-opts button[aria-pressed="true"]{background:var(--fork);color:#fff}
+.tjv .pv-hint{font-size:.8125rem;color:var(--sub);margin:2px 0 0}
+.tjv .rng{display:inline-block;border:1px solid var(--accent);color:var(--accent);border-radius:3px;padding:0 5px;font-size:.875em;line-height:1.4}
+.tjv .pv-step.pt > .pv-mark{position:absolute;left:-23px;top:7px;width:14px;height:14px;background:var(--accent)}
+.tjv .pv-list.inner.part::before{background:var(--accent)}
+.tjv .pv-list.inner.part > .pv-step > .pv-check{border-color:var(--accent)}
+.tjv .rng.missing{border-color:var(--warn);color:var(--warn)}
+.tjs-row{display:flex;align-items:center;gap:.5rem;border-top:1px dotted var(--rule);padding:.4rem 0}
+.tjs-row:first-child{border-top:0}
+.tjs-name{flex:1;min-width:0;text-align:left;border:0;background:none;padding:0;font-weight:700;display:flex;flex-direction:column;line-height:1.35;cursor:pointer}
+.tjs-name small{font-weight:400;font-size:.74rem;color:var(--sub)}
+.tjs-name .arw{color:var(--sub);font-weight:400}
+.tjs-from{font-size:.68rem;color:var(--sub);border:1px solid var(--rule);border-radius:3px;padding:0 .35rem;white-space:nowrap}
+.tjs-add{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-top:.5rem}
+.tjs-add select{flex:1;min-width:9rem;padding:.35rem .45rem;border:1px solid var(--rule);border-radius:3px;background:#fff}
+</style>
+
 </body>
 </html>
