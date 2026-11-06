@@ -525,7 +525,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-31 r100";
+const APP_VERSION = "2026-11-06 r102";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1870,6 +1870,7 @@ async function loadGov(){
   gov.cons = c.data; gov.consSha = c.sha;
   gov.amend = (a.data && a.data.items) ? a.data : { items: [] }; gov.amendSha = a.sha;
   gov.council = Object.assign({ supreme: [], standing: [] }, k.data || {}); gov.councilSha = k.sha;
+  await loadNaisei().catch(() => {});
 }
 
 // 保存。別の端末で先に変わっていたら読み直して同じ操作をかけ直す
@@ -1920,6 +1921,7 @@ function renderGov(){
   if (gov.view === "最高評議会") return renderSupreme(box);
   if (gov.view === "常任評議会") return renderStanding(box);
   if (gov.view === "議題候補") return renderCandidates(box);
+  if (gov.view === "内省院") return renderNaisei(box);
 }
 
 // 議題候補:思いついた議題を溜めておき、機が熟したら評議会にかける
@@ -1951,6 +1953,154 @@ function renderCandidates(box){
     '<span class="status" id="gov-msg"></span>';
 }
 const backBtn = '<button type="button" class="back" data-gback>‹ 政府</button>';
+/* ───────── 内省院:毎日の内省の時間を決める機関 ─────────
+   ・活動時間(行政時間+内省時間)の◯%を内省時間にする。始まりの時刻は決めても決めなくてもいい
+   ・内省時間の中身(計画作成・計画修正・評議会など)は、内省時間の◯%ずつ。時刻は決めても決めなくてもいい
+     (時刻のないものは、行軍表に「時間の指定なし」として出る)
+   ・ひとつの議題箱に、行き先(どの中身用か)と分野を付けて入れる。済みにしなかった議題は次に持ち越す(継続審議)。
+     行き先が評議会のものは、議題候補と同じもの(二重にしない)
+   ・行軍表でつけた実行率(中身ごとの 済み/半分)を読んで、内省実行率のグラフにする */
+const NAISEI = "roadmap/gov/naisei.json";
+const naisei = { doc: null, sha: null, rates: null, filter: "" };
+const NS_ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
+function naiseiDefault(){ return { v: 2, activeHours: 16, ratio: 10, start: "", days: NS_ALL_DAYS.slice(), dayOff: {},
+  items: [{ id: uid(), name: "計画作成", ratio: 40, time: "" }, { id: uid(), name: "計画修正", ratio: 30, time: "" }, { id: uid(), name: "評議会", ratio: 30, time: "", link: "candidates" }], agenda: [] }; }
+function nsUpgrade(d){
+  if (!d) return null; d = Object.assign(naiseiDefault(), d);
+  if (!d.v || d.v < 2) {   // 前の形(始まり〜終わりの時刻)から
+    const a = toMinS(d.start), z = toMinS(d.end);
+    if (a != null && z != null && z > a) d.ratio = Math.round((z - a) / (d.activeHours * 60) * 1000) / 10;
+    const n = (d.items || []).length || 1; d.items = (d.items || []).map(it => Object.assign({ ratio: Math.round(100 / n) }, it)); d.v = 2; }
+  return d; }
+const toMinS = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? +m[1] * 60 + +m[2] : null; };
+const fromMin = m => String(Math.floor(m / 60) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+const hmLabel = m => m >= 60 ? Math.floor(m / 60) + "時間" + (m % 60 ? m % 60 + "分" : "") : m + "分";
+async function loadNaisei(){ const r = await readJson(NAISEI); naisei.doc = nsUpgrade(r.data); naisei.sha = r.sha; naisei.rates = null; }
+const nsDoc = () => naisei.doc || (naisei.doc = naiseiDefault());
+async function saveNaisei(mutate){
+  for (let i = 0; i < 3; i++) {
+    try { if (mutate(nsDoc()) === false) return false; naisei.sha = await writeJson(NAISEI, naisei.doc, naisei.sha); return true; }
+    catch (e) { if ((e.status === 409 || e.status === 422) && i < 2) { await loadNaisei(); continue; } govMsg(e.message || "保存できませんでした", true); return false; }
+  }
+  return false;
+}
+const nsMinutes = N => Math.round((+N.activeHours || 0) * 60 * (+N.ratio || 0) / 100);
+const nsItemMin = (N, it) => Math.round(nsMinutes(N) * (+it.ratio || 0) / 100);
+// その日の内省時間({ start(あれば), min })。休みなら null
+function naiseiWindow(N, date){
+  const o = (N.dayOff || {})[date];
+  if (o && o.off) return null;
+  const wd = new Date(date + "T12:00:00").getDay();
+  if (!(o && o.start) && !(N.days || NS_ALL_DAYS).includes(wd)) return null;
+  const min = nsMinutes(N), start = (o && o.start) || N.start || "";
+  return { start, min, end: start && toMinS(start) != null ? fromMin(toMinS(start) + min) : "", changed: !!(o && o.start) };
+}
+function naiseiCarry(N, created){ const today = taskDay(); let n = 0, d = created; for (let k = 0; k < 400; k++) { d = addDays(d, 1); if (d >= today) break; if (naiseiWindow(N, d)) n++; } return n; }
+const nsCandidates = () => (gov.council.candidates || []).filter(c => c.status === "候補");
+function naiseiSummary(){
+  const N = naisei.doc; if (!N) return "まだ決めていません";
+  const w = naiseiWindow(N, taskDay()), open = (N.agenda || []).filter(a => !a.done).length + nsCandidates().length;
+  return (w ? "今日 " + hmLabel(w.min) + (w.start ? "(" + w.start + "〜" + w.end + ")" : "") : "今日は休み") + (open ? "・議題 " + open : "");
+}
+// 行軍表の記録から、日ごとの内省実行率を読む(この月と先月)
+async function loadNaiseiRates(){
+  const d = taskDay(), months = [d.slice(0, 7), addDays(d.slice(0, 7) + "-01", -1).slice(0, 7)], out = {};
+  for (const m of months) { try { const r = await readJson("roadmap/tasks/applog/" + m + ".json"); for (const [day, recs] of Object.entries(r.data || {})) { const x = recs && recs.__naisei; if (x && x.rate != null) out[day] = +x.rate; else if (x && x.done) out[day] = 100; } } catch (e) {} }
+  naisei.rates = out; if (gov.view === "内省院") renderGov();
+}
+function rateChart(N){
+  const R = naisei.rates; if (!R) { loadNaiseiRates(); return '<div class="ns-none">読み込んでいます…</div>'; }
+  const today = taskDay(), days = []; for (let k = 29; k >= 0; k--) days.push(addDays(today, -k));
+  const held = days.filter(d => naiseiWindow(N, d) && d <= today);
+  const avg = arr => { const v = arr.filter(d => d < today || R[d] != null).map(d => R[d] || 0); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
+  const a7 = avg(held.filter(d => d > addDays(today, -7))), a30 = avg(held);
+  return '<div class="ns-rates"><span>この7日 <b>' + (a7 == null ? "—" : a7 + "%") + "</b></span><span>この30日 <b>" + (a30 == null ? "—" : a30 + "%") + "</b></span></div>" +
+    '<div class="ns-chart">' + days.map(d => { const on = !!naiseiWindow(N, d), v = R[d], h = v == null ? 0 : v;
+      return '<div class="ns-bar' + (on ? "" : " off") + (d === today ? " today" : "") + '" title="' + esc(d) + "　" + (on ? (v == null ? (d < today ? "0%(記録なし)" : "まだ") : v + "%") : "休み") + '"><i style="height:' + h + '%"></i></div>'; }).join("") + "</div>" +
+    '<div class="ns-axis"><span>' + esc(days[0].slice(5).replace("-", "/")) + "</span><span>今日</span></div>" +
+    '<p class="hint" style="margin:.3rem 0 0">行軍表で、内省の中身ごとに「済み」「半分」をつけると、その時間の割合が実行率になります。記録のない日は0%として数えます(休みの日は除く)。</p>';
+}
+function renderNaisei(box){
+  const N = nsDoc(), today = taskDay(), w = naiseiWindow(N, today), o = (N.dayOff || {})[today];
+  const DN = ["日", "月", "火", "水", "木", "金", "土"], ms = (state.gov && state.gov.ministries) || [];
+  const tagName = t => t === "全体" ? "全体" : t ? ((ms.find(m => m.tag === t) || { name: t }).name) : "";
+  const total = nsMinutes(N), sumR = (N.items || []).reduce((a, it) => a + (+it.ratio || 0), 0);
+  const carryTag = c => c > 0 ? '<span class="ns-carry">継続 ' + c + "回目</span>" : "";
+  // 議題箱(ひとつに集める)
+  const dest = N.items || [], f = naisei.filter;
+  const rows = [];
+  for (const a of (N.agenda || []).filter(a => !a.done)) rows.push({ kind: "a", id: a.id, item: a.item, text: a.text, tag: a.tag || "", created: a.created });
+  const cand = dest.find(it => it.link === "candidates");
+  if (cand) for (const c of nsCandidates()) rows.push({ kind: "c", id: c.id, item: cand.id, text: (c.star ? "★ " : "") + c.title, tag: c.tag || "", created: c.created });
+  const shown = rows.filter(r => !f || r.item === f);
+  const destSel = (r) => r.kind === "c" ? '<span class="ns-dst">' + esc(cand.name) + "</span>" :
+    '<select data-ns-ag-move="' + esc(r.id) + '">' + dest.map(it => '<option value="' + esc(it.id) + '"' + (it.id === r.item ? " selected" : "") + ">" + esc(it.name) + "</option>").join("") + "</select>";
+  const agendaBox = '<div class="ns-card"><b>議題箱</b><div class="addrow"><input id="ns-ag-text" placeholder="議題を入れる">' +
+      '<select id="ns-ag-dest">' + dest.map(it => '<option value="' + esc(it.id) + '">' + esc(it.name) + "用</option>").join("") + "</select>" +
+      '<select id="ns-ag-tag"><option value="">分野</option><option value="全体">全体</option>' + ms.map(m => '<option value="' + esc(m.tag) + '">' + esc(m.name) + "</option>").join("") + "</select>" +
+      '<button type="button" class="btn sm" data-ns-ag-add>入れる</button></div>' +
+    '<div class="ns-days">' + [["", "すべて " + rows.length]].concat(dest.map(it => [it.id, it.name + " " + rows.filter(r => r.item === it.id).length])).map(([v, l]) => '<button type="button" data-ns-filter="' + esc(v) + '" aria-pressed="' + (f === v) + '">' + esc(l) + "</button>").join("") + "</div>" +
+    (shown.map(r => '<div class="ns-ag"><span>' + esc(r.text) + (r.tag ? '<span class="ns-tag">' + esc(tagName(r.tag)) + "</span>" : "") + carryTag(naiseiCarry(N, r.created)) + '<small>' + esc(r.created) + "</small></span>" + destSel(r) +
+        (r.kind === "a" ? '<button type="button" class="btn sm" data-ns-ag-done="' + esc(r.id) + '">済み</button><button type="button" class="btn ghost sm" data-ns-ag-del="' + esc(r.id) + '">消す</button>' : '<button type="button" class="btn ghost sm" data-gview="議題候補">議題候補で</button>') + "</div>").join("") || '<div class="ns-none">議題はありません</div>') +
+    (() => { const done = (N.agenda || []).filter(a => a.done).slice(-8).reverse(); return done.length ? '<details class="ns-done"><summary>済んだ議題</summary>' + done.map(a => '<div class="ns-ag done"><span>' + esc(a.text) + "</span><small>" + esc(a.doneAt || "") + '</small><button type="button" class="btn ghost sm" data-ns-ag-undo="' + esc(a.id) + '">戻す</button></div>').join("") + "</details>" : ""; })() + "</div>";
+  box.innerHTML = backBtn + '<div class="sec ns"><h3>内省院</h3><p class="hint" style="margin-top:0">毎日の内省の時間を決める機関。決めた時間は行軍表に出て、こなした割合は行軍表でつける。</p>' +
+    '<div class="ns-card"><b>内省時間の量</b>' +
+      '<div class="addrow"><label class="ns-tm">活動時間<input type="number" min="1" max="24" step="0.5" id="ns-active" value="' + esc(N.activeHours) + '">時間</label>' +
+      '<label class="ns-tm">そのうち内省<input type="number" min="0" max="100" step="1" id="ns-ratio" value="' + esc(N.ratio) + '">%</label></div>' +
+      '<div class="ns-today">= 毎日 <b>' + hmLabel(total) + "</b> の内省時間(行政時間は " + hmLabel(Math.max(0, N.activeHours * 60 - total)) + ")</div>" +
+      '<div class="addrow"><label class="ns-tm">始まりの時刻<input type="time" id="ns-start" value="' + esc(N.start || "") + '"></label>' + (N.start ? '<span class="ns-today">〜' + esc(fromMin(toMinS(N.start) + total)) + '</span><button type="button" class="btn ghost sm" data-ns-start-clear>時刻を決めない</button>' : '<span class="ns-today">時刻を決めない(行軍表では時間の指定なし)</span>') + "</div>" +
+      '<div class="ns-days">' + DN.map((d, i) => '<button type="button" data-ns-day="' + i + '" aria-pressed="' + (N.days || NS_ALL_DAYS).includes(i) + '">' + d + "</button>").join("") + "</div>" +
+      '<div class="ns-today">今日(' + esc(today.slice(5).replace("-", "/")) + "):<b>" + (w ? hmLabel(w.min) + (w.start ? "・" + esc(w.start) + "〜" + esc(w.end) + (w.changed ? "(今日だけ)" : "") : "・時刻なし") : "休み") + "</b></div>" +
+      '<div class="addrow"><input type="time" id="ns-t-start" value="' + esc((o && o.start) || (w && w.start) || "") + '"><button type="button" class="btn sm" data-ns-today-set>今日だけ始まりを変える</button><button type="button" class="btn ghost sm" data-ns-today-off>今日は休み</button>' + (o ? '<button type="button" class="btn ghost sm" data-ns-today-clear>元に戻す</button>' : "") + "</div></div>" +
+    "<h3>内省時間の中身</h3>" + (sumR !== 100 ? '<div class="ns-warn">割合の合計が ' + sumR + "% です(100%にすると内省時間をちょうど使い切ります)</div>" : "") +
+    dest.map((it, k) => '<div class="ns-card"><div class="ns-ih"><input class="ns-name" data-ns-name="' + esc(it.id) + '" value="' + esc(it.name) + '">' +
+        '<label class="ns-tm"><input type="number" min="0" max="100" step="5" data-ns-ratio="' + esc(it.id) + '" value="' + esc(it.ratio || 0) + '">%</label><span class="ns-min">' + hmLabel(nsItemMin(N, it)) + "</span>" +
+        '<label class="ns-tm">時刻<input type="time" data-ns-time="' + esc(it.id) + '" value="' + esc(it.time || "") + '"></label>' +
+        '<span class="ns-ops"><button type="button" class="btn ghost sm" data-ns-up="' + k + '"' + (k ? "" : " disabled") + '>↑</button><button type="button" class="btn ghost sm" data-ns-down="' + k + '"' + (k < dest.length - 1 ? "" : " disabled") + '>↓</button>' +
+        '<button type="button" class="btn ghost sm" data-ns-idel="' + esc(it.id) + '">消す</button></span></div>' + (it.link === "candidates" ? '<div class="ns-sub">議題は議題候補と同じもの</div>' : "") + "</div>").join("") +
+    '<div class="addrow" style="margin-top:.4rem"><input id="ns-new" placeholder="中身を足す(例:週の振り返り)"><button type="button" class="btn sm" data-ns-add>足す</button></div>' +
+    agendaBox +
+    '<div class="ns-card"><b>内省実行率</b>' + rateChart(N) + "</div>" +
+    '<span class="status" id="gov-msg"></span></div>';
+  if (!box.__nsBound) { box.__nsBound = true; box.addEventListener("click", naiseiClick); box.addEventListener("change", naiseiChange); }
+}
+async function naiseiClick(e){
+  if (gov.view !== "内省院") return;
+  const q = sel => e.target.closest(sel); let b; const today = taskDay();
+  if ((b = q("[data-ns-filter]"))) { naisei.filter = b.dataset.nsFilter; return renderGov(); }
+  if ((b = q("[data-ns-day]"))) { const i = +b.dataset.nsDay; await saveNaisei(N => { const ds = new Set(N.days || NS_ALL_DAYS); ds.has(i) ? ds.delete(i) : ds.add(i); N.days = [...ds].sort(); }); return renderGov(); }
+  if (q("[data-ns-start-clear]")) { await saveNaisei(N => { N.start = ""; }); return renderGov(); }
+  if (q("[data-ns-today-set]")) { const a = (document.getElementById("ns-t-start") || {}).value; if (!a) return govMsg("時刻を入れてください", true); await saveNaisei(N => { N.dayOff = N.dayOff || {}; N.dayOff[today] = { start: a }; }); govMsg("今日だけ変えました"); return renderGov(); }
+  if (q("[data-ns-today-off]")) { await saveNaisei(N => { N.dayOff = N.dayOff || {}; N.dayOff[today] = { off: true }; }); govMsg("今日は休みにしました"); return renderGov(); }
+  if (q("[data-ns-today-clear]")) { await saveNaisei(N => { if (N.dayOff) delete N.dayOff[today]; }); return renderGov(); }
+  if (q("[data-ns-add]")) { const t = ((document.getElementById("ns-new") || {}).value || "").trim(); if (!t) return; await saveNaisei(N => { N.items = (N.items || []).concat([{ id: uid(), name: t, ratio: 0, time: "" }]); }); return renderGov(); }
+  if ((b = q("[data-ns-idel]"))) { const id = b.dataset.nsIdel, it = (nsDoc().items || []).find(x => x.id === id); if (!it || !confirm("「" + it.name + "」を消す?(この中身用の議題も消える)")) return;
+    await saveNaisei(N => { N.items = N.items.filter(x => x.id !== id); N.agenda = (N.agenda || []).filter(a => a.item !== id); }); return renderGov(); }
+  if ((b = q("[data-ns-up]")) || (b = q("[data-ns-down]"))) { const k = +(b.dataset.nsUp ?? b.dataset.nsDown), to = b.dataset.nsUp != null ? k - 1 : k + 1;
+    await saveNaisei(N => { if (to < 0 || to >= N.items.length) return false; const x = N.items.splice(k, 1)[0]; N.items.splice(to, 0, x); }); return renderGov(); }
+  if (q("[data-ns-ag-add]")) { const t = ((document.getElementById("ns-ag-text") || {}).value || "").trim(), dst = (document.getElementById("ns-ag-dest") || {}).value, tag = (document.getElementById("ns-ag-tag") || {}).value || ""; if (!t || !dst) return;
+    const it = (nsDoc().items || []).find(x => x.id === dst);
+    if (it && it.link === "candidates") await saveGov("council", () => { gov.council.candidates = (gov.council.candidates || []).concat([{ id: uid(), title: t, tag, note: "", created: today, status: "候補", star: false }]); });
+    else await saveNaisei(N => { N.agenda = (N.agenda || []).concat([{ id: uid(), item: dst, text: t, tag, created: today, done: false }]); });
+    govMsg("議題箱に入れました(" + (it ? it.name : "") + "用)"); return renderGov(); }
+  if ((b = q("[data-ns-ag-done]"))) { const id = b.dataset.nsAgDone; await saveNaisei(N => { const a = (N.agenda || []).find(x => x.id === id); if (a) { a.done = true; a.doneAt = today; } }); return renderGov(); }
+  if ((b = q("[data-ns-ag-undo]"))) { const id = b.dataset.nsAgUndo; await saveNaisei(N => { const a = (N.agenda || []).find(x => x.id === id); if (a) { a.done = false; delete a.doneAt; } }); return renderGov(); }
+  if ((b = q("[data-ns-ag-del]"))) { const id = b.dataset.nsAgDel; await saveNaisei(N => { N.agenda = (N.agenda || []).filter(x => x.id !== id); }); return renderGov(); }
+}
+async function naiseiChange(e){
+  if (gov.view !== "内省院") return;
+  const t = e.target, d = t.dataset;
+  if (t.id === "ns-active" || t.id === "ns-ratio") { const v = Math.max(0, +t.value || 0); await saveNaisei(N => { N[t.id === "ns-active" ? "activeHours" : "ratio"] = v; }); govMsg("保存しました"); return renderGov(); }
+  if (t.id === "ns-start") { const v = t.value; await saveNaisei(N => { N.start = v; }); govMsg("保存しました"); return renderGov(); }
+  if (d.nsAgMove) { const id = d.nsAgMove, to = t.value, it = (nsDoc().items || []).find(x => x.id === to), a = (nsDoc().agenda || []).find(x => x.id === id); if (!a) return;
+    if (it && it.link === "candidates") { await saveGov("council", () => { gov.council.candidates = (gov.council.candidates || []).concat([{ id: uid(), title: a.text, tag: a.tag || "", note: "", created: a.created, status: "候補", star: false }]); }); await saveNaisei(N => { N.agenda = N.agenda.filter(x => x.id !== id); }); }
+    else await saveNaisei(N => { const x = N.agenda.find(y => y.id === id); if (x) x.item = to; });
+    govMsg("行き先を変えました"); return renderGov(); }
+  if (d.nsName || d.nsTime || d.nsRatio) { const id = d.nsName || d.nsTime || d.nsRatio, key = d.nsName ? "name" : d.nsTime ? "time" : "ratio", v = key === "ratio" ? Math.max(0, +t.value || 0) : t.value.trim();
+    if (key === "name" && !v) return renderGov();
+    await saveNaisei(N => { const it = (N.items || []).find(x => x.id === id); if (it) it[key] = v; }); govMsg("保存しました"); return renderGov(); }
+}
+
 
 function renderGovHome(box){
   const live = movedToKenseiin() ? 0 : gov.amend.items.filter(a => ["審議待ち", "審議できる", "審議中"].includes(amendStatus(a))).length;
@@ -1966,7 +2116,8 @@ function renderGovHome(box){
     '<button type="button" class="organ" data-gview="憲法"><b>憲法</b><span>' + (gov.cons ? "第" + gov.cons.version + "版・" + gov.cons.articles.length + "条" + (gov.cons.copyOf === "kenseiin" ? "(写し)" : "") : "まだ写していません") + "</span></button>" +
     '<button type="button" class="organ" data-gview="憲政院"><b>憲政院</b><span>' + (movedToKenseiin() ? "憲政院アプリへ" : "改憲案の起草" + (live ? "・進行中 " + live : "")) + "</span></button>" +
     '<button type="button" class="organ" data-gview="最高評議会"><b>最高評議会</b><span>改憲と重大国策の審議</span></button>' +
-    '<button type="button" class="organ" data-gview="常任評議会"><b>常任評議会</b><span>議題' + (open ? "・未了 " + open : "") + "</span></button></div>" +
+    '<button type="button" class="organ" data-gview="常任評議会"><b>常任評議会</b><span>議題' + (open ? "・未了 " + open : "") + "</span></button>" +
+    '<button type="button" class="organ" data-gview="内省院"><b>内省院</b><span>' + naiseiSummary() + "</span></button></div>" +
     (decrees.length ? '<div class="sec"><h3>最高評議会の議決</h3>' + decrees.map(x => '<div class="decree"><div class="dd">' + esc(x.closedAt.slice(0, 10)) + "　" + esc(x.title) +
       "</div>" + esc(x.decision || "") + "</div>").join("") + "</div>" : "") +
     '<span class="status" id="gov-msg"></span>';
@@ -4709,6 +4860,41 @@ SE.init([
 .tjs-from{font-size:.68rem;color:var(--sub);border:1px solid var(--rule);border-radius:3px;padding:0 .35rem;white-space:nowrap}
 .tjs-add{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-top:.5rem}
 .tjs-add select{flex:1;min-width:9rem;padding:.35rem .45rem;border:1px solid var(--rule);border-radius:3px;background:#fff}
+
+/* 内省院 */
+.ns .ns-card{background:var(--sheet,#fff);border:1px solid var(--rule,#ddd);border-radius:6px;padding:.6rem .7rem;margin:.5rem 0}
+.ns .ns-days{display:flex;gap:.3rem;margin:.4rem 0;flex-wrap:wrap}
+.ns .ns-days button{min-width:2.2rem;padding:.25rem .4rem;border:1px solid var(--rule,#ccc);border-radius:999px;background:transparent;cursor:pointer}
+.ns .ns-days button[aria-pressed="true"]{background:var(--ink,#222);color:#fff;border-color:var(--ink,#222)}
+.ns .ns-today{font-size:.85rem;margin:.3rem 0}
+.ns .addrow{flex-wrap:wrap;gap:.35rem;align-items:center}
+.ns .addrow input[type=time]{width:auto;flex:0 1 8.5rem}
+.ns .ns-ih{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.ns .ns-name{flex:1 1 9rem;font-weight:700}
+.ns .ns-tm{font-size:.75rem;color:var(--sub,#777);display:flex;align-items:center;gap:.2rem}
+.ns .ns-tm input[type=number]{width:3.6rem}
+.ns .ns-sub{font-size:.75rem;color:var(--sub,#777);margin:.45rem 0 .2rem}
+.ns .ns-ag{display:flex;gap:.4rem;align-items:center;padding:.25rem 0;border-top:1px dashed var(--rule,#ddd);font-size:.88rem}
+.ns .ns-ag span{flex:1}
+.ns .ns-ag small{color:var(--sub,#888);font-size:.72rem;white-space:nowrap}
+.ns .ns-ag.done span{color:var(--sub,#888);text-decoration:line-through}
+.ns .ns-carry{margin-left:.4rem;font-size:.7rem;padding:.05rem .35rem;border-radius:999px;background:#B5432F18;color:#B5432F;white-space:nowrap}
+.ns .ns-none{font-size:.82rem;color:var(--sub,#888);padding:.2rem 0}
+.ns details.ns-done summary{font-size:.78rem;color:var(--sub,#777);cursor:pointer;margin-top:.3rem}
+
+.ns .ns-min{font-size:.8rem;color:var(--sub,#777);min-width:4.2rem}
+.ns .ns-warn{font-size:.8rem;color:#B5432F;margin:.2rem 0}
+.ns .ns-tag{margin-left:.4rem;font-size:.7rem;padding:.05rem .35rem;border-radius:999px;background:#2F4F8A18;color:#2F4F8A}
+.ns .ns-ag small{display:block}
+.ns .ns-ag select{max-width:7.5rem;font-size:.78rem}
+.ns .ns-dst{font-size:.75rem;color:var(--sub,#777)}
+.ns .ns-rates{display:flex;gap:1rem;font-size:.85rem;margin:.2rem 0 .4rem}
+.ns .ns-chart{display:flex;align-items:flex-end;gap:2px;height:80px;border-bottom:1px solid var(--rule,#ccc)}
+.ns .ns-bar{flex:1;height:100%;display:flex;align-items:flex-end;background:#0000000a}
+.ns .ns-bar i{display:block;width:100%;background:#2F4F8A;border-radius:2px 2px 0 0}
+.ns .ns-bar.off{background:repeating-linear-gradient(45deg,#00000008,#00000008 3px,transparent 3px,transparent 6px)}
+.ns .ns-bar.today{outline:1px solid #B5432F}
+.ns .ns-axis{display:flex;justify-content:space-between;font-size:.7rem;color:var(--sub,#888)}
 </style>
 
 </body>
