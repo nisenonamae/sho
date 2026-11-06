@@ -525,7 +525,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-06 r103";
+const APP_VERSION = "2026-11-07 r105";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -718,6 +718,9 @@ function tasksFor(tag, label, pid){
 
 /* ───── 描画 ───── */
 function renderNotice(msg){ document.getElementById("notices").innerHTML = msg ? '<p class="notice">' + esc(msg) + "</p>" : ""; }
+// 支配・国力は小数3桁で出す(計算も小数3桁で記録する)
+const fmtDom = v => (Number(v) || 0).toFixed(3);
+const fmtPow = v => (Number(v) || 0).toFixed(3);
 function powerOf(tag){
   const ml = (state.stats && state.stats.ministry_latest) || [];
   const m = ml.find(x => x.tag === tag || x.ministry === tag);
@@ -1659,9 +1662,9 @@ function renderList(){
     return '<li style="--mc:' + colorOf(m.tag) + '">' + (state.reorder ? '<span class="mv"><button type="button" data-mv="' + esc(m.tag) + ':-1"' + (i ? "" : " disabled") + ' aria-label="上へ">▲</button>' +
         '<button type="button" data-mv="' + esc(m.tag) + ':1"' + (i < arr.length - 1 ? "" : " disabled") + ' aria-label="下へ">▼</button></span>' : "") +
       '<button type="button" data-open="' + esc(m.tag) + '"><span class="mn">' + esc(m.name) +
-      (open ? ' <span class="badge">' + open + "</span>" : "") + '</span><span class="mp">' + (p ? Number(p.power).toFixed(1) : "—") + "</span>" +
+      (open ? ' <span class="badge">' + open + "</span>" : "") + '</span><span class="mp">' + (p ? fmtPow(p.power) : "—") + "</span>" +
       '<span class="mm"><span class="now-s">' + (nS ? esc(nS.label) : "STAGE —") + '</span><span class="now-w">' + (nW ? esc(nW.label) : "WAVE —") + "</span>" +
-      (p ? "<span>支配 " + Math.round(p.dominance) + "</span><span>領土 " + p.territory + "</span>" : "") + "</span></button>" +
+      (p ? "<span>支配 " + fmtDom(p.dominance) + "</span><span>領土 " + p.territory + "</span>" : "") + "</span></button>" +
       (state.reorder ? "" : '<a class="plan-go" href="' + TAIKEI_APP + "#sho=" + encodeURIComponent(m.name) + '" title="大計で' + esc(m.name) + 'の計画を開く">計画</a>') + "</li>";
   }).join("") + "</ul>";
   const orph = orphanTasks();
@@ -1780,7 +1783,7 @@ function renderDetail(){
   const nowS = nowOf(pages().filter(x => x.parent === "m:" + m.tag && x.kind === "STAGE").sort(byLabel));
   const nowW = nowOf(pages().filter(x => x.parent === "m:" + m.tag && x.kind === "WAVE").sort(byLabel));
   const head = '<button type="button" class="back" data-back>‹ 省の一覧</button>' +
-    '<div class="mh"><h2>' + esc(m.name) + "</h2>" + '<a class="plan-go-h" href="' + TAIKEI_APP + "#sho=" + encodeURIComponent(m.name) + '">この省の計画 ↗</a>' + (p ? '<span>国力 <b>' + Number(p.power).toFixed(1) + "</b>　支配 " + Math.round(p.dominance) + "　領土 " + p.territory + "</span>" : "") + "</div>" +
+    '<div class="mh"><h2>' + esc(m.name) + "</h2>" + '<a class="plan-go-h" href="' + TAIKEI_APP + "#sho=" + encodeURIComponent(m.name) + '">この省の計画 ↗</a>' + (p ? '<span>国力 <b>' + fmtPow(p.power) + "</b>　支配 " + fmtDom(p.dominance) + "　領土 " + p.territory + "</span>" : "") + "</div>" +
     ((nowS || nowW) ? '<div class="nowline">' + (nowS ? '<a href="#" data-goto-page="' + nowS.id + '" class="nl-s">いまここ ' + esc(nowS.label) + (nowS.title ? " " + esc(nowS.title) : "") + "</a>" : "") +
       (nowW ? '<a href="#" data-goto-page="' + nowW.id + '" class="nl-w">いまここ ' + esc(nowW.label) + (nowW.title ? " " + esc(nowW.title) : "") + "</a>" : "") + "</div>" : "") +
     '<div class="mtabs" role="tablist">' + ["地図", "首脳"].concat(isDefense(m) ? ["安全保障"] : [], ["この省について"]).map(t => '<button type="button" role="tab" data-mtab="' + t + '" aria-selected="' + (t === tab) + '">' + t + "</button>").join("") + "</div>";
@@ -2744,7 +2747,7 @@ function meetingHtml(d, ms){
     if (S.prev) h += '<div class="panel"><div class="panel-h"><span>前の作戦期の総括:' + esc(S.prev.name) + '</span></div><div class="panel-b">' + (S.prev.goals || []).map(g =>
         '<div class="mrow"><span><b class="' + (g.result === "達成" ? "ok" : "ng") + '">' + esc(g.result || "—") + "</b> " + esc(g.text) + (g.resultNote ? '<small>' + esc(g.resultNote) + "</small>" : "") + "</span>" + addBtn("前の作戦期:" + g.text + "は" + (g.result || "") + (g.resultNote ? "(" + g.resultNote + ")" : "")) + "</div>").join("") + "</div></div>";
     h += '<div class="panel"><div class="panel-h"><span>省ごとの今</span></div><div class="panel-b"><div class="mtbl"><div class="mth"><span>省</span><span>重要度</span><span>領土・支配</span><span>時勢</span><span>しんどさ</span><span>要再設定</span><span>待機中</span><span></span></div>' +
-      S.rows.map(r => '<div class="mtr"><span style="color:' + colorOf(r.tag) + ';font-weight:700">' + esc(r.name) + "</span><span>" + f1(r.weight) + "</span><span>" + (r.territory != null ? esc(r.territory) + "・" + Math.round(r.dominance || 0) : "—") + "</span><span>" +
+      S.rows.map(r => '<div class="mtr"><span style="color:' + colorOf(r.tag) + ';font-weight:700">' + esc(r.name) + "</span><span>" + f1(r.weight) + "</span><span>" + (r.territory != null ? esc(r.territory) + "・" + fmtDom(r.dominance) : "—") + "</span><span>" +
         (r.tide ? (r.tide > 0 ? "+" : "") + r.tide.toFixed(1) : "0") + "</span><span>" + (r.burden ? r.burden.toFixed(1) : "—") + '</span><span class="' + (r.fallen ? "ng" : "") + '">' + r.fallen + "/" + r.tasks + "</span><span>" + (r.waiting || "—") + "</span><span>" +
         addBtn(r.name + ":" + [r.fallen ? "要再設定 " + r.fallen + "/" + r.tasks : "", r.burden ? "しんどさ " + r.burden.toFixed(1) : "", r.tide ? "時勢 " + (r.tide > 0 ? "+" : "") + r.tide.toFixed(1) : "", r.waiting ? "待機中 " + r.waiting : ""].filter(Boolean).join("・")) + "</span></div>").join("") + "</div></div></div>";
     const worry = S.alerts.map(p => ({ t: p.label + " " + (p.title || "") + "(対応中のALERT)", s: "ALERT" })).concat(S.raids.map(c => ({ t: c.name + ":" + c.why + "(RAIDの候補)", s: "RAID" })))
