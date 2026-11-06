@@ -525,7 +525,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-06 r102";
+const APP_VERSION = "2026-11-06 r103";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -1986,12 +1986,14 @@ async function saveNaisei(mutate){
 }
 const nsMinutes = N => Math.round((+N.activeHours || 0) * 60 * (+N.ratio || 0) / 100);
 const nsItemMin = (N, it) => Math.round(nsMinutes(N) * (+it.ratio || 0) / 100);
+// その日に有効だった曜日の設定(設定を変えた日から新しい設定。過去の日の扱いは変わらない)
+function nsDaysAt(N, date){ const h = (N.daysHist || []).filter(x => x.from <= date).sort((a, b) => a.from < b.from ? -1 : 1); return h.length ? h[h.length - 1].days : (N.days || NS_ALL_DAYS); }
 // その日の内省時間({ start(あれば), min })。休みなら null
 function naiseiWindow(N, date){
   const o = (N.dayOff || {})[date];
   if (o && o.off) return null;
   const wd = new Date(date + "T12:00:00").getDay();
-  if (!(o && o.start) && !(N.days || NS_ALL_DAYS).includes(wd)) return null;
+  if (!(o && o.start) && !nsDaysAt(N, date).includes(wd)) return null;
   const min = nsMinutes(N), start = (o && o.start) || N.start || "";
   return { start, min, end: start && toMinS(start) != null ? fromMin(toMinS(start) + min) : "", changed: !!(o && o.start) };
 }
@@ -2068,7 +2070,8 @@ async function naiseiClick(e){
   if (gov.view !== "内省院") return;
   const q = sel => e.target.closest(sel); let b; const today = taskDay();
   if ((b = q("[data-ns-filter]"))) { naisei.filter = b.dataset.nsFilter; return renderGov(); }
-  if ((b = q("[data-ns-day]"))) { const i = +b.dataset.nsDay; await saveNaisei(N => { const ds = new Set(N.days || NS_ALL_DAYS); ds.has(i) ? ds.delete(i) : ds.add(i); N.days = [...ds].sort(); }); return renderGov(); }
+  if ((b = q("[data-ns-day]"))) { const i = +b.dataset.nsDay; await saveNaisei(N => { const before = (N.days || NS_ALL_DAYS).slice(), ds = new Set(before); ds.has(i) ? ds.delete(i) : ds.add(i); N.days = [...ds].sort();
+      N.daysHist = N.daysHist && N.daysHist.length ? N.daysHist : [{ from: "0000-01-01", days: before }]; N.daysHist = N.daysHist.filter(x => x.from !== today).concat([{ from: today, days: N.days.slice() }]); }); return renderGov(); }
   if (q("[data-ns-start-clear]")) { await saveNaisei(N => { N.start = ""; }); return renderGov(); }
   if (q("[data-ns-today-set]")) { const a = (document.getElementById("ns-t-start") || {}).value; if (!a) return govMsg("時刻を入れてください", true); await saveNaisei(N => { N.dayOff = N.dayOff || {}; N.dayOff[today] = { start: a }; }); govMsg("今日だけ変えました"); return renderGov(); }
   if (q("[data-ns-today-off]")) { await saveNaisei(N => { N.dayOff = N.dayOff || {}; N.dayOff[today] = { off: true }; }); govMsg("今日は休みにしました"); return renderGov(); }
