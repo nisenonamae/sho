@@ -1073,7 +1073,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r133";
+const APP_VERSION = "2026-11-20 r134";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5462,7 +5462,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.12";
+const APP_VERSION = "h5.13";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6074,6 +6074,7 @@ function goalCard(s, g, r){
     '<div class="ch" style="border-top:1px solid var(--rule)"><b>物差しの重み</b><span>0〜5・「物差しで比べる」で使う</span></div>' +
     (r.yc && Object.keys(r.yc).length ? '<div class="ctl2" style="padding:.45rem .8rem 0"><button data-ha="gwyo" data-hk="' + esc(g.key) + '">世論の割合から入れる</button></div>' : "") +
     crits().map(c => '<div class="wrow"><span class="nm2">' + esc(c.name) + (r.yc && r.yc[c.id] != null ? "<small>世論 " + r.yc[c.id] + "%</small>" : "") + '</span><span class="wsel">' + [0, 1, 2, 3, 4, 5].map(v => '<button class="' + ((goal.w[c.id] || 0) === v ? "on" : "") + '" data-ha="gw" data-hk="' + esc(g.key) + '" data-hd="' + c.id + '" data-hv="' + v + '"' + (v ? ' aria-label="重み' + v + '"' : "") + ">" + (v ? v : "外す") + "</button>").join("") + "</span></div>").join("") +
+    '<div class="add" style="border-top:1px dashed var(--rule)"><input id="hy-critgoal" placeholder="+ 物差しを足す(例:お金・家族との時間)" enterkeyhint="done"><button data-ha="critgoaladd" data-hk="' + esc(g.key) + '">足す</button></div>' +
     '<div class="ch" style="border-top:1px solid var(--rule)"><b>何に基づいて決めたか</b><span>1つ以上・理由は必ず</span></div><div class="cb"><div class="basis">' +
     bases().map(([k, n, d]) => '<button class="' + (goal.basis[k] ? "on" : "") + '" data-ha="gbasis" data-hk="' + esc(g.key) + '" data-hv="' + k + '"><i>' + (goal.basis[k] ? "✓" : "") + "</i><span><b>" + n + "</b>" + d + "</span></button>").join("") + "</div>" +
     '<div class="add" style="margin-top:.4rem;border:1px dashed var(--rule);border-radius:10px"><input id="hy-basisnew" placeholder="+ 基づいたものを足す(例:お金・家族の都合)" enterkeyhint="done"><button data-ha="basisadd">足す</button></div>' +
@@ -7129,6 +7130,8 @@ function onClick(ev){
     case "xopt": { const x = (prompt("案を書く") || "").trim(); if (!x) return; mut(() => { const r = resOf(s, b.dataset.hk); (r.xopts = r.xopts || []).push({ id: "x" + rid(), x }); }); return; }
     case "gw": mut(() => { const r = resOf(s, b.dataset.hk); goalOf(r).w[b.dataset.hd] = +v; }); return;
     case "basisadd": { const el = $("#hy-basisnew"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } const id = "b" + rid(); mut(() => { (D.settings.bases = D.settings.bases || []).push({ id, n: x }); touch(D.settings); const cp = curPart(s), d = cp && s.debates[cp.d]; if (d) goalOf(resOf(s, gkeyOfDebate(s, d))).basis[id] = true; }); return; }
+    case "critgoaladd": { const el = $("#hy-critgoal"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; }
+      mut(() => { const c = { id: "c" + rid(), name: x, w: 2 }, r = resOf(s, b.dataset.hk); D.settings.crits.push(c); touch(D.settings); goalOf(r).w[c.id] = 2; if (r.yc && Object.keys(r.yc).length) r.yc[c.id] = 0; yoLog(s, b.dataset.hk, "crit", "物差し「" + x + "」が加わった"); }); return; }
     case "critnew": { const x = (prompt("物差しを足す(例:お金・家族との時間)") || "").trim(); if (!x) return; mut(() => { const c = { id: "c" + rid(), name: x, w: 2 }; D.settings.crits.push(c); touch(D.settings); goalOf(resOf(s, b.dataset.hk)).w[c.id] = 2; }); return; }
     case "critoff": if (!confirm("この物差しを、この比べから外しますか(重みを0にする)。")) return; mut(() => { goalOf(resOf(s, b.dataset.hk)).w[v] = 0; }); return;
     case "critback": mut(() => { goalOf(resOf(s, b.dataset.hk)).w[v] = 2; }); return;
@@ -7303,6 +7306,7 @@ function onKey(ev){
   if (t.id === "hy-dtitle") { ev.preventDefault(); t.blur(); return; }
   if (t.id === "hy-ttx") { ev.preventDefault(); $("[data-ha=ttlsave]").click(); return; }
   if (t.id === "hy-nexttitle") { ev.preventDefault(); t.blur(); return; }
+  if (t.id === "hy-critgoal") { ev.preventDefault(); const b = $("[data-ha=critgoaladd]"); b && b.click(); return; }
   if (t.id === "hy-basisnew") { ev.preventDefault(); const b = $("[data-ha=basisadd]"); b && b.click(); return; }
   if (t.id === "hy-subnew") { ev.preventDefault(); const b = $("[data-ha=subadd]"); b && b.click(); return; }
   if (t.id === "hy-yonew") { ev.preventDefault(); const b = $("[data-ha=yonew]"); b && b.click(); return; }
