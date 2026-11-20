@@ -901,6 +901,10 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 @media (min-width:1000px){#hy .sv.talk>.top>.wrap{max-width:1100px}#hy .sv.talk>.wrap{max-width:1100px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:0 20px;align-items:start}#hy .sv.talk>.wrap>.body{grid-column:1;grid-row:1;padding-bottom:2rem}#hy .sv.talk>.wrap>.spacer{display:none}#hy .sv.talk>.wrap>.dock{position:sticky;top:var(--toph,96px);grid-column:2;grid-row:1;height:calc(100vh - var(--toph,96px));left:auto;right:auto;bottom:auto;z-index:5;pointer-events:auto;display:flex;flex-direction:column}#hy .sv.talk>.wrap>.dock>.wrap{background:none;padding:.7rem 16px 16px 0;max-width:none;margin:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:flex-end}#hy .sv.talk>.wrap>.dock>.wrap>*{flex:none}#hy .sv.talk .pconly{display:block;flex:0 1 auto!important;min-height:0;overflow-y:auto;scrollbar-width:thin}#hy .sv.talk .inp.tall textarea{min-height:5.5rem}#hy .sv.talk .mbonly{display:none}#hy .sv.talk .pconly .card{margin-bottom:.6rem}#hy .sv.talk .pconly .bubs{padding:.5rem .4rem .6rem;gap:.35rem}#hy .sv.talk .seats{flex-wrap:wrap;overflow:visible;white-space:normal}}
 #hy .inp.tall .tgs{gap:.3rem}
 #hy .inp.tall .tgs button{font-size:.74rem;padding:.3rem .55rem;border-radius:7px}
+#hy .seat.ask{border-style:dashed}
+#hy .seat.ask .dot{display:inline-block;width:.45rem;height:.45rem;border-radius:50%;background:var(--c);margin-left:.3rem}
+#hy .askq{margin:.6rem 0 .2rem;padding:.4rem .7rem;border:1.5px dashed var(--c);border-radius:10px;font-size:.84rem;line-height:1.6;white-space:pre-wrap;color:var(--ink)}
+#hy .askq .nh{display:block;font-size:.68rem;font-weight:800;color:var(--c);margin-bottom:.1rem}
 body.hy-full{padding-bottom:0!important}
 body.hy-full nav.tabs{display:none!important}
 body.hy-full>.wrap{max-width:none;padding:0}
@@ -962,7 +966,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r122";
+const APP_VERSION = "2026-11-20 r123";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5351,7 +5355,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h4.16";
+const APP_VERSION = "h4.17";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6031,6 +6035,7 @@ function sayHTML(e, opts){
 function entryHTML(e, opts){
   if (e.k === "pause") return '<div class="divider">ここで休会(' + new Date(e.at).getHours() + ":" + pad(new Date(e.at).getMinutes()) + ")" + (e.back ? "・" + (e.back - e.at < 60000 ? "すぐ再開" : ago2(e.back - e.at) + "後に再開") : "") + "</div>";
   if (e.k === "yoron") return yoronHTML(e);
+  if (e.k === "ask") return '<div class="askq" style="--c:' + CLAUDE.c + '"><span class="nh">Claude に聞いた' + (e.as ? "(" + esc(e.as) + ")" : "") + "</span>" + esc(e.x) + "</div>";
   if (e.k === "shingi") return '<button class="note2' + (opts && opts.hl ? " hl" : "") + '" data-ha="entry" data-hv="' + e.id + '"><span class="nh">議長' + (e.g ? "・" + esc(e.g) : "") + "</span>" + esc(e.x) + "</button>";
   if (e.k === "sum") return '<button class="sum2" data-ha="entry" data-hv="' + e.id + '"><span class="nh"><span>議長・整理(まとめ)</span><span>議決に出る</span></span>' + esc(e.x) + "</button>";
   return sayHTML(e, opts);
@@ -6060,6 +6065,7 @@ function partDebate(s, p, i, n, nx){
   const seat = U.seat === "sh" || !members().some(m => m.id === U.seat && m.on) ? "sh" : U.seat;
   const seatsHTML = '<div class="seats"><button class="seat sh' + (seat === "sh" ? " on" : "") + '" style="--c:#22201C" data-ha="seat" data-hv="sh"><span class="av">議</span>議長</button>' +
     members().filter(m => m.on).map(m => '<button class="seat' + (seat === m.id ? " on" : "") + '" style="--c:' + m.c + '" data-ha="seat" data-hv="' + m.id + '"><span class="av">' + esc(m.s) + "</span>" + esc(m.name) + "</button>").join("") +
+    '<button class="seat ask" style="--c:' + CLAUDE.c + '" data-ha="sheet" data-hs="ask"><span class="av">' + esc(CLAUDE.s) + "</span>Claudeに聞く" + (d.ask && d.ask.wait ? '<i class="dot"></i>' : "") + "</button>" +
     '<button class="seat plus" style="--c:var(--sub)" data-ha="sheet" data-hs="members" aria-label="議員の設定">+</button></div>';
   const dk = d.id + ":" + seat, draft = U.drafts[dk] || "";
   let inp;
@@ -6108,7 +6114,8 @@ function buildPrompt(s){
     g.debates.forEach(d => {
       L.push("□ 審議" + circ(dn(s, d)) + " 論点:" + (d.title || "(未記入)"));
       d.e.forEach(e => {
-        if (e.k === "pause") return;
+        if (e.k === "pause" || e.k === "yoron") return;
+        if (e.k === "ask") { L.push("- (Claudeに聞いた)" + e.x.replace(/\n/g, " / ")); return; }
         if (e.k === "shingi") L.push("- (自分のメモ)" + e.x.replace(/\n/g, " / "));
         else if (e.k === "sum") L.push("- (まとめ)" + e.x.replace(/\n/g, " / "));
         else L.push("- " + memberOf(e.m).name + ":" + e.x + (e.g ? "〔" + e.g + "〕" : ""));
@@ -6119,6 +6126,48 @@ function buildPrompt(s){
   L.push("答え方:");
   L.push("- 1行に1つの発言にしてください(5〜8行)。");
   L.push("- 行のはじめに【案】【反論】【問題】【原因】のどれかを付けてください。");
+  L.push("- 前置きや、最後のまとめの文はいりません。");
+  return L.join("\n");
+}
+/* 審議の途中で Claude に聞く(パーツにせず、その場で) */
+const ASKQ = ["この案の穴を探して", "反論して", "見落としている案を出して", "事実として正しいか確かめて", "物差しで比べるとどうなるか", "目的の言い方を整えて"];
+function askOf(d){ return d.ask = d.ask || { q: "", seat: "neutral", mode: "lines", paste: "", wait: false }; }
+function sheetAsk(s){
+  const cp = curPart(s), d = cp && cp.d && s.debates[cp.d]; if (!d) return "";
+  const a = askOf(d), seats = members().filter(m => m.on);
+  return sheetWrap('<div style="--pc:' + CLAUDE.c + '"><h3>Claude に聞く</h3><p class="d">いまの審議の論点・目的・世論・発言録をつけて聞く。答えは発言録に Claude(参考人)の発言として入る。</p>' +
+    '<div class="lbl">聞きたいこと</div><textarea class="fi" id="hy-askq" style="min-height:3.2rem" data-hin="askq" placeholder="例:「帰ってすぐ1問」は、授業が22時に終わる日でも続くか">' + esc(a.q) + "</textarea>" +
+    '<div class="chips" style="margin-top:.45rem">' + ASKQ.map(x => '<button class="chip" data-ha="askpre" data-hv="' + x + '">' + x + "</button>").join("") + "</div>" +
+    '<div class="lbl" style="margin-top:.8rem">どの立場で</div><div class="chips">' + '<button class="chip' + (a.seat === "neutral" ? " on" : "") + '" data-ha="askseat" data-hv="neutral">中立の参考人</button>' +
+      seats.map(m => '<button class="chip' + (a.seat === m.id ? " on" : "") + '" style="' + (a.seat === m.id ? "--pc:" + m.c : "") + '" data-ha="askseat" data-hv="' + m.id + '">' + esc(m.name) + "として</button>").join("") + "</div>" +
+    '<div class="lbl" style="margin-top:.8rem">答え方</div><div class="chips">' + [["lines", "1行ずつの発言(案・反論の印つき)"], ["whole", "ひとまとまりの答え"]].map(([k, l]) => '<button class="chip' + (a.mode === k ? " on" : "") + '" data-ha="askmode" data-hv="' + k + '">' + l + "</button>").join("") + "</div>" +
+    '<button class="copy" style="margin-top:.9rem" data-ha="askcopy"><span>⧉</span><span>相談文をコピー<small>コピーして Claude に貼る</small></span></button>' +
+    '<div class="lbl" style="margin-top:.9rem">Claude の答えを貼る</div><textarea class="fi" id="hy-askpaste" style="min-height:4.5rem" data-hin="askpaste" placeholder="' + (a.mode === "lines" ? "【案】【反論】などの印はそのまま印になる" : "そのまま1つの発言として入る") + '">' + esc(a.paste) + "</textarea>" +
+    '<button class="bigbtn" data-ha="askput">発言録に入れる</button></div>');
+}
+function buildAsk(s, d){
+  const a = askOf(d), m = a.seat === "neutral" ? null : memberOf(a.seat), gk = gkeyOfDebate(s, d), r = s.res[gk], L = [];
+  L.push("自分の生活と勉強のしかたを決める会議「最高評議会」の第" + s.no + "回(" + titleOf(s) + ")です。自分の中の立場を「議員」として座らせて議論しています。いま審議の途中で、ひとつ聞きたいことがあります。");
+  L.push(m ? "あなたは議員「" + m.name + "」(" + (m.d || "") + ")の席に座って答えてください。" : "あなたは中立の参考人として答えてください。");
+  L.push("");
+  L.push("■ " + (d.stage === "goal" ? "目的の審議(何をよしとするか)" : "審議") + " 論点:" + (d.title || "(まだ決まっていない)"));
+  if (r && r.goal && r.goal.text) L.push("目的:" + r.goal.text + "/物差しの重み:" + crits().filter(c => wOf(r, c) > 0).map(c => c.name + "×" + wOf(r, c)).join("・"));
+  if (d.stage === "goal" && r && r.yc && Object.keys(r.yc).length) L.push("世論(物差し):" + critItems(r).filter(c => r.yc[c.id] != null).map(c => c.x + " " + r.yc[c.id] + "%").join("・"));
+  if (d.stage !== "goal" && r && r.yo && Object.keys(r.yo).length) { const g = groups(s).find(x => x.key === gk); L.push("世論(案):" + optsOf(s, g || { debates: [d] }, r).filter(o => r.yo[o.id] != null).map(o => o.x + " " + r.yo[o.id] + "%").join("・")); }
+  const ag = d.agenda && D.agendas[d.agenda];
+  if (ag && ag.dec && D.decisions[ag.dec]) { const dd = D.decisions[ag.dec], rr = (dd.results || []).slice(-1)[0]; L.push("前回の決定:" + dd.text + (rr ? " → " + rr.v + (rr.note ? "(" + rr.note + ")" : "") : "")); }
+  L.push(""); L.push("■ ここまでの発言録");
+  d.e.forEach(e => {
+    if (e.k === "pause" || e.k === "yoron") return;
+    if (e.k === "ask") L.push("- (Claudeに聞いた)" + e.x.replace(/\n/g, " / "));
+    else if (e.k === "shingi") L.push("- (議長・" + (e.g || "メモ") + ")" + e.x.replace(/\n/g, " / "));
+    else if (e.k === "sum") L.push("- (議長・整理)" + e.x.replace(/\n/g, " / "));
+    else L.push("- " + memberOf(e.m).name + ":" + e.x.replace(/\n/g, " / ") + (e.g ? "〔" + e.g + "〕" : ""));
+  });
+  L.push(""); L.push("■ 聞きたいこと"); L.push(a.q.trim() || "(この審議の穴と、見落としている案)");
+  L.push(""); L.push("答え方:");
+  if (a.mode === "lines") { L.push("- 1行に1つの発言にしてください(3〜8行)。"); L.push("- 行のはじめに【案】【反論】【問題】【原因】のどれかを付けてください(当てはまらなければ付けなくてよい)。"); }
+  else L.push("- 短くまとめて答えてください。");
   L.push("- 前置きや、最後のまとめの文はいりません。");
   return L.join("\n");
 }
@@ -6302,7 +6351,7 @@ function histRow(s){
       (s.consult && (s.consult.ans || []).length ? '<div class="rl"><small style="color:var(--p5)">Claude 相談</small>' + (s.consult.seat ? (s.consult.seat === "neutral" ? "中立の参考人" : esc(memberOf(s.consult.seat).name)) + "の席・" : "") + s.consult.ans.length + "行を発言録へ" + (s.consult.link ? '・<a href="' + esc(s.consult.link) + '" target="_blank" rel="noopener">会話を開く</a>' : "") + "</div>" : "") +
       (kini.length ? '<div class="rl"><small style="color:#7a5a00">気になったこと</small>' + kini.map(k => esc(k.x) + " → " + (destL[k.dest || "box"])).join("<br>") + "</div>" : "") +
       (s.unfinished ? '<div class="rl" style="color:var(--sub)">結論が出ないまま終わった。議題箱に入れてある。</div>' : "") +
-      (debs.some(d => d.e.length) ? '<details class="hd rl"><summary>' + (s.old ? "審議の中身を見る" : "発言録をすべて見る(発言 " + nE + "・審議 " + nS + ")") + "</summary>" + debs.map(d => (debs.length > 1 && !s.old ? '<p class="hx"><b>審議' + circ(dn(s, d)) + " " + esc(d.title || "") + "</b></p>" : "") + d.e.filter(e => e.k !== "pause").map(e => '<p class="hx">' + (e.k === "say" ? "<b>" + esc(memberOf(e.m).name) + "</b> " : e.k === "sum" ? "<b>まとめ</b> " : "") + esc(e.x) + (e.g ? "〔" + esc(e.g) + "〕" : "") + "</p>").join("")).join("") + "</details>" : "") +
+      (debs.some(d => d.e.length) ? '<details class="hd rl"><summary>' + (s.old ? "審議の中身を見る" : "発言録をすべて見る(発言 " + nE + "・審議 " + nS + ")") + "</summary>" + debs.map(d => (debs.length > 1 && !s.old ? '<p class="hx"><b>審議' + circ(dn(s, d)) + " " + esc(d.title || "") + "</b></p>" : "") + d.e.filter(e => e.k !== "pause").map(e => '<p class="hx">' + (e.k === "say" ? "<b>" + esc(memberOf(e.m).name) + "</b> " : e.k === "sum" ? "<b>まとめ</b> " : e.k === "ask" ? "<b>Claudeに聞いた</b> " : e.k === "yoron" ? "<b>世論</b> " + esc(e.diff || "") + (e.x ? "・" : "") : e.k === "shingi" ? "<b>議長</b> " : "") + esc(e.x) + (e.g ? "〔" + esc(e.g) + "〕" : "") + "</p>").join("")).join("") + "</details>" : "") +
       '<div class="rl" style="border-top:0"><button class="delbtn" style="margin-top:.2rem" data-ha="delsess" data-hv="' + s.id + '">この回を消す</button></div></div>';
   }
   return '<button class="hist" data-ha="hist" data-hv="' + s.id + '"><span class="hm"><b>第' + s.no + "回 " + esc(titleOf(s)) + "</b><span>" + md(s.date) + (s.place ? "・" + esc(s.place) : "") + (s.elapsed ? "・" + Math.round(s.elapsed / 60000) + "分" : "") + "・決定 " + (s.nDec || 0) + (s.unfinished ? "・途中で終わった" : "") + "</span></span>" + (open ? "▴" : "▾") + "</button>" + body;
@@ -6344,6 +6393,7 @@ function viewSheet(){
     case "limit": return sheetLimit(s);
     case "title": return sheetTitle(s);
     case "mput": return sheetMput(s);
+    case "ask": return sheetAsk(s);
     case "tpl": return sheetTpl();
     case "yo": return sheetYo(s);
     case "yoedit": return sheetYoEdit(s);
@@ -6793,6 +6843,16 @@ function onClick(ev){
     case "extend": mut(() => { const d = s.debates[curPart(s).d]; d.min += 5; }); return;
     case "recapoff": U.recapOff[v] = 1; saveUI(); render(); return;
     case "cseat": mut(() => { s.consult.seat = v; }); return;
+    case "askpre": { const d = s.debates[curPart(s).d], a = askOf(d), el = $("#hy-askq"); a.q = el ? el.value : a.q; a.q = a.q.trim() ? a.q.trim() + "\n" + v : v; mut(() => {}); return; }
+    case "askseat": { const d = s.debates[curPart(s).d]; askOf(d).q = ($("#hy-askq") || {}).value ?? askOf(d).q; mut(() => { askOf(d).seat = v; }); return; }
+    case "askmode": { const d = s.debates[curPart(s).d]; askOf(d).q = ($("#hy-askq") || {}).value ?? askOf(d).q; mut(() => { askOf(d).mode = v; }); return; }
+    case "askcopy": { const d = s.debates[curPart(s).d], a = askOf(d); a.q = ($("#hy-askq") || {}).value ?? a.q; a.wait = true; saveLocal(); copyText(buildAsk(s, d)).then(ok => toast(ok ? "コピーした。Claude に貼って、答えをここに貼る" : "コピーできなかった")); return; }
+    case "askput": { const d = s.debates[curPart(s).d], a = askOf(d), el = $("#hy-askpaste"), q = (($("#hy-askq") || {}).value ?? a.q).trim(), txt = el ? el.value : a.paste;
+      if (!String(txt).trim()) { el && el.focus(); return; }
+      const list = a.mode === "lines" ? parseAnswer(txt) : [{ id: rid(), k: "say", m: "C", x: String(txt).trim(), g: null, at: now() }];
+      const as = a.seat === "neutral" ? "中立の参考人" : memberOf(a.seat).name + "として";
+      mut(() => { d.e.push({ id: rid(), k: "ask", x: q || "この審議の穴と、見落としている案", as, at: now() }); list.forEach(e => { e.as = as; d.e.push(e); }); d.ask = { q: "", seat: a.seat, mode: a.mode, paste: "", wait: false }; U.sheet = null; });
+      toast(list.length + " 件を発言録に入れた"); return; }
     case "copyprompt": copyText(buildPrompt(s)).then(ok => toast(ok ? "コピーした。Claude に貼る" : "コピーできなかった")); return;
     case "paste": { const el = $("#hy-paste"), list = parseAnswer(el ? el.value : ""); if (!list.length) { el && el.focus(); return; } mut(() => { s.consult.ans.push(...list); s.consult.paste = ""; }); toast(list.length + " 行を発言録に入れた"); return; }
     case "showlink": mut(() => { s.consult.showLink = true; }); return;
@@ -6857,6 +6917,8 @@ function onInput(ev){
     case "checknote": quiet(() => { const c = s.checks[t.dataset.hd] || (applyCheck(s, D.decisions[t.dataset.hd], null), s.checks[t.dataset.hd]); c.note = t.value; const r = (D.decisions[t.dataset.hd].results || []).find(x => x.sess === s.id); if (r) { r.note = t.value; touch(D.decisions[t.dataset.hd]); } }); return;
     case "tplname": quiet(() => { const tp = tplOf(t.dataset.hk); tp.n = t.value; touch(D.settings); }); return;
     case "tpldesc": quiet(() => { const tp = tplOf(t.dataset.hk); tp.d = t.value; touch(D.settings); }); return;
+    case "askq": quiet(() => { const cp = curPart(s); if (cp && cp.d) askOf(s.debates[cp.d]).q = t.value; }); return;
+    case "askpaste": quiet(() => { const cp = curPart(s); if (cp && cp.d) askOf(s.debates[cp.d]).paste = t.value; }); return;
     case "goaltx": quiet(() => { goalOf(resOf(s, t.dataset.hk)).text = t.value; }); return;
     case "goalwhy": quiet(() => { goalOf(resOf(s, t.dataset.hk)).reason = t.value; }); return;
     case "vwhy": quiet(() => { resOf(s, t.dataset.hk).why = t.value; }); return;
