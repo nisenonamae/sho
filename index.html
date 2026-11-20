@@ -525,7 +525,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-07 r105";
+const APP_VERSION = "2026-11-20 r106";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2220,6 +2220,7 @@ function renderSupreme(box){
   const pol = gov.council.supreme.slice().reverse(), pLive = pol.filter(p => !p.closedAt), pDone = pol.filter(p => p.closedAt);
   box.innerHTML = backBtn + '<div class="mh"><h2>最高評議会</h2></div>' +
     '<p style="font-size:.86rem;color:var(--sub)">最高議決機関。審議は制限時間を定めて深く集中して行う。議会終了を宣言した議決は確定し、すべての活動に優先する。</p>' +
+    '<a href="./hyogikai/" style="display:block;text-decoration:none;color:#fff;background:#B8432F;border-radius:14px;padding:.9rem 1rem;margin:.6rem 0 .2rem;font-weight:800;font-size:1.05rem;letter-spacing:.15em;text-align:center">会を開く<small style="display:block;font-weight:400;letter-spacing:0;font-size:.72rem;opacity:.9;margin-top:.15rem">最高評議会アプリ(場づくり・検証・審議・相談・議決)</small></a>' +
     '<div class="sec"><h3>改憲の審議</h3>' + (movedToKenseiin() ? kenseiinNote("改憲の審議は、憲政院アプリの最高評議会で行います。")
       : (aLive.length ? aLive.map(aRow).join("") : '<div class="empty">審議を待っている改憲案はありません。</div>') + foldHtml("これまでの改憲", aDone.map(aRow).join(""), aDone.length)) + "</div>" +
     '<div class="sec"><h3>重大国策の審議</h3>' +
