@@ -772,6 +772,11 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .seg3 button b{display:block;font-size:.9rem}
 #hy .seg3 button span{display:block;font-size:.7rem;color:var(--sub);margin-top:.1rem}
 #hy .seg3 button[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink) inset}
+#hy .top .ttl{flex:1;min-width:0;text-align:left;border:0;background:none;color:var(--paper);padding:0;font-family:inherit;font-size:.9rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.04em}
+#hy .top .ttl b{margin-right:.45rem;letter-spacing:.1em}
+#hy .hist .hm{flex:1;min-width:0;display:flex;flex-direction:column;gap:.1rem}
+#hy .hist .hm b{font-size:.88rem;line-height:1.45;color:var(--ink)}
+#hy .hist .hm span{font-size:.74rem}
 @media (prefers-reduced-motion:reduce){}
 body.hy-full{padding-bottom:0!important}
 body.hy-full nav.tabs{display:none!important}
@@ -834,7 +839,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r108";
+const APP_VERSION = "2026-11-20 r109";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5223,7 +5228,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h2.02";
+const APP_VERSION = "h2.03";
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
 
@@ -5342,14 +5347,15 @@ function nextTeirei(from){ const d = new Date((from || today()) + "T00:00:00"); 
 function mkPart(t, extra){ return Object.assign({ id: rid(), t, on: true, done: false }, extra || {}); }
 function openSession(kind){
   const st = D.settings;
-  const s = { id: rid(), no: nextNo(), kind, limit: st.limits[kind] || 60, at: now(), date: today(), elapsed: 0, run: true, since: now(), parts: [], cur: null,
+  const s = { id: rid(), no: nextNo(), kind, title: (st.nextTitle || "").trim(), limit: st.limits[kind] || 60, at: now(), date: today(), elapsed: 0, run: true, since: now(), parts: [], cur: null,
     place: null, prep: {}, checks: {}, picks: {}, debates: {}, consult: { seat: null, ans: [], link: "", skip: false, paste: "" },
     res: {}, kini: [], focus: 0, pauses: [], recap: null, u: now() };
   PRESETS[kind].parts.forEach(t => { if (t === "debate") { const d = newDebate(s, { title: "", min: 25 }); s.parts.push(mkPart("debate", { d: d.id })); } else s.parts.push(mkPart(t)); });
   // 継続審議があれば、議題選びで最初から選んでおく
   if (kind === "full") contAgendas().slice(0, st.maxPick).forEach(a => pickAgenda(s, a.id, true));
   s.cur = s.parts[0].id;
-  if (st.noManual) { st.nextNo = s.no + 1; touch(st); }
+  if (st.noManual) st.nextNo = s.no + 1;
+  st.nextTitle = ""; touch(st);
   D.sessions[s.id] = s; D.cur = s.id; D.curU = now();
   U.view = "sess"; U.verifyIdx = 0; U.resTab = null; U.seat = "sh"; U.smode = "shingi";
 }
@@ -5448,6 +5454,9 @@ function nextNo(){
   if (st.noManual) return st.nextNo;
   return (EMB.past || 0) + Object.values(D.sessions).filter(x => !x.del).length + 1;
 }
+// 会の名前(何の会か)。なければ、審議した議題から作る
+function autoTitle(s){ const gs = groups(s).map(g => g.title).filter(Boolean); return gs.length ? gs[0] + (gs.length > 1 ? " ほか" + (gs.length - 1) + "件" : "") : (Object.keys(s.checks || {}).length ? "決定の検証" : ""); }
+const titleOf = s => s.title || autoTitle(s) || (PRESETS[s.kind] ? PRESETS[s.kind].n : "会");
 const plannedMin = s => Object.keys(s.picks).filter(id => D.agendas[id]).reduce((a, id) => a + s.picks[id], 0);
 
 /* ───────── 描画 ───────── */
@@ -5482,7 +5491,7 @@ function nextPart(s){ const on = onParts(s), cp = curPart(s), i = on.indexOf(cp)
 
 function viewSession(){
   const s = S(), cp = curPart(s), on = onParts(s), idx = on.indexOf(cp) + 1, nx = nextPart(s);
-  const top = '<div class="top"><div class="wrap"><div class="r1"><b>第' + s.no + "回 " + esc(PRESETS[s.kind] ? PRESETS[s.kind].n : "会") + '</b><button class="tm" data-ha="sheet" data-hs="limit" aria-label="会の時間を変える"><small>会の時間</small><span id="hy-tm" class="' + (s.limit && liveElapsed(s) > s.limit * 60000 ? "over" : "") + '">' + hms(liveElapsed(s)) + '</span><small class="lim">/ ' + (s.limit || "—") + "分</small></button></div>" +
+  const top = '<div class="top"><div class="wrap"><div class="r1"><button class="ttl" data-ha="sheet" data-hs="title" aria-label="会の名前を直す"><b>第' + s.no + "回</b>" + esc(titleOf(s)) + '</button><button class="tm" data-ha="sheet" data-hs="limit" aria-label="会の時間を変える"><small>会の時間</small><span id="hy-tm" class="' + (s.limit && liveElapsed(s) > s.limit * 60000 ? "over" : "") + '">' + hms(liveElapsed(s)) + '</span><small class="lim">/ ' + (s.limit || "—") + "分</small></button></div>" +
     stepsBar(s) + '<div class="r2"><span>' + idx + " " + esc(partLabel(s, cp)) + (nx ? " → " + esc(partName(s, nx)) : "") + '</span><span class="bt">' + savedLabel() +
     '<button class="pill" data-ha="pause">❚❚ 休会</button><button class="pill" data-ha="sheet" data-hs="parts">✎ 構成</button></span></div></div></div>';
   const pc = T[cp.t].c, nc = nx ? T[nx.t].c : "#4A4540";
@@ -5622,7 +5631,7 @@ function buildPrompt(s){
   const c = s.consult, seatId = c.seat || ((members().find(m => m.on && m.name === "慎重派") || members().find(m => m.on) || {}).id) || "neutral";
   const m = seatId === "neutral" ? null : memberOf(seatId);
   const L = [];
-  L.push("自分の生活と勉強のしかたを決める会議「最高評議会」の第" + s.no + "回です。自分の中の立場を「議員」として座らせて議論しています。");
+  L.push("自分の生活と勉強のしかたを決める会議「最高評議会」の第" + s.no + "回(" + titleOf(s) + ")です。自分の中の立場を「議員」として座らせて議論しています。");
   L.push(m ? "あなたは議員「" + m.name + "」(" + (m.d || "") + ")の席に座って、この議論に加わってください。発言録の穴と、反対意見を出してください。" : "あなたは中立の参考人として、この議論の穴と、見落としている案を出してください。");
   L.push("");
   groups(s).forEach(g => {
@@ -5689,6 +5698,7 @@ function partClose(s, p, i, n){
   const c = sessCounts(s), mins = Math.round(liveElapsed(s) / 60000), kini = s.kini.filter(x => !x.del);
   const nextT = nextTeirei(), checks = groups(s).map(g => s.res[g.key]).filter(r => r && !r.cont && r.text.trim()).map(r => r.date || addDays(today(), r.every));
   return ptitle(p, i, n, T.close.d) + '<div class="body">' +
+    '<div class="card"><div class="ch"><b>この会の名前</b><span>議事録にこの名前で残る</span></div><div class="cb"><input class="fi" data-hin="stitle" value="' + esc(s.title || "") + '" placeholder="' + esc(autoTitle(s) || "何の会だったか") + '"></div></div>' +
     '<div class="card"><div class="ch"><b>今日の会</b><span>自動でまとまる</span></div><div class="grid4"><div><b>' + c.checks + "</b>検証</div><div><b>" + c.agendas + "</b>議題</div><div><b>" + c.decs + "</b>決定</div><div><b>" + mins + "</b>分</div></div></div>" +
     '<div class="card"><div class="ch"><b>気になったこと</b><span>' + (kini.length ? kini.length + " 件を振り分ける" : "なし") + "</span></div>" +
     (kini.length ? kini.map(k => '<div class="out"><em>' + esc(k.x) + '</em><span class="s3">' + [["box", "議題箱"], ["later", "あとで"], ["del", "消す"]].map(([v, l]) => '<button class="' + ((k.dest || "box") === v ? "on" : "") + '" data-ha="kdest" data-hk="' + k.id + '" data-hv="' + v + '">' + l + "</button>").join("") + "</span></div>").join("") : '<div class="cb"><div class="empty">会の途中で気になったことは、左下の黄色いボタンから書ける。</div></div>') + "</div>" +
@@ -5708,7 +5718,7 @@ function viewHome(){
     const s = paused, cp = curPart(s), lp = (s.pauses || []).slice(-1)[0] || {};
     const d = cp && cp.d && s.debates[cp.d];
     const nSay = Object.values(s.debates).reduce((a, x) => a + x.e.filter(e => e.k !== "pause").length, 0), nIdea = Object.values(s.debates).reduce((a, x) => a + x.e.filter(e => e.g === "案").length, 0);
-    resume = '<div class="resume"><div class="rh">休会中の会があります<span>' + (lp.at ? "休会から " + ago(lp.at) : "") + '</span></div><div class="rb"><b>第' + s.no + "回 " + esc(PRESETS[s.kind].n) + "</b>" + stepsBar(s, "minisegs") +
+    resume = '<div class="resume"><div class="rh">休会中の会があります<span>' + (lp.at ? "休会から " + ago(lp.at) : "") + '</span></div><div class="rb"><b>第' + s.no + "回 " + esc(titleOf(s)) + "</b>" + stepsBar(s, "minisegs") +
       '<div class="meta">' + esc(partLabel(s, cp)) + "の途中<br>発言 " + nSay + "・案 " + nIdea + "・会の時間 " + Math.round(liveElapsed(s) / 60000) + "分" + (d ? "・審議の残り " + ms2(d.min * 60000 - d.used) : "") + "</div>" +
       '<div class="why">' + (lp.why ? "<i>" + esc(lp.why) + "</i>" : "") + (s.place ? esc(s.place) : "") + (lp.when ? "・再開の目安:" + esc(lp.when) : "") + "</div>" +
       '<div class="rbtns"><button class="go2" data-ha="resume">続きから再開</button><button class="end2" data-ha="resumeclose">ここで閉会</button></div></div></div>';
@@ -5719,7 +5729,10 @@ function viewHome(){
   // 次の会(番号と前回)
   const nextCard = paused ? "" : '<div class="card" style="--pc:var(--p6)"><div class="ch"><b>次の会</b><span>' + (last ? "前回 第" + last.no + "回・" + md(last.date) + "・" + daysBetween(last.date, today()) + "日前" : "前回までの記録は、いちばん下の「重大国策(前のしくみ)」") + '</span></div><div class="cb nextno">' +
     (U.editNo ? '<span class="nolbl">第</span><input type="number" min="1" inputmode="numeric" class="noin" data-hin="nextno" value="' + nextNo() + '" aria-label="次の会の番号"><span class="nolbl">回</span><button class="mini" data-ha="editno">これでいい</button>'
-      : '<b class="no">第' + nextNo() + '回</b><button class="mini" data-ha="editno">番号を直す</button>') + "</div></div>";
+      : '<b class="no">第' + nextNo() + '回</b><button class="mini" data-ha="editno">番号を直す</button>') + "</div>" +
+    '<div class="cb" style="border-top:1px solid var(--rule)"><div class="lbl">何の会か</div><input class="fi" id="hy-nexttitle" data-hin="nexttitle" value="' + esc(st.nextTitle || "") + '" placeholder="例:バイトが始まったあとの時間の組み方">' +
+    (cont.concat(box).length ? '<div class="chips" style="margin-top:.5rem">' + cont.concat(box).slice(0, 4).map(a => '<button class="chip" data-ha="titlefrom" data-hv="' + a.id + '">' + esc(cut(a.x, 16)) + "</button>").join("") + "</div>" : "") +
+    '<p class="note" style="margin:.4rem 0 0">空のままでもよい。そのときは、審議した議題が名前になる。</p></div></div>';
   // 開く理由(自分で決める)
   const reasonCard = '<div class="card" style="--pc:var(--p6)"><div class="ch"><b>開く理由</b><span>自分で決める。押すと直せる</span></div>' +
     reasons.map(r => U.editReason === r.id
@@ -5745,7 +5758,7 @@ function viewHome(){
   return '<div class="home">' + (EMB.back || "") + '<header class="head"><h1>最高評議会</h1><button data-ha="view" data-hv="set">設定・議員 ⚙</button></header>' +
     '<div class="stack">' + resume + nextCard + reasonCard + stateCard + todayCard + boxCard + laterCard + histCard + "</div>" +
     '<p class="note" style="margin:.4rem 0 .3rem">最高評議会 ' + APP_VERSION + "・" + (NET.conn ? "同期:" + esc(NET.conn.repo) + (NET.state === "err" ? "(つながらない)" : "") : "同期していない(省の設定でつなぐ)") + "</p>" +
-    "</div>" + (paused ? "" : '<div class="dock"><div class="wrap"><div class="foot"><button class="go" data-ha="open">開 会<small>第' + nextNo() + "回 " + esc(PRESETS[kind].n) + "・" + D.settings.limits[kind] + "分。押すと会の時計が動き出す</small></button></div></div></div>");
+    "</div>" + (paused ? "" : '<div class="dock"><div class="wrap"><div class="foot"><button class="go" data-ha="open">開 会<small>第' + nextNo() + "回 " + esc(cut((st.nextTitle || "").trim() || PRESETS[kind].n, 18)) + "・" + D.settings.limits[kind] + "分。押すと会の時計が動き出す</small></button></div></div></div>");
 }
 function pauseSummary(){
   const all = []; closedSessions().concat(S() ? [S()] : []).forEach(s => (s.pauses || []).forEach(p => all.push({ why: p.why, place: s.place })));
@@ -5765,7 +5778,7 @@ function histRow(s){
       ((s.pauses || []).length ? "<h4>休会</h4>" + s.pauses.map(p => '<div class="dline">' + esc(p.why || "") + (p.back ? "・" + ago2(p.back - p.at) + "後に再開" : "") + "</div>").join("") : "") +
       (s.consult && s.consult.link ? '<h4>相談</h4><div class="dline"><a href="' + esc(s.consult.link) + '" target="_blank" rel="noopener">会話を開く</a></div>' : "") + "</div>";
   }
-  return '<button class="hist" data-ha="hist" data-hv="' + s.id + '"><b>第' + s.no + "回</b><span>" + md(s.date) + (s.place ? "・" + esc(s.place) : "") + "・" + Math.round(s.elapsed / 60000) + "分・決定 " + (s.nDec || 0) + "</span>" + (open ? "▴" : "▾") + "</button>" + body;
+  return '<button class="hist" data-ha="hist" data-hv="' + s.id + '"><span class="hm"><b>第' + s.no + "回 " + esc(titleOf(s)) + "</b><span>" + md(s.date) + (s.place ? "・" + esc(s.place) : "") + "・" + Math.round(s.elapsed / 60000) + "分・決定 " + (s.nDec || 0) + "</span></span>" + (open ? "▴" : "▾") + "</button>" + body;
 }
 
 /* ───────── 設定 ───────── */
@@ -5798,6 +5811,7 @@ function viewSheet(){
     case "addpart": return sheetAddPart(s);
     case "retitle": return sheetRetitle(s);
     case "limit": return sheetLimit(s);
+    case "title": return sheetTitle(s);
   }
   return "";
 }
@@ -5864,6 +5878,14 @@ function sheetEntry(s){
     '<div class="lbl">書き直す</div><textarea class="fi" id="hy-etx">' + esc(e.x) + "</textarea>" +
     '<div class="chips" style="margin-top:.8rem;--pc:var(--p4)"><button class="chip on" data-ha="esave">直す</button>' + (inConsult ? "" : '<button class="chip" data-ha="eissue">ここから論点を変える</button>') + '<button class="chip" data-ha="edel">消す</button></div>');
 }
+function sheetTitle(s){
+  if (!s) return "";
+  const sug = groups(s).map(g => g.title).filter(Boolean);
+  return sheetWrap('<h3>第' + s.no + '回は何の会か</h3><p class="d">議事録やホームにこの名前で出る。空なら、審議した議題が名前になる。</p>' +
+    '<input class="fi" id="hy-ttx" value="' + esc(s.title || "") + '" placeholder="' + esc(autoTitle(s) || "何の会か") + '">' +
+    (sug.length ? '<div class="chips" style="margin-top:.6rem">' + sug.slice(0, 4).map(x => '<button class="chip" data-ha="ttlpick" data-hv="' + esc(x) + '">' + esc(cut(x, 18)) + "</button>").join("") + "</div>" : "") +
+    '<button class="bigbtn" data-ha="ttlsave">これにする</button>');
+}
 function sheetLimit(s){
   if (!s) return "";
   const el = Math.floor(liveElapsed(s) / 60000), cp = curPart(s), d = cp && cp.d && s.debates[cp.d];
@@ -5924,6 +5946,7 @@ function finalize(s){
   const st = D.settings; st.placeStats = st.placeStats || {};
   if (s.place) { const x = st.placeStats[s.place] || (st.placeStats[s.place] = { use: 0, fin: 0 }); x.use++; if (!(s.pauses || []).length) x.fin++; }
   touch(st);
+  if (!s.title) s.title = autoTitle(s);
   s.run = false; s.closed = now(); s.nDec = nDec; s.parts.forEach(p => { if (p.t === "close") p.done = true; });
   D.cur = null; D.curU = now();
 }
@@ -5991,6 +6014,9 @@ function onClick(ev){
     case "pmin": mut(() => { let m = s.picks[v] + 5; if (m > 60) m = 10; s.picks[v] = m; Object.values(s.debates).forEach(d => { if (d.agenda === v && !d.from) d.min = m; }); }); return;
     case "addag": { const el = b.parentElement.querySelector("input"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } mut(() => { const na = { id: rid(), x, at: now(), st: "box", u: now() }; D.agendas[na.id] = na; }); const e2 = $("#hy-newag"); if (e2) e2.focus({ preventScroll: true }); return; }
     case "delag": if (!confirm("この議題を消しますか。")) return; mut(() => touch(Object.assign(D.agendas[v], { del: true }))); return;
+    case "titlefrom": { const a = D.agendas[v]; if (!a) return; mut(() => { D.settings.nextTitle = a.x; touch(D.settings); }); return; }
+    case "ttlpick": { const el = $("#hy-ttx"); if (el) { el.value = v; el.focus(); } return; }
+    case "ttlsave": { const x = ($("#hy-ttx").value || "").trim(); U.sheet = null; mut(() => { s.title = x; }); return; }
     case "editno": U.editNo = !U.editNo; render(); if (U.editNo) { const n = $(".noin"); if (n) { n.focus(); n.select(); } } return;
     case "addreason": { const el = $("#hy-newreason"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } mut(() => { D.settings.reasons = D.settings.reasons || []; D.settings.reasons.push({ id: rid(), x }); touch(D.settings); }); const e2 = $("#hy-newreason"); if (e2) e2.focus({ preventScroll: true }); return; }
     case "reasonedit": U.editReason = v; render(); { const e = $("#hy-reasonedit"); if (e) e.focus(); } return;
@@ -6088,6 +6114,8 @@ function onInput(ev){
     case "resdate": quiet(() => { const r = resOf(s, t.dataset.hk); r.date = t.value; }); render(); return;
     case "clink": quiet(() => { s.consult.link = t.value.trim(); }); return;
     case "min": { const n = Math.round(+t.value); if (n >= 1) quiet(() => setMin(t.dataset.hk, n)); return; }
+    case "nexttitle": quiet(() => { D.settings.nextTitle = t.value; touch(D.settings); }); return;
+    case "stitle": quiet(() => { s.title = t.value.trim(); }); return;
     case "nextno": { const n = Math.round(+t.value); if (n >= 1) quiet(() => { D.settings.nextNo = n; D.settings.noManual = true; touch(D.settings); }); return; }
     case "mem": quiet(() => { const m = D.settings.members.find(x => x.id === t.dataset.hv); m[t.dataset.hf] = t.value; touch(D.settings); }); return;
   }
@@ -6100,6 +6128,8 @@ function onKey(ev){
   if (t.id === "hy-newag") { ev.preventDefault(); const b = t.parentElement.querySelector("[data-ha=addag]"); b && b.click(); return; }
   if (t.id === "hy-newkini") { ev.preventDefault(); $("[data-ha=addkini]").click(); return; }
   if (t.id === "hy-dtitle") { ev.preventDefault(); t.blur(); return; }
+  if (t.id === "hy-ttx") { ev.preventDefault(); $("[data-ha=ttlsave]").click(); return; }
+  if (t.id === "hy-nexttitle") { ev.preventDefault(); t.blur(); return; }
   if (t.id === "hy-newreason") { ev.preventDefault(); $("[data-ha=addreason]").click(); return; }
   if (t.id === "hy-reasonedit") { ev.preventDefault(); $("[data-ha=reasonsave]").click(); return; }
   if (t.classList && t.classList.contains("noin")) { ev.preventDefault(); $("[data-ha=editno]").click(); return; }
