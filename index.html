@@ -474,6 +474,291 @@ a.pk-STAGE b{color:var(--stage)}a.pk-WAVE b{color:var(--wave)}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-top:1px solid var(--rule);display:flex;padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs button{flex:1;border:none;background:none;padding:.8rem 0;cursor:pointer;color:var(--sub);font-weight:700}
 nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--shu)}
+/* ───── 最高評議会(#hy の中だけに効く) ───── */
+#hy,#hy :where(*),#hy :where(*)::before,#hy :where(*)::after{all:revert;box-sizing:border-box}
+#hy{font-family:"Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;font-size:16px;line-height:normal;color:var(--ink);-webkit-font-smoothing:antialiased}
+#hy{--ink:#22201C;--paper:#F6F3EC;--white:#FFFDF8;--sheet:#F1EDE4;--rule:#DDD6C8;--sub:#7A7266;--faint:#ADA597;
+ --p1:#3F7A55;--p2:#2F4F8A;--p3:#A9761C;--p4:#6B4C9A;--p5:#22808A;--p6:#B8432F;--p7:#4A4540;--gold:#B8860B}
+#hy{margin:0;background:var(--paper);color:var(--ink);font-family:"Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#hy button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#hy button:focus-visible,#hy input:focus-visible,#hy textarea:focus-visible{outline:2px solid var(--pc,var(--ink));outline-offset:2px}
+#hy input,#hy textarea{font:inherit;color:var(--ink)}
+#hy .wrap{max-width:600px;margin:0 auto}
+#hy .top{position:sticky;top:0;z-index:20;background:var(--ink);color:var(--paper);padding:.6rem 16px .7rem}
+#hy .top .r1{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+#hy .top b{font-size:.95rem;letter-spacing:.1em}
+#hy .top .tm{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.05rem;white-space:nowrap}
+#hy .top .tm small{font-size:.65rem;font-weight:400;opacity:.7;margin-right:.3rem}
+#hy .steps{display:flex;gap:3px;margin-top:.5rem}
+#hy .steps i{flex:1;height:6px;border-radius:3px;background:var(--c);opacity:.28}
+#hy .steps i.d{opacity:.9}
+#hy .steps i.c{opacity:1;box-shadow:0 0 0 1.5px var(--paper)}
+#hy .top .r2{display:flex;justify-content:space-between;align-items:center;gap:.4rem;margin-top:.45rem;font-size:.7rem}
+#hy .top .r2>span{opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+#hy .top .bt{display:flex;gap:.35rem;align-items:center;flex:none}
+#hy .pill{border:1px solid rgba(246,243,236,.4);border-radius:999px;padding:.2rem .65rem;background:none;color:var(--paper);font-size:.72rem}
+#hy .saved{font-size:.62rem;opacity:.7;margin-right:.1rem;white-space:nowrap}
+#hy .saved.err{color:#F2A08F;opacity:1}
+#hy .ptitle{padding:.95rem 16px .2rem;border-left:6px solid var(--pc);margin:0}
+#hy .ptitle small{display:block;font-size:.72rem;color:var(--pc);font-weight:800;letter-spacing:.1em}
+#hy .ptitle h2{margin:.1rem 0 0;font-size:1.35rem}
+#hy .ptitle p{margin:.25rem 0 0;font-size:.8rem;color:var(--sub);line-height:1.6}
+#hy .body{padding:.7rem 16px 0}
+#hy .card{background:var(--white);border:1px solid var(--rule);border-radius:12px;margin:0 0 .6rem;overflow:hidden}
+#hy .ch{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;padding:.55rem .8rem;background:var(--sheet);border-bottom:1px solid var(--rule)}
+#hy .ch b{font-size:.84rem;color:var(--pc);letter-spacing:.04em;flex:none}
+#hy .ch span{font-size:.7rem;color:var(--sub);text-align:right}
+#hy .cb{padding:.65rem .8rem}
+#hy .ta{display:block;width:100%;border:0;background:transparent;resize:vertical;font-size:.88rem;line-height:1.7;padding:0;min-height:5rem}
+#hy .ta:focus{outline:none}
+#hy .ta::placeholder,#hy .inp input::placeholder,#hy .inp textarea::placeholder,#hy .fi::placeholder{color:var(--faint)}
+#hy .fi{display:block;width:100%;background:var(--white);border:1px solid var(--rule);border-radius:10px;padding:.55rem .7rem;font-size:.9rem;line-height:1.6}
+#hy textarea.fi{resize:vertical;min-height:4.5rem}
+#hy .chips{display:flex;flex-wrap:wrap;gap:.4rem}
+#hy .chip{border:1.5px solid var(--rule);background:var(--white);border-radius:999px;padding:.32rem .75rem;font-size:.82rem;font-weight:600;color:var(--sub)}
+#hy .chip.on{background:var(--pc);border-color:var(--pc);color:var(--white)}
+#hy .chip small{font-weight:400;font-size:.68rem;opacity:.8;margin-left:.3rem}
+#hy .chk{display:flex;gap:.65rem;align-items:center;padding:.65rem .8rem;border:0;border-top:1px solid var(--rule);width:100%;background:none;text-align:left}
+#hy .chk:first-child{border-top:0}
+#hy .box{flex:none;width:1.4rem;height:1.4rem;border-radius:6px;border:2px solid var(--rule);display:grid;place-items:center;font-size:.8rem;font-weight:800;color:var(--white)}
+#hy .box.on{background:var(--pc);border-color:var(--pc)}
+#hy .chk b{display:block;font-size:.9rem}
+#hy .chk span.s{display:block;font-size:.72rem;color:var(--sub);margin-top:.1rem}
+#hy .dt{font-weight:800;font-size:1.05rem;line-height:1.5}
+#hy .meta{font-size:.74rem;color:var(--sub);margin-top:.2rem;line-height:1.55}
+#hy .res{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.6rem}
+#hy .res button{text-align:center;border:1.5px solid var(--rule);border-radius:10px;padding:.6rem 0;font-size:.84rem;font-weight:700;color:var(--sub);background:var(--white)}
+#hy .res .on{background:var(--rc,#3F7A55);border-color:var(--rc,#3F7A55);color:var(--white)}
+#hy .auto{font-size:.76rem;color:#3F7A55;margin-top:.5rem;line-height:1.55}
+#hy .auto.w{color:var(--p6)}
+#hy .auto button{border:0;background:none;padding:0;text-decoration:underline;text-underline-offset:3px;color:inherit;font-size:inherit}
+#hy .line{border-top:1px solid var(--rule);margin:.65rem -.8rem 0;padding:.6rem .8rem 0}
+#hy .lbl{font-size:.72rem;font-weight:700;color:var(--sub);margin-bottom:.3rem}
+#hy .item{display:flex;gap:.65rem;align-items:center;padding:.65rem .8rem;border-top:1px solid var(--rule)}
+#hy .item:first-child{border-top:0}
+#hy .item .m{flex:1;min-width:0}
+#hy .item .m b{display:block;font-size:.9rem;line-height:1.45;font-weight:700}
+#hy .item .m span{display:block;font-size:.72rem;color:var(--sub);margin-top:.1rem}
+#hy .item.pin{background:#FBF4E4}
+#hy .w{color:var(--p6)!important}
+#hy .cs{color:var(--p3)!important}
+#hy .min{flex:none;font-size:.8rem;font-weight:800;color:var(--pc);border:1.5px solid var(--pc);border-radius:8px;padding:.2rem .5rem;background:none}
+#hy .tapzone{display:flex;gap:.65rem;align-items:center;flex:1;min-width:0;border:0;background:none;padding:0;text-align:left}
+#hy .add{display:flex;gap:.4rem;padding:.5rem .8rem;border-top:1px solid var(--rule);font-size:.82rem;color:var(--sub);align-items:center}
+#hy .add input{flex:1;min-width:0;border:0;background:transparent;font-size:.86rem;padding:.25rem 0}
+#hy .add input:focus{outline:none}
+#hy .add button,#hy .mini{border:1.5px solid var(--rule);background:var(--white);border-radius:8px;padding:.25rem .6rem;font-size:.76rem;font-weight:700;color:var(--sub)}
+#hy .addbtn{display:block;width:100%;text-align:left;border:0;border-top:1px solid var(--rule);background:none;padding:.6rem .8rem;font-size:.82rem;color:var(--sub)}
+#hy .tabs{display:flex;gap:.35rem;margin-bottom:.6rem}
+#hy .tabs button{flex:1;font-size:.76rem;font-weight:700;border-radius:9px;padding:.45rem .55rem;background:var(--sheet);color:var(--sub);line-height:1.35;border:0;text-align:left;min-width:0}
+#hy .tabs button.on{background:var(--white);color:var(--ink);box-shadow:0 0 0 1.5px var(--pc) inset}
+#hy .idea{display:flex;align-items:center;gap:.6rem;padding:.6rem .8rem;border-top:1px solid var(--rule);font-size:.9rem;width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left}
+#hy .idea:first-child{border-top:0}
+#hy .copy{display:flex;align-items:center;gap:.7rem;width:100%;background:var(--pc);color:var(--white);border:0;border-radius:10px;padding:.75rem .9rem;font-weight:800;text-align:left;font-size:.95rem}
+#hy .copy small{display:block;font-weight:400;font-size:.7rem;opacity:.85;margin-top:.1rem}
+#hy .links{display:flex;justify-content:space-between;gap:.5rem;font-size:.78rem;color:var(--sub);margin:.2rem 2px .6rem}
+#hy .links button{border:0;background:none;padding:.2rem 0;color:inherit;text-decoration:underline;text-underline-offset:3px;font-size:inherit}
+#hy .dec{position:relative;padding-right:2.6rem}
+#hy .dec textarea{font-weight:800;font-size:1.05rem;line-height:1.65;min-height:3.4rem}
+#hy .seal{position:absolute;top:-.15rem;right:0;width:2.2rem;height:2.2rem;border-radius:50%;border:2.5px solid var(--pc);color:var(--pc);display:grid;place-items:center;font-size:.8rem;font-weight:800;transform:rotate(-10deg)}
+#hy .grid4{display:grid;grid-template-columns:repeat(4,1fr)}
+#hy .grid4 div{text-align:center;padding:.5rem 0;font-size:.68rem;color:var(--sub);border-left:1px solid var(--rule)}
+#hy .grid4 div:first-child{border-left:0}
+#hy .grid4 b{display:block;font-size:1.3rem;color:var(--ink)}
+#hy .out{display:flex;gap:.5rem;align-items:center;padding:.55rem .8rem;border-top:1px solid var(--rule);font-size:.84rem}
+#hy .out:first-child{border-top:0}
+#hy .out em{flex:1;font-style:normal;min-width:0}
+#hy .s3{display:flex;background:var(--sheet);border-radius:8px;padding:2px;gap:2px;flex:none}
+#hy .s3 button{font-size:.66rem;font-weight:700;padding:.3rem .45rem;border-radius:6px;color:var(--sub);border:0;background:none}
+#hy .s3 .on{background:var(--pc);color:var(--white)}
+#hy .dots{display:flex;gap:.4rem}
+#hy .dots button{flex:1;text-align:center;padding:.45rem 0;border-radius:8px;border:1.5px solid var(--rule);font-weight:700;color:var(--sub);background:var(--white)}
+#hy .dots .on{background:var(--pc);border-color:var(--pc);color:var(--white)}
+#hy .empty{font-size:.84rem;color:var(--sub);line-height:1.7;padding:.2rem 0}
+#hy .dock{position:fixed;left:0;right:0;bottom:0;z-index:15;pointer-events:none}
+#hy .dock .wrap{padding:.7rem 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(rgba(246,243,236,0),var(--paper) 22%);pointer-events:auto}
+#hy .foot{display:flex;gap:.5rem;align-items:stretch}
+#hy .memo{flex:none;border:1.5px dashed var(--gold);background:#F7EDCF;color:#7a5a00;border-radius:12px;padding:.55rem .7rem;font-size:.74rem;font-weight:700;line-height:1.25;text-align:center}
+#hy .next{flex:1;border:0;border-radius:12px;background:var(--nc);color:var(--white);text-align:center;padding:.8rem;font-weight:800;font-size:.95rem}
+#hy .next small{display:block;font-weight:400;font-size:.66rem;opacity:.9;margin-top:.1rem}
+#hy .spacer{height:var(--sp,120px)}
+#hy .dim{position:fixed;inset:0;background:rgba(34,32,28,.45);z-index:40}
+#hy .bs{position:fixed;left:0;right:0;bottom:0;max-height:88vh;overflow:auto;z-index:41;background:var(--paper);border-radius:18px 18px 0 0;padding:.6rem 16px calc(18px + env(safe-area-inset-bottom));max-width:600px;margin:0 auto}
+#hy .grab{width:40px;height:4px;border-radius:2px;background:var(--rule);margin:0 auto .8rem}
+#hy .bs h3{margin:0;font-size:1.1rem}
+#hy .bs p.d{margin:.25rem 0 .7rem;font-size:.76rem;color:var(--sub);line-height:1.55}
+#hy .bigbtn{display:block;width:100%;border:0;border-radius:12px;background:var(--bc,var(--ink));color:var(--white);padding:.85rem;font-weight:800;font-size:.95rem;margin-top:1rem;text-align:center}
+#hy .bigbtn small{display:block;font-weight:400;font-size:.68rem;opacity:.9}
+#hy .pr{display:flex;align-items:center;gap:.55rem;padding:.55rem .7rem;border-top:1px solid var(--rule)}
+#hy .pr:first-child{border-top:0}
+#hy .pr .cl{width:.75rem;height:2rem;border-radius:4px;background:var(--c);flex:none}
+#hy .pr .m{flex:1;min-width:0}
+#hy .pr .m b{display:block;font-size:.9rem;line-height:1.4}
+#hy .pr .m span{display:block;font-size:.7rem;color:var(--sub)}
+#hy .pr.here{background:#F3EEF8}
+#hy .pr.off .m,#hy .pr.off .cl,#hy .pr.off .av{opacity:.35}
+#hy .mv{display:flex;flex-direction:column;gap:2px;flex:none}
+#hy .mv button{border:0;background:var(--sheet);border-radius:5px;width:1.6rem;height:1.05rem;font-size:.55rem;color:var(--sub);padding:0;line-height:1}
+#hy .mv button:disabled{opacity:.3}
+#hy .sw{width:42px;height:24px;border-radius:12px;background:var(--rule);position:relative;flex:none;border:0;padding:0}
+#hy .sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--white);transition:left .15s}
+#hy .sw.on{background:var(--ink)}
+#hy .sw.on::after{left:21px}
+#hy .donechip{font-size:.7rem;color:var(--sub);border:0;background:none;padding:.3rem .2rem;flex:none}
+#hy .jump{font-size:.7rem;color:var(--pc);font-weight:700;border:1.5px solid var(--rule);background:var(--white);border-radius:999px;padding:.15rem .55rem;flex:none}
+#hy .presets{display:flex;gap:.35rem;margin-bottom:.6rem}
+#hy .presets button{flex:1;text-align:center;font-size:.76rem;font-weight:700;border-radius:9px;padding:.45rem 0;border:1.5px solid var(--rule);background:var(--white);color:var(--sub)}
+#hy .presets .on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+#hy{--mc:#22808A}
+#hy .issue{display:flex;align-items:flex-start;gap:.5rem;background:var(--white);border:1px solid var(--rule);border-left:4px solid var(--pc);border-radius:4px 10px 10px 4px;padding:.5rem .7rem;margin:0 0 .5rem}
+#hy .issue small{display:block;font-size:.66rem;color:var(--pc);font-weight:800}
+#hy .issue b{display:block;font-size:.95rem;line-height:1.45}
+#hy .issue .m{flex:1;min-width:0}
+#hy .issue .tm2{font-size:.72rem;color:var(--sub);white-space:nowrap;font-variant-numeric:tabular-nums}
+#hy .issue .tm2.w{color:var(--p6);font-weight:700}
+#hy .tray{display:flex;align-items:center;gap:.35rem;overflow-x:auto;margin:0 0 .5rem;scrollbar-width:none}
+#hy .tray::-webkit-scrollbar{display:none}
+#hy .tray>span{font-size:.68rem;font-weight:800;color:var(--pc);flex:none}
+#hy .tray i{font-style:normal;font-size:.74rem;background:var(--white);border:1.5px solid var(--pc);color:var(--ink);border-radius:999px;padding:.2rem .55rem;white-space:nowrap}
+#hy .tray i.ph{border-style:dashed;color:var(--sub)}
+#hy .log{background:var(--white);border:1px solid var(--rule);border-radius:12px;padding:.3rem .6rem .5rem;min-height:280px}
+#hy .log .ch{margin:-.3rem -.6rem .35rem}
+#hy .say{display:flex;gap:.5rem;padding:.4rem 0;width:100%;border:0;background:none;text-align:left}
+#hy .say:focus-visible{outline:2px solid var(--c)}
+#hy .av{flex:none;width:1.9rem;height:1.9rem;border-radius:50%;background:var(--c);color:var(--white);display:grid;place-items:center;font-size:.78rem;font-weight:800}
+#hy .say .m{flex:1;min-width:0}
+#hy .say .nm{font-size:.66rem;color:var(--c);font-weight:800}
+#hy .say .tx{font-size:.86rem;line-height:1.55;margin-top:.05rem;white-space:pre-wrap;word-break:break-word}
+#hy .tg{display:inline-block;font-size:.62rem;font-weight:800;border-radius:5px;padding:.03rem .35rem;margin-top:.2rem;margin-right:.25rem;border:1px solid var(--rule);color:var(--sub)}
+#hy .tg.an{background:var(--p4);border-color:var(--p4);color:var(--white)}
+#hy .tg.hn{background:var(--p6);border-color:var(--p6);color:var(--white)}
+#hy .tg.gn{background:#5B6B7A;border-color:#5B6B7A;color:var(--white)}
+#hy .tg.mn{background:var(--p3);border-color:var(--p3);color:var(--white)}
+#hy .note2{display:block;width:100%;text-align:left;border:0;background:#F7F4FA;margin:.5rem 0;padding:.45rem .7rem .45rem .75rem;border-left:3px solid var(--pc);border-radius:0 8px 8px 0;font-size:.92rem;line-height:1.75;color:var(--ink);white-space:pre-wrap;word-break:break-word}
+#hy .nh{font-size:.64rem;font-weight:800;color:var(--pc);margin-bottom:.1rem;display:flex;justify-content:space-between}
+#hy .sum2{display:block;width:100%;text-align:left;margin:.5rem 0;padding:.6rem .7rem;border:1.5px solid var(--pc);background:var(--white);border-radius:10px;font-size:.88rem;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+#hy .seats{display:flex;gap:.35rem;overflow-x:auto;white-space:nowrap;margin-bottom:.35rem;align-items:center;scrollbar-width:none;padding:2px}
+#hy .seats::-webkit-scrollbar{display:none}
+#hy .seat{flex:none;display:flex;align-items:center;gap:.25rem;font-size:.7rem;white-space:nowrap;font-weight:700;color:var(--sub);background:var(--white);border:1.5px solid var(--rule);border-radius:999px;padding:.12rem .55rem .12rem .12rem}
+#hy .seat .av{width:1.4rem;height:1.4rem;font-size:.6rem}
+#hy .seat.on{border-color:var(--c);color:var(--c);box-shadow:0 0 0 1px var(--c) inset}
+#hy .seat.sh .av{background:var(--white);color:var(--p4);border:1.5px solid var(--p4)}
+#hy .seat.plus{padding:.2rem .55rem}
+#hy .inp{display:flex;gap:.4rem;align-items:center;background:var(--white);border:1.5px solid var(--c,var(--pc));border-radius:12px;padding:.35rem .4rem .35rem .7rem}
+#hy .inp input{flex:1;min-width:0;border:0;background:transparent;font-size:.88rem;padding:.3rem 0}
+#hy .inp input:focus,#hy .inp textarea:focus{outline:none}
+#hy .tgs{display:flex;gap:.2rem;flex:none}
+#hy .tgs button{font-size:.62rem;font-weight:800;border:1px solid var(--rule);border-radius:5px;padding:.2rem .3rem;color:var(--sub);background:var(--white)}
+#hy .tgs button.on.an{background:var(--p4);border-color:var(--p4);color:var(--white)}
+#hy .tgs button.on.hn{background:var(--p6);border-color:var(--p6);color:var(--white)}
+#hy .tgs button.on.gn{background:#5B6B7A;border-color:#5B6B7A;color:var(--white)}
+#hy .tgs button.on.mn{background:var(--p3);border-color:var(--p3);color:var(--white)}
+#hy .send{background:var(--c,var(--pc));color:var(--white);border:0;border-radius:8px;padding:.4rem .65rem;font-size:.78rem;font-weight:800;flex:none}
+#hy .inp.tall{flex-direction:column;align-items:stretch;padding:.5rem .5rem .45rem .7rem}
+#hy .inp.tall textarea{border:0;background:transparent;min-height:4.6rem;line-height:1.6;font-size:.9rem;resize:none;padding:0}
+#hy .inp.tall .bot{display:flex;justify-content:space-between;align-items:center}
+#hy .cmpk{display:flex;gap:.3rem}
+#hy .cmpk button{font-size:.68rem;font-weight:800;border:1px solid var(--rule);border-radius:6px;padding:.25rem .5rem;color:var(--sub);background:var(--white)}
+#hy .cmpk .on{background:var(--p4);border-color:var(--p4);color:var(--white)}
+#hy .sumcard .it2{display:block;padding:.6rem .8rem;border-top:1px solid var(--rule)}
+#hy .sumcard .it2:first-child{border-top:0}
+#hy .sumcard small{display:block;font-size:.66rem;font-weight:800;color:var(--p4)}
+#hy .sumcard p{margin:.15rem 0 0;font-size:.86rem;line-height:1.65;white-space:pre-wrap}
+#hy .ans .it2{display:flex;gap:.55rem;align-items:flex-start;padding:.6rem .8rem;border:0;border-top:1px solid var(--rule);width:100%;background:none;text-align:left}
+#hy .ans .it2:first-child{border-top:0}
+#hy .ans .it2 .m{flex:1}
+#hy .ans .it2 b{display:block;font-size:.9rem;line-height:1.5}
+#hy .ans .it2 small{font-size:.68rem;color:var(--sub)}
+#hy .resume{background:var(--white);border:2px solid var(--p4);border-radius:14px;overflow:hidden;margin-bottom:.8rem}
+#hy .resume .rh{background:var(--p4);color:var(--white);padding:.5rem .8rem;display:flex;justify-content:space-between;align-items:baseline;font-size:.8rem;font-weight:800}
+#hy .resume .rh span{font-weight:400;font-size:.7rem;opacity:.9}
+#hy .resume .rb{padding:.7rem .8rem}
+#hy .resume .rb>b{display:block;font-size:1rem;line-height:1.5}
+#hy .minisegs{display:flex;gap:3px;margin:.55rem 0 .2rem}
+#hy .minisegs i{flex:1;height:5px;border-radius:3px;background:var(--c);opacity:.25}
+#hy .minisegs i.d{opacity:.85}
+#hy .minisegs i.c{opacity:1;outline:2px solid var(--c);outline-offset:1px}
+#hy .rbtns{display:flex;gap:.45rem;margin-top:.7rem}
+#hy .rbtns button{text-align:center;border-radius:10px;padding:.7rem 0;font-weight:800;font-size:.86rem;border:0}
+#hy .rbtns .go2{flex:2;background:var(--p4);color:var(--white)}
+#hy .rbtns .end2{flex:1;border:1.5px solid var(--rule);color:var(--sub);background:var(--white)}
+#hy .why{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.45rem;font-size:.72rem;color:var(--sub)}
+#hy .why i{font-style:normal;font-size:.66rem;font-weight:800;background:#F7EDCF;color:#7a5a00;border-radius:5px;padding:.05rem .4rem}
+#hy .recap{background:#F3EEF8;border:1px solid #DCCFEA;border-radius:12px;padding:.6rem .75rem;margin-bottom:.55rem}
+#hy .recap .hh{display:flex;justify-content:space-between;font-size:.72rem;font-weight:800;color:var(--p4)}
+#hy .recap .hh button{border:0;background:none;color:inherit;font-weight:800;font-size:inherit;padding:0}
+#hy .recap p{margin:.3rem 0 0;font-size:.82rem;line-height:1.6}
+#hy .divider{display:flex;align-items:center;gap:.5rem;margin:.5rem 0;font-size:.66rem;font-weight:800;color:var(--p4)}
+#hy .divider::before,#hy .divider::after{content:"";flex:1;border-top:1.5px dashed #CDB9E0}
+#hy .hl{background:#FBF7E6;border-radius:8px}
+#hy .reason{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+#hy .reason button{text-align:center;border:1.5px solid var(--rule);border-radius:10px;padding:.6rem 0;font-size:.82rem;font-weight:700;color:var(--sub);background:var(--white)}
+#hy .reason .on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+#hy .note{font-size:.74rem;color:var(--sub);line-height:1.6;margin:.4rem 2px 0}
+#hy .head{display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding:16px 0 .5rem}
+#hy .head h1{margin:0;font-size:1.25rem;letter-spacing:.18em}
+#hy .head button{border:0;background:none;color:var(--sub);font-size:.78rem;padding:.2rem 0}
+#hy .hseal{display:flex;align-items:center;gap:.9rem;margin:1.2rem 0 1rem}
+#hy .hseal .mark{width:58px;height:58px;border-radius:50%;border:2.5px solid var(--p6);color:var(--p6);display:grid;place-items:center;font-weight:800;font-size:.8rem;line-height:1.15;text-align:center;letter-spacing:.05em;transform:rotate(-8deg);flex:none}
+#hy .hseal b{display:block;font-size:1.3rem}
+#hy .hseal span{font-size:.8rem;color:var(--sub)}
+#hy .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin:0 0 1.2rem}
+#hy .stats div{background:var(--white);border:1px solid var(--rule);border-radius:12px;padding:.55rem .3rem;text-align:center;font-size:.68rem;color:var(--sub);line-height:1.35}
+#hy .stats b{display:block;font-size:1.45rem;color:var(--ink);font-variant-numeric:tabular-nums}
+#hy .stats .warn b{color:var(--p6)}
+#hy .hh2{font-size:.95rem;letter-spacing:.08em;margin:1.4rem 0 .5rem;display:flex;align-items:baseline;gap:.5rem}
+#hy .hh2 small{font-weight:400;letter-spacing:0;color:var(--sub);font-size:.72rem}
+#hy .reasons{display:flex;flex-direction:column;gap:.5rem}
+#hy .rs{display:flex;gap:.75rem;align-items:flex-start;background:var(--white);border:1px solid var(--rule);border-left:5px solid var(--rc);border-radius:4px 12px 12px 4px;padding:.65rem .8rem}
+#hy .rs .ic{flex:none;width:2.1rem;height:2.1rem;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:.95rem;background:var(--rs);color:var(--rc)}
+#hy .rs .m{flex:1;min-width:0}
+#hy .rs .m b{display:block;font-size:.95rem}
+#hy .rs .m>span{display:block;font-size:.76rem;color:var(--sub);margin-top:.1rem}
+#hy .rs ul{margin:.35rem 0 0;padding:0;list-style:none}
+#hy .rs li{font-size:.82rem;padding:.18rem 0;display:flex;gap:.4rem;align-items:baseline}
+#hy .rs li i{font-style:normal;font-size:.68rem;border-radius:999px;padding:0 .45rem;flex:none;background:var(--rs);color:var(--rc)}
+#hy .rs.none{--rc:var(--rule);--rs:var(--sheet)}
+#hy .len{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+#hy .len button{text-align:left;border:1.5px solid var(--rule);background:var(--white);border-radius:14px;padding:.75rem .85rem}
+#hy .len button b{display:block;font-size:1rem}
+#hy .len button span{display:block;font-size:.74rem;color:var(--sub);margin-top:.15rem;line-height:1.5}
+#hy .len button em{display:inline-block;font-style:normal;font-size:.7rem;font-weight:700;margin-top:.4rem;color:var(--sub)}
+#hy .len button[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink) inset}
+#hy .last{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:var(--white);border:1px solid var(--rule);border-radius:12px;padding:.6rem .8rem;font-size:.82rem}
+#hy .last b{font-size:.9rem}
+#hy .last span{color:var(--sub)}
+#hy .go{flex:1;border:0;border-radius:14px;background:var(--p6);color:var(--white);font-weight:800;font-size:1.1rem;letter-spacing:.2em;padding:.95rem;box-shadow:0 6px 18px rgba(184,67,47,.3)}
+#hy .go small{display:block;font-size:.7rem;letter-spacing:0;font-weight:400;opacity:.9;margin-top:.15rem}
+#hy .hist{border:0;background:none;width:100%;text-align:left;display:flex;gap:.6rem;align-items:baseline;padding:.6rem .8rem;border-top:1px solid var(--rule);font-size:.82rem}
+#hy .hist:first-child{border-top:0}
+#hy .hist b{flex:none}
+#hy .hist span{color:var(--sub);flex:1}
+#hy .histbody{padding:.2rem .8rem .7rem;font-size:.82rem;line-height:1.65;border-top:1px dashed var(--rule)}
+#hy .histbody h4{margin:.5rem 0 .1rem;font-size:.72rem;color:var(--sub)}
+#hy .histbody .dline{padding:.15rem 0}
+#hy .histbody .dline i{font-style:normal;font-size:.66rem;border-radius:5px;padding:0 .35rem;background:var(--sheet);color:var(--sub);margin-left:.3rem}
+#hy .x{border:0;background:none;color:var(--faint);font-size:1rem;padding:0 .2rem;flex:none}
+#hy .toast{position:fixed;left:50%;top:96px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:.55rem 1rem;border-radius:999px;font-size:.8rem;z-index:60;max-width:90vw;text-align:center}
+#hy .set .f{display:flex;flex-direction:column;gap:.25rem;margin-bottom:.6rem}
+#hy .set label{font-size:.72rem;font-weight:700;color:var(--sub)}
+#hy .memrow .av{width:2.1rem;height:2.1rem;border:0}
+#hy .palette{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.35rem}
+#hy .palette button{width:1.6rem;height:1.6rem;border-radius:50%;border:2px solid var(--white);background:var(--c);box-shadow:0 0 0 1px var(--rule)}
+#hy .palette button.on{box-shadow:0 0 0 2px var(--ink)}
+#hy .edrow{padding:.5rem .7rem .7rem;border-top:1px dashed var(--rule);display:flex;flex-direction:column;gap:.4rem}
+#hy .edrow .two{display:flex;gap:.4rem}
+#hy .edrow .two .fi:first-child{flex:0 0 3.6rem;text-align:center}
+@media (prefers-reduced-motion:reduce){}
+body.hy-full{padding-bottom:0!important}
+body.hy-full nav.tabs{display:none!important}
+body.hy-full>.wrap{max-width:none;padding:0}
+body.hy-full #view-gov>.head{display:none}
+body:not(.hy-full) #hy .dock{bottom:calc(var(--navh,58px) + env(safe-area-inset-bottom))}
+#hy .home{padding:0}
+#hy .back{border:none;background:none;color:var(--sub);cursor:pointer;padding:0;margin:0 0 .2rem;font-size:.88rem;font-family:inherit}
+body.hy-full .hy-legacy{display:none}
+.hy-legacy{padding-bottom:110px}
+
 </style>
 </head>
 <body>
@@ -525,7 +810,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r106";
+const APP_VERSION = "2026-11-20 r107";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2218,17 +2503,21 @@ function renderSupreme(box){
       (p.closedAt ? "議決" : p.startedAt ? "審議中" : "未審議") + "</span></button>";
   const aLive = amends.filter(a => !doneSt.includes(amendStatus(a))), aDone = amends.filter(a => doneSt.includes(amendStatus(a)));
   const pol = gov.council.supreme.slice().reverse(), pLive = pol.filter(p => !p.closedAt), pDone = pol.filter(p => p.closedAt);
-  box.innerHTML = backBtn + '<div class="mh"><h2>最高評議会</h2></div>' +
-    '<p style="font-size:.86rem;color:var(--sub)">最高議決機関。審議は制限時間を定めて深く集中して行う。議会終了を宣言した議決は確定し、すべての活動に優先する。</p>' +
-    '<a href="./hyogikai/" style="display:block;text-decoration:none;color:#fff;background:#B8432F;border-radius:14px;padding:.9rem 1rem;margin:.6rem 0 .2rem;font-weight:800;font-size:1.05rem;letter-spacing:.15em;text-align:center">会を開く<small style="display:block;font-weight:400;letter-spacing:0;font-size:.72rem;opacity:.9;margin-top:.15rem">最高評議会アプリ(場づくり・検証・審議・相談・議決)</small></a>' +
-    '<div class="sec"><h3>改憲の審議</h3>' + (movedToKenseiin() ? kenseiinNote("改憲の審議は、憲政院アプリの最高評議会で行います。")
+  // 会そのもの(開会〜閉会)は「最高評議会」のしくみ(window.HY)が描く。前のしくみの記録は、その下にたたんで残す
+  const oldPol = pLive.length + pDone.length, oldAm = aLive.length + aDone.length;
+  const legacy = '<div class="sec"><h3>改憲の審議</h3>' + (movedToKenseiin() ? kenseiinNote("改憲の審議は、憲政院アプリの最高評議会で行います。")
       : (aLive.length ? aLive.map(aRow).join("") : '<div class="empty">審議を待っている改憲案はありません。</div>') + foldHtml("これまでの改憲", aDone.map(aRow).join(""), aDone.length)) + "</div>" +
-    '<div class="sec"><h3>重大国策の審議</h3>' +
-      '<div class="addrow"><input id="pol-title" placeholder="議題"><button type="button" class="btn sm" data-pol-new>議題を立てる</button></div>' +
-      pLive.map(pRow).join("") + foldHtml("これまでの議決", pDone.map(pRow).join(""), pDone.length) + "</div>" +
+    (oldPol ? '<div class="sec"><h3>重大国策(前のしくみ)</h3>' + pLive.map(pRow).join("") + foldHtml("これまでの議決", pDone.map(pRow).join(""), pDone.length) + "</div>" : "") +
     archiveHtml("supreme", "Notionの記録") +
     '<span class="status" id="gov-msg"></span>';
+  let root = box.querySelector(":scope > #hy");
+  if (!root || !window.HY) { box.innerHTML = '<div id="hy"></div><div class="hy-legacy">' + legacy + "</div>"; root = box.querySelector("#hy"); }
+  else { const lg = box.querySelector(":scope > .hy-legacy"); if (lg) lg.innerHTML = legacy; }
+  if (window.HY) window.HY.mount(root, { back: backBtn });
+  else root.innerHTML = backBtn + '<div class="mh"><h2>最高評議会</h2></div><div class="empty">最高評議会のしくみを読み込めませんでした。開き直してください。</div>';
+  void oldAm;
 }
+window.__shoOpenSupreme = () => { gov.view = "最高評議会"; gov.open = null; showView("gov"); renderGov(); };
 
 function sessionBlock(sess, closedHtml){
   if (sess && sess.closedAt) return closedHtml;
@@ -4904,5 +5193,972 @@ SE.init([
 .ns .ns-axis{display:flex;justify-content:space-between;font-size:.7rem;color:var(--sub,#888)}
 </style>
 
+<script>
+/* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
+(() => {
+"use strict";
+const APP_VERSION = "h2.00";
+const DATA_PATH = "roadmap/apps/hyogikai/data.json";
+const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
+
+/* ───────── 小道具 ───────── */
+let ROOT = null;
+const $ = s => (ROOT || document).querySelector(s);
+const mounted = () => !!(ROOT && ROOT.isConnected);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const now = () => Date.now();
+const pad = n => String(n).padStart(2, "0");
+const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const today = () => ymd(new Date());
+const addDays = (s, n) => { const d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + n); return ymd(d); };
+const daysBetween = (a, b) => Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 864e5);
+const WD = "日月火水木金土";
+const md = s => { const d = new Date(s + "T00:00:00"); return (d.getMonth() + 1) + "/" + d.getDate() + "(" + WD[d.getDay()] + ")"; };
+const hms = ms => { ms = Math.max(0, ms); const s = Math.floor(ms / 1000); return pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s / 60) % 60) + ":" + pad(s % 60); };
+const ms2 = ms => { const neg = ms < 0; ms = Math.abs(ms); const s = Math.floor(ms / 1000); return (neg ? "-" : "") + Math.floor(s / 60) + ":" + pad(s % 60); };
+const CIRC = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+const circ = n => CIRC[n - 1] || "(" + n + ")";
+const cut = (s, n) => { s = String(s || ""); return s.length > n ? s.slice(0, n) + "…" : s; };
+const ago = t => { const m = Math.round((now() - t) / 60000); if (m < 1) return "いま"; if (m < 60) return m + "分"; const h = Math.round(m / 60); if (h < 48) return h + "時間"; return Math.round(h / 24) + "日"; };
+const lsGet = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+
+/* ───────── パーツと議員 ───────── */
+const T = {
+  place:   { n: "場づくり",   c: "#3F7A55", d: "ほかのことが気にならない場に整えてから始める。" },
+  verify:  { n: "検証",       c: "#2F4F8A", d: "確かめる日が来た決定が、効いたかを確かめる。" },
+  pick:    { n: "議題選び",   c: "#A9761C", d: "" },
+  debate:  { n: "審議",       c: "#6B4C9A", d: "" },
+  consult: { n: "Claude 相談", c: "#22808A", d: "発言録をそのまま渡して、議員として反論してもらう。" },
+  resolve: { n: "議決",       c: "#B8432F", d: "審議ごとのまとめを見ながら、案から決める。" },
+  close:   { n: "閉会",       c: "#4A4540", d: "今日のまとめ。気になったことを片付けて閉じる。" }
+};
+const PRESETS = {
+  full:    { n: "本会議",   parts: ["place", "verify", "pick", "consult", "resolve", "close"] },
+  short:   { n: "短い会",   parts: ["place", "verify", "close"] },
+  consult: { n: "相談だけ", parts: ["place", "debate", "consult", "resolve", "close"] }
+};
+const PALETTE = ["#2F6FB0", "#9A5B2E", "#2E7D6B", "#C08A1E", "#5B6B7A", "#8A4C7A", "#3F7A55", "#B8432F", "#4A6FA5", "#6B6B2E"];
+const CLAUDE = { id: "C", name: "Claude(参考人)", s: "C", c: "#22808A" };
+const TAGS = [["問題", "mn"], ["原因", "gn"], ["案", "an"], ["反論", "hn"]];
+const tagCls = g => (TAGS.find(t => t[0] === g) || [0, ""])[1];
+const RESULTS = [["効いた", "#3F7A55"], ["少し効いた", "#6E8F3A"], ["効かなかった", "#B8432F"], ["守れなかった", "#8A5A3A"]];
+const PAUSE_WHY = ["時間切れ", "気が散った", "予定が入った", "疲れた"];
+
+function defaults(){
+  return {
+    v: 1, cur: null, curU: 0,
+    settings: { u: 0, nextNo: 1, teirei: 5, maxPick: 2, boxOpen: 3,
+      places: ["図書館", "自宅", "カフェ"], placeStats: {},
+      prep: [{ id: "p1", x: "Freedom を入れた", s: "YouTube の動画と SNS を止める。音楽はそのまま" }, { id: "p2", x: "スマホを手の届かないところへ", s: "" }, { id: "p3", x: "飲み物とトイレ", s: "" }],
+      members: [
+        { id: "m1", name: "推進派", s: "推", d: "やってみよう、で前に進める", c: "#2F6FB0", on: true },
+        { id: "m2", name: "慎重派", s: "慎", d: "前の失敗と危なさを先に考える", c: "#9A5B2E", on: true },
+        { id: "m3", name: "未来の自分", s: "未", d: "1年後の自分ならどう思うか", c: "#2E7D6B", on: true },
+        { id: "m4", name: "飽きる自分", s: "飽", d: "3日後に守れるかを突く", c: "#C08A1E", on: true },
+        { id: "m5", name: "受験生の自分", s: "受", d: "受験に効くかで考える", c: "#5B6B7A", on: false }
+      ] },
+    agendas: {}, decisions: {}, sessions: {}, later: {}
+  };
+}
+function normalize(d){
+  const base = defaults();
+  d = d && typeof d === "object" ? d : base;
+  ["agendas", "decisions", "sessions", "later"].forEach(k => { if (!d[k] || typeof d[k] !== "object") d[k] = {}; });
+  d.settings = Object.assign(base.settings, d.settings || {});
+  if (!("cur" in d)) d.cur = null; if (!d.curU) d.curU = 0;
+  return d;
+}
+
+/* ───────── 状態 ───────── */
+let D = normalize(lsGet(K_DATA, null));
+const U = Object.assign({ view: "home", sheet: null, arg: null, seat: "sh", smode: "shingi", tag: null, verifyIdx: 0, resTab: null, open: {}, editMem: null, recapOff: {}, len: "full", drafts: {}, nextArm: null }, lsGet(K_UI, {}));
+U.sheet = null; U.arg = null; U.nextArm = null;
+const NET = { conn: null, sha: null, state: "", dirty: false, timer: null, busy: false };
+const touch = o => { if (o) o.u = now(); return o; };
+const S = () => D.cur && D.sessions[D.cur] && !D.sessions[D.cur].del && !D.sessions[D.cur].closed ? D.sessions[D.cur] : null;
+const members = () => D.settings.members.filter(m => !m.del);
+const memberOf = id => id === "C" ? CLAUDE : (D.settings.members.find(m => m.id === id) || { id, name: "?", s: "?", c: "#888" });
+const agendaList = () => Object.values(D.agendas).filter(a => !a.del);
+const decisionList = () => Object.values(D.decisions).filter(x => !x.del);
+const closedSessions = () => Object.values(D.sessions).filter(s => !s.del && s.closed).sort((a, b) => b.no - a.no || b.at - a.at);
+
+function saveLocal(){ lsSet(K_DATA, D); }
+function saveUI(){ lsSet(K_UI, { view: U.view, seat: U.seat, smode: U.smode, len: U.len, drafts: U.drafts, recapOff: U.recapOff }); }
+function mut(fn, opt){
+  fn();
+  const s = S(); if (s) touch(s);
+  saveLocal(); saveUI(); queuePush();
+  if (!opt || opt.render !== false) render();
+}
+
+/* ───────── 会の時計 ───────── */
+const partOf = (s, id) => s.parts.find(p => p.id === id);
+const curPart = s => partOf(s, s.cur) || s.parts.find(p => p.on) || null;
+const onParts = s => s.parts.filter(p => p.on);
+function liveElapsed(s){ return s.elapsed + (s.run ? now() - s.since : 0); }
+function debUsed(s, d){ const cp = curPart(s); return d.used + (s.run && cp && cp.d === d.id ? now() - s.since : 0); }
+function flush(s){
+  if (!s || !s.run) return; const t = now(), dt = Math.max(0, t - s.since);
+  s.elapsed += dt; const cp = curPart(s); if (cp && cp.d && s.debates[cp.d]) s.debates[cp.d].used += dt; s.since = t;
+}
+function alive(){ try { localStorage.setItem(K_ALIVE, String(now())); } catch (e) {} }
+
+/* ───────── 議題・決定の見方 ───────── */
+function dueDecisions(){ const t = today(); return decisionList().filter(x => x.st === "active" && x.checkAt && x.checkAt <= t).sort((a, b) => a.checkAt < b.checkAt ? -1 : 1); }
+function boxAgendas(){ return agendaList().filter(a => a.st === "box").sort((a, b) => a.at - b.at); }
+function contAgendas(){ return agendaList().filter(a => a.st === "cont").sort((a, b) => a.at - b.at); }
+function nextTeirei(from){ const d = new Date((from || today()) + "T00:00:00"); for (let i = 0; i < 8; i++) { if (d.getDay() === D.settings.teirei && i > 0) return ymd(d); d.setDate(d.getDate() + 1); } return ymd(d); }
+
+/* ───────── 会を開く ───────── */
+function mkPart(t, extra){ return Object.assign({ id: rid(), t, on: true, done: false }, extra || {}); }
+function openSession(kind){
+  const st = D.settings;
+  const s = { id: rid(), no: st.nextNo, kind, at: now(), date: today(), elapsed: 0, run: true, since: now(), parts: [], cur: null,
+    place: null, prep: {}, checks: {}, picks: {}, debates: {}, consult: { seat: null, ans: [], link: "", skip: false, paste: "" },
+    res: {}, kini: [], focus: 0, pauses: [], recap: null, u: now() };
+  PRESETS[kind].parts.forEach(t => { if (t === "debate") { const d = newDebate(s, { title: "", min: 25 }); s.parts.push(mkPart("debate", { d: d.id })); } else s.parts.push(mkPart(t)); });
+  // 継続審議があれば、議題選びで最初から選んでおく
+  if (kind === "full") contAgendas().slice(0, st.maxPick).forEach(a => pickAgenda(s, a.id, true));
+  s.cur = s.parts[0].id;
+  st.nextNo++; touch(st);
+  D.sessions[s.id] = s; D.cur = s.id; D.curU = now();
+  U.view = "sess"; U.verifyIdx = 0; U.resTab = null; U.seat = "sh"; U.smode = "shingi";
+}
+function newDebate(s, o){
+  const n = Object.keys(s.debates).length + 1;
+  const d = { id: rid(), n, title: o.title || "", agenda: o.agenda || null, from: o.from || null, min: o.min || 20, used: 0, e: [] };
+  s.debates[d.id] = d; return d;
+}
+function pickAgenda(s, aid, on){
+  const a = D.agendas[aid]; if (!a) return;
+  if (on) {
+    if (s.picks[aid]) return;
+    s.picks[aid] = a.st === "cont" ? 25 : 15;
+    const d = newDebate(s, { title: a.x, agenda: aid, min: s.picks[aid] });
+    const idx = lastIndex(s, p => p.t === "debate" || p.t === "pick");
+    const consultIdx = s.parts.findIndex(p => p.t === "consult" || p.t === "resolve" || p.t === "close");
+    const at = idx >= 0 ? idx + 1 : (consultIdx >= 0 ? consultIdx : s.parts.length);
+    s.parts.splice(at, 0, mkPart("debate", { d: d.id }));
+  } else {
+    delete s.picks[aid];
+    Object.values(s.debates).filter(d => d.agenda === aid && !d.from).forEach(d => {
+      if (d.e.length) return;
+      s.parts = s.parts.filter(p => p.d !== d.id); delete s.debates[d.id];
+    });
+  }
+}
+function lastIndex(arr, f){ for (let i = arr.parts.length - 1; i >= 0; i--) if (f(arr.parts[i])) return i; return -1; }
+
+/* ───────── 検証の結果 ───────── */
+function applyCheck(s, dec, val, note){
+  const c = s.checks[dec.id] || (s.checks[dec.id] = { prev: { st: dec.st, checkAt: dec.checkAt }, val: null, note: "", ag: null });
+  // いったん元に戻してから当てはめる(押し直しても二重にならない)
+  dec.results = (dec.results || []).filter(r => r.sess !== s.id);
+  dec.st = c.prev.st; dec.checkAt = c.prev.checkAt; dec.keep = false;
+  if (c.ag && D.agendas[c.ag]) { touch(Object.assign(D.agendas[c.ag], { del: true })); c.ag = null; }
+  c.val = val; if (note != null) c.note = note;
+  if (val) {
+    dec.results.push({ sess: s.id, no: s.no, at: today(), v: val, note: c.note });
+    const prevOk = dec.results.length >= 2 && dec.results[dec.results.length - 2].v === "効いた";
+    if (val === "効いた" && prevOk) dec.st = "ended";
+    else if (val === "効いた" || val === "少し効いた") dec.checkAt = addDays(today(), dec.every || 7);
+    else {
+      dec.st = "cont";
+      const old = dec.agenda && D.agendas[dec.agenda];
+      const a = { id: rid(), x: old ? old.x : dec.text, at: now(), st: "cont", contN: ((old && old.contN) || 0) + 1, dec: dec.id, why: val, u: now() };
+      D.agendas[a.id] = a; c.ag = a.id;
+    }
+  }
+  touch(dec);
+}
+
+/* ───────── 議決のまとまり ───────── */
+function dn(s, d){ if (!d) return 0; const ids = s.parts.filter(p => p.t === "debate" && s.debates[p.d]).map(p => p.d); const i = ids.indexOf(d.id); return i >= 0 ? i + 1 : d.n; }
+function rootOf(s, d){ let x = d, g = 0; while (x.from && s.debates[x.from] && g++ < 30) x = s.debates[x.from]; return x; }
+function groups(s){
+  const out = [], seen = {};
+  s.parts.filter(p => p.t === "debate" && s.debates[p.d]).forEach(p => {
+    const d = s.debates[p.d], r = rootOf(s, d), ag = d.agenda || r.agenda;
+    const key = ag ? "a:" + ag : "d:" + r.id;
+    if (!seen[key]) { seen[key] = { key, agenda: ag, title: ag && D.agendas[ag] ? D.agendas[ag].x : (r.title || "審議" + circ(dn(s, r))), debates: [] }; out.push(seen[key]); }
+    seen[key].debates.push(d);
+  });
+  return out;
+}
+function ideasOf(s, g){
+  const list = [];
+  g.debates.forEach(d => d.e.forEach(e => { if (e.k === "say" && e.g === "案") list.push({ id: e.id, x: e.x, by: memberOf(e.m).name + " · 審議" + circ(dn(s, d)) }); }));
+  (s.consult.ans || []).forEach(e => { if (e.g === "案") list.push({ id: e.id, x: e.x, by: "Claude(参考人) · 相談" }); });
+  return list;
+}
+const resOf = (s, key) => s.res[key] || (s.res[key] = { picked: [], text: "", edited: false, every: 7, date: "", mode: "rule", how: "", showHow: false, cont: false });
+
+/* ───────── 描画 ───────── */
+function render(){
+  if (!mounted()) { document.body.classList.remove("hy-full"); return; }
+  document.body.classList.toggle("hy-full", U.view === "sess" && !!S());
+  const nav = document.querySelector("nav.tabs"); if (nav && nav.offsetHeight) ROOT.style.setProperty("--navh", nav.offsetHeight + "px");
+  const app = $("#hy-app"), y = window.scrollY, ae = document.activeElement, aid = ae && ae.id;
+  let sel = null; try { if (aid && ae.selectionStart != null) sel = [ae.selectionStart, ae.selectionEnd]; } catch (e) {}
+  if (U.view === "set") app.innerHTML = viewSettings();
+  else if (U.view === "sess" && S()) app.innerHTML = viewSession();
+  else { U.view = "home"; app.innerHTML = viewHome(); }
+  $("#hy-sheet").innerHTML = U.sheet ? viewSheet() : "";
+  const dock = $(".dock"); const sp = $(".spacer"); if (dock && sp) sp.style.setProperty("--sp", (dock.offsetHeight + 12) + "px");
+  if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+  if (aid) { const n = document.getElementById(aid); if (n && n !== ae && document.activeElement !== n) { n.focus({ preventScroll: true }); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
+  tick(true);
+}
+function savedLabel(){
+  if (!NET.conn) return '<span class="saved">✓ 手元に保存済み</span>';
+  if (NET.state === "err") return '<span class="saved err">同期できない・手元に保存済み</span>';
+  if (NET.dirty || NET.busy) return '<span class="saved">✓ 保存済み・同期中</span>';
+  return '<span class="saved">✓ 保存済み</span>';
+}
+function stepsBar(s, cls){
+  const cp = curPart(s);
+  return '<div class="' + (cls || "steps") + '">' + onParts(s).map(p => '<i class="' + (p === cp ? "c" : p.done ? "d" : "") + '" style="--c:' + T[p.t].c + '"></i>').join("") + "</div>";
+}
+function partName(s, p){ if (p.t === "debate") { const d = s.debates[p.d]; return "審議" + (d ? circ(dn(s, d)) : ""); } return T[p.t].n; }
+function partLabel(s, p){ if (p.t === "debate") { const d = s.debates[p.d]; return "審議" + (d ? circ(dn(s, d)) : "") + (d && d.title ? "「" + cut(d.title, 10) + "」" : ""); } return T[p.t].n; }
+function nextPart(s){ const on = onParts(s), cp = curPart(s), i = on.indexOf(cp); return on.slice(i + 1).find(p => !p.done) || on[i + 1] || null; }
+
+function viewSession(){
+  const s = S(), cp = curPart(s), on = onParts(s), idx = on.indexOf(cp) + 1, nx = nextPart(s);
+  const top = '<div class="top"><div class="wrap"><div class="r1"><b>第' + s.no + "回 " + esc(PRESETS[s.kind] ? PRESETS[s.kind].n : "会") + '</b><span class="tm"><small>会の時間</small><span id="hy-tm">' + hms(liveElapsed(s)) + "</span></span></div>" +
+    stepsBar(s) + '<div class="r2"><span>' + idx + " " + esc(partLabel(s, cp)) + (nx ? " → " + esc(partName(s, nx)) : "") + '</span><span class="bt">' + savedLabel() +
+    '<button class="pill" data-ha="pause">❚❚ 休会</button><button class="pill" data-ha="sheet" data-hs="parts">✎ 構成</button></span></div></div></div>';
+  const pc = T[cp.t].c, nc = nx ? T[nx.t].c : "#4A4540";
+  let body = "";
+  try { body = ({ place: partPlace, verify: partVerify, pick: partPick, debate: partDebate, consult: partConsult, resolve: partResolve, close: partClose })[cp.t](s, cp, idx, on.length, nx); }
+  catch (e) { body = '<div class="body"><div class="card"><div class="cb">表示でつまずきました:' + esc(e.message) + "</div></div></div>"; console.error(e); }
+  return '<div style="--pc:' + pc + ";--nc:" + nc + '">' + top + '<div class="wrap">' + body + "</div></div>";
+}
+function ptitle(p, idx, total, desc){ return '<div class="ptitle"><small>' + idx + " / " + total + "</small><h2>" + esc(T[p.t].n) + "</h2>" + (desc ? "<p>" + desc + "</p>" : "") + "</div>"; }
+function foot(s, nx, label, sub, extra, stay){
+  const k = s.kini.filter(x => !x.del).length;
+  return '<div class="spacer"></div><div class="dock"><div class="wrap">' + (extra || "") + '<div class="foot"><button class="memo" data-ha="sheet" data-hs="kini">✎ 気になった<br>こと ' + k + '</button><button class="next" data-ha="next"' + (stay ? ' style="background:var(--pc)"' : "") + '>' + label + (sub ? "<small>" + sub + "</small>" : "") + "</button></div></div></div>";
+}
+function nextLabel(s, nx){ if (!nx) return "閉会へ"; const on = onParts(s); return "次へ:" + (on.indexOf(nx) + 1) + " " + esc(partName(s, nx)); }
+
+/* 1 場づくり */
+function partPlace(s, p, i, n, nx){
+  const st = D.settings, ps = st.placeStats || {};
+  const left = st.prep.filter(x => !x.del && !s.prep[x.id]).length;
+  return ptitle(p, i, n, T.place.d) + '<div class="body">' +
+    '<div class="card"><div class="ch"><b>場所</b><span>数字は最後までいけた回数</span></div><div class="cb"><div class="chips">' +
+    st.places.map(pl => { const x = ps[pl]; return '<button class="chip' + (s.place === pl ? " on" : "") + '" data-ha="place" data-hv="' + esc(pl) + '">' + esc(pl) + (x ? "<small>" + x.fin + "/" + x.use + "</small>" : "") + "</button>"; }).join("") +
+    '<button class="chip" data-ha="addplace">+ ほか</button></div></div></div>' +
+    '<div class="card"><div class="ch"><b>準備</b><span>そろったら押す</span></div>' +
+    st.prep.filter(x => !x.del).map(x => '<button class="chk" data-ha="prep" data-hv="' + x.id + '"><span class="box' + (s.prep[x.id] ? " on" : "") + '">' + (s.prep[x.id] ? "✓" : "") + "</span><span><b>" + esc(x.x) + "</b>" + (x.s ? '<span class="s">' + esc(x.s) + "</span>" : "") + "</span></button>").join("") +
+    "</div></div>" + foot(s, nx, nextLabel(s, nx), left ? "準備があと" + left + "つ" : "");
+}
+/* 2 検証 */
+function verifyList(s){
+  // 会の中では並びを固定する(確かめると確かめる日が動いて、一覧から消えないように)
+  s.vlist = s.vlist || [];
+  dueDecisions().forEach(x => { if (!s.vlist.includes(x.id)) s.vlist.push(x.id); });
+  return s.vlist.map(id => D.decisions[id]).filter(x => x && !x.del);
+}
+function partVerify(s, p, i, n, nx){
+  const list = verifyList(s);
+  if (!list.length) return ptitle(p, i, n, "確かめる日が来た決定はない。") + '<div class="body"><div class="card"><div class="cb"><div class="empty">今日確かめる決定はありません。議決で決めたことは、確かめる日が来るとここに並びます。</div></div></div></div>' + foot(s, nx, nextLabel(s, nx));
+  U.verifyIdx = Math.min(U.verifyIdx, list.length - 1);
+  const dec = list[U.verifyIdx], c = s.checks[dec.id] || {}, val = c.val;
+  const last = (dec.results || []).filter(r => r.sess !== s.id).slice(-1)[0];
+  let auto = "";
+  if (val === "効いた" && dec.st === "ended") auto = '<div class="auto">✓ 2回続けて効いた。終結になる(<button data-ha="keep" data-hv="' + dec.id + '">続けるなら押して外す</button>)</div>';
+  else if (val === "効いた" && dec.keep) auto = '<div class="auto">続ける。次に確かめる日:' + md(dec.checkAt) + "</div>";
+  else if (val === "効いた" || val === "少し効いた") auto = '<div class="auto">次に確かめる日:' + md(dec.checkAt) + "</div>";
+  else if (val) auto = '<div class="auto w">継続審議になる。議題選びのいちばん上に出る。</div>';
+  const isLast = U.verifyIdx >= list.length - 1;
+  return ptitle(p, i, n, "確かめる日が来た決定が " + list.length + " 件。効いたかを確かめる。") + '<div class="body">' +
+    '<div class="card"><div class="ch"><b>確かめる決定</b><span>' + (U.verifyIdx + 1) + " / " + list.length + " 件</span></div><div class=\"cb\">" +
+    '<div class="dt">' + esc(dec.text) + '</div><div class="meta">' + md(dec.at) + " 決定(第" + dec.no + "回)" + (dec.mode === "trial" ? "・試し" : "") + (dec.how ? "<br>確かめ方:" + esc(dec.how) : "") + (last ? "<br>前回:" + esc(last.v) : "") + "</div>" +
+    '<div class="res">' + RESULTS.map(([r, col]) => '<button class="' + (val === r ? "on" : "") + '" style="--rc:' + col + '" data-ha="check" data-hd="' + dec.id + '" data-hv="' + r + '">' + r + "</button>").join("") + "</div>" + auto +
+    '<div class="line"><div class="lbl">ひとこと(なくてよい)</div><textarea class="ta" style="min-height:3rem" data-hin="checknote" data-hd="' + dec.id + '" placeholder="気づいたこと">' + esc(c.note || "") + "</textarea></div>" +
+    "</div></div>" + (list.length > 1 ? '<div class="links"><button data-ha="vprev"' + (U.verifyIdx ? "" : " disabled") + '>← 前の決定</button><button data-ha="vnext"' + (isLast ? " disabled" : "") + ">次の決定 →</button></div>" : "") + "</div>" +
+    foot(s, nx, isLast ? nextLabel(s, nx) : "次の決定へ", isLast ? "" : (U.verifyIdx + 2) + " / " + list.length + " 件", "", !isLast);
+}
+/* 3 議題選び */
+function partPick(s, p, i, n, nx){
+  const max = D.settings.maxPick, picked = Object.keys(s.picks).filter(id => D.agendas[id]);
+  const mins = picked.reduce((a, id) => a + s.picks[id], 0);
+  const list = contAgendas().concat(boxAgendas());
+  picked.forEach(id => { const a = D.agendas[id]; if (a && !list.includes(a)) list.push(a); });
+  const firstDeb = s.parts.find(q => q.t === "debate" && s.debates[q.d] && s.debates[q.d].agenda);
+  return ptitle(p, i, n, "今日は " + max + " つまで。時間は押すと 5 分ずつ変わる。") + '<div class="body">' +
+    '<div class="card"><div class="ch"><b>議題箱</b><span>' + picked.length + " つ選んだ・" + mins + " 分</span></div>" +
+    (list.length ? list.map(a => { const on = !!s.picks[a.id];
+      return '<div class="item' + (a.st === "cont" ? " pin" : "") + '"><button class="tapzone" data-ha="pick" data-hv="' + a.id + '"><span class="box' + (on ? " on" : "") + '">' + (on ? "✓" : "") + '</span><span class="m"><b>' + esc(a.x) + "</b><span" + (a.st === "cont" ? ' class="cs"' : (now() - a.at > 10 * 864e5 ? ' class="w"' : "")) + ">" +
+        (a.st === "cont" ? "継続審議・" + (a.contN || 1) + "回目" + (a.why ? "(" + esc(a.why) + ")" : "") : ago(a.at) + "前から") + "</span></span></button>" +
+        (on ? '<button class="min" data-ha="pmin" data-hv="' + a.id + '">' + s.picks[a.id] + "分</button>" : "") + "</div>"; }).join("") : '<div class="cb"><div class="empty">議題箱は空です。下に書いて足せます。</div></div>') +
+    '<div class="add"><input id="hy-newag" placeholder="+ 議題を書く" enterkeyhint="done"><button data-ha="addag">入れる</button></div></div>' +
+    (picked.length > max ? '<p class="note w">' + max + " つより多く選んでいる。時間が足りるか見直す。</p>" : "") +
+    "</div>" + foot(s, nx, nextLabel(s, nx), firstDeb ? "1つ目「" + esc(cut(s.debates[firstDeb.d].title, 8)) + "」から" : (picked.length ? "" : "選ばないと審議は飛ばす"));
+}
+/* 4 審議 */
+function sayHTML(e, opts){
+  const m = memberOf(e.m), hl = opts && opts.hl ? " hl" : "";
+  return '<button class="say' + hl + '" style="--c:' + m.c + '" data-ha="entry" data-hv="' + e.id + '"><span class="av">' + esc(m.s) + '</span><span class="m"><span class="nm" style="display:block">' + esc(m.name) + '</span><span class="tx" style="display:block">' + esc(e.x) + "</span>" + (e.g ? '<span class="tg ' + tagCls(e.g) + '">' + esc(e.g) + "</span>" : "") + "</span></button>";
+}
+function entryHTML(e, opts){
+  if (e.k === "pause") return '<div class="divider">ここで休会(' + new Date(e.at).getHours() + ":" + pad(new Date(e.at).getMinutes()) + ")" + (e.back ? "・" + (e.back - e.at < 60000 ? "すぐ再開" : ago2(e.back - e.at) + "後に再開") : "") + "</div>";
+  if (e.k === "shingi") return '<button class="note2' + (opts && opts.hl ? " hl" : "") + '" data-ha="entry" data-hv="' + e.id + '"><span class="nh">審議</span>' + esc(e.x) + "</button>";
+  if (e.k === "sum") return '<button class="sum2" data-ha="entry" data-hv="' + e.id + '"><span class="nh"><span>ここまでのまとめ</span><span>議決に出る</span></span>' + esc(e.x) + "</button>";
+  return sayHTML(e, opts);
+}
+function ago2(ms){ const m = Math.round(ms / 60000); if (m < 1) return "すぐ"; if (m < 60) return m + "分"; const h = Math.round(m / 60); if (h < 48) return h + "時間"; return Math.round(h / 24) + "日"; }
+function partDebate(s, p, i, n, nx){
+  const d = s.debates[p.d]; if (!d) return '<div class="body">この審議は消えています。</div>' + foot(s, nx, nextLabel(s, nx));
+  const left = d.min * 60000 - debUsed(s, d), from = d.from && s.debates[d.from];
+  const ideas = d.e.filter(e => e.k === "say" && e.g === "案");
+  const hasSum = d.e.some(e => e.k === "sum");
+  const lastReal = [...d.e].reverse().find(e => e.k !== "pause");
+  const pauseIdx = d.e.map(e => e.k).lastIndexOf("pause");
+  const hlId = pauseIdx > 0 ? (d.e.slice(0, pauseIdx).reverse().find(e => e.k !== "pause") || {}).id : null;
+  let recap = "";
+  if (s.recap && s.recap.d === d.id && !U.recapOff[s.recap.at]) recap = '<div class="recap"><div class="hh"><span>再開・休会前のおさらい</span><button data-ha="recapoff" data-hv="' + s.recap.at + '">閉じる</button></div><p>' + esc(s.recap.text) + "</p></div>";
+  const titleEdit = !d.title;
+  const issue = '<div class="issue"><div class="m"><small>審議 ' + circ(dn(s, d)) + " 論点" + (from ? " ・ " + circ(dn(s, from)) + "から分かれた" : "") + "</small>" +
+    (titleEdit ? '<input class="fi" style="margin-top:.25rem" id="hy-dtitle" placeholder="論点を書く(何を決めたいか)" enterkeyhint="done">' : '<b data-ha="retitle" role="button" tabindex="0">' + esc(d.title) + "</b>") +
+    '</div><span class="tm2' + (left < 120000 ? " w" : "") + '" id="hy-dtm">残り ' + ms2(left) + "</span></div>";
+  const tray = '<div class="tray"><span>案 ' + ideas.length + "</span>" + (ideas.length ? ideas.map(e => "<i>" + esc(cut(e.x, 18)) + "</i>").join("") : '<i class="ph">「案」を付けた発言がここに集まる</i>') + "</div>";
+  const log = '<div class="log"><div class="ch"><b>発言録</b><span>' + (from ? circ(dn(s, from)) + "の流れから" : "議員の発言と審議を混ぜて書ける") + "</span></div>" +
+    (d.e.length ? d.e.map(e => entryHTML(e, { hl: e.id === hlId })).join("") : '<div class="empty" style="padding:.6rem .1rem">まず審議で事実を書くか、議員を選んで一言ずつ発言する。</div>') + '<div id="hy-logend"></div></div>';
+  const near = left < 180000 || (s.recap && 0);
+  const closeCard = near ? '<div class="card" style="margin-top:.6rem"><div class="ch"><b>この審議を閉じる前に</b><span>時間が近づくと出る</span></div><div class="cb"><div class="empty">' + (hasSum ? "まとめは書けている。残った問いがあれば、新しい審議か議題箱へ。" : "下の入力を「まとめ」にして、2〜3行でまとめる。") + '</div><div class="chips" style="margin-top:.5rem"><button class="chip on" data-ha="sheet" data-hs="issue">新しい論点で審議を足す</button><button class="chip" data-ha="sheet" data-hs="issue" data-hv="box">議題箱へ</button><button class="chip" data-ha="extend">5分のばす</button></div></div></div>' : "";
+  // 入力
+  const seat = U.seat === "sh" || !members().some(m => m.id === U.seat && m.on) ? "sh" : U.seat;
+  const seatsHTML = '<div class="seats"><button class="seat sh' + (seat === "sh" ? " on" : "") + '" style="--c:#6B4C9A" data-ha="seat" data-hv="sh"><span class="av">✎</span>審議</button>' +
+    members().filter(m => m.on).map(m => '<button class="seat' + (seat === m.id ? " on" : "") + '" style="--c:' + m.c + '" data-ha="seat" data-hv="' + m.id + '"><span class="av">' + esc(m.s) + "</span>" + esc(m.name) + "</button>").join("") +
+    '<button class="seat plus" style="--c:var(--sub)" data-ha="sheet" data-hs="members" aria-label="議員の設定">+</button></div>';
+  const dk = d.id + ":" + seat, draft = U.drafts[dk] || "";
+  let inp;
+  if (seat === "sh") inp = '<div class="inp tall" style="--c:#6B4C9A"><textarea id="hy-comp" rows="3" placeholder="' + (U.smode === "sum" ? "ここまでのまとめ(2〜3行。議決に出る)" : "審議を書く(何行でもよい)") + '…" data-hdk="' + dk + '">' + esc(draft) + '</textarea><div class="bot"><span class="cmpk"><button class="' + (U.smode === "shingi" ? "on" : "") + '" data-ha="smode" data-hv="shingi">審議</button><button class="' + (U.smode === "sum" ? "on" : "") + '" data-ha="smode" data-hv="sum">まとめ</button></span><button class="send" data-ha="post">書く</button></div></div>';
+  else { const m = memberOf(seat); inp = '<div class="inp" style="--c:' + m.c + '"><input id="hy-comp" placeholder="' + esc(m.name) + 'として発言…" data-hdk="' + dk + '" value="' + esc(draft) + '" enterkeyhint="send"><span class="tgs">' + TAGS.map(([t, c]) => '<button class="' + c + (U.tag === t ? " on" : "") + '" data-ha="tag" data-hv="' + t + '">' + t + "</button>").join("") + '</span><button class="send" data-ha="post">発言</button></div>'; }
+  const sub = !hasSum && d.e.length ? "まとめがまだ" + (U.nextArm === p.id ? "・もう一度押すと進む" : "") : (hasSum ? "まとめが書けた" : "");
+  return '<div class="body" style="padding-top:.7rem">' + issue + recap + tray + log + closeCard + "</div>" +
+    foot(s, nx, nextLabel(s, nx), sub, seatsHTML + inp + '<div style="height:.45rem"></div>');
+}
+/* 5 Claude 相談 */
+function partConsult(s, p, i, n, nx){
+  const c = s.consult, seats = members().filter(m => m.on);
+  const seat = c.seat || (seats.find(m => m.name === "慎重派") || seats[0] || {}).id || "neutral";
+  const debs = s.parts.filter(q => q.t === "debate" && s.debates[q.d]).map(q => s.debates[q.d]);
+  const nIdeas = s.parts.filter(q => q.t === "debate").reduce((a, q) => a + (s.debates[q.d] ? s.debates[q.d].e.filter(e => e.g === "案").length : 0), 0) + c.ans.filter(e => e.g === "案").length;
+  return ptitle(p, i, n, T.consult.d) + '<div class="body">' +
+    '<div class="card"><div class="ch"><b>相談文</b><span>' + (debs.length ? "審議" + debs.map(d => circ(dn(s, d))).join("") + "の論点・発言録・案・前回の決定" : "審議がまだない") + '</span></div><div class="cb">' +
+    '<div class="lbl">Claude に座ってもらう席</div><div class="chips" style="margin-bottom:.6rem">' +
+    seats.map(m => '<button class="chip' + (seat === m.id ? " on" : "") + '" style="' + (seat === m.id ? "--pc:" + m.c : "") + '" data-ha="cseat" data-hv="' + m.id + '">' + esc(m.name) + "として" + (m.name === "慎重派" ? "反論" : "") + "</button>").join("") +
+    '<button class="chip' + (seat === "neutral" ? " on" : "") + '" data-ha="cseat" data-hv="neutral">中立の参考人</button></div>' +
+    '<button class="copy" data-ha="copyprompt"><span>⧉</span><span>相談文をコピー<small>コピーして Claude に貼る</small></span></button></div></div>' +
+    '<div class="card"><div class="ch"><b>Claude の答え</b><span>貼ると一行ずつ発言録に入る</span></div><div class="cb" style="padding:.3rem .7rem">' +
+    (c.ans.length ? c.ans.map(e => sayHTML(e)).join("") : '<div class="empty" style="padding:.4rem 0">まだ答えはない。</div>') +
+    '</div><div class="cb" style="border-top:1px solid var(--rule)"><textarea class="ta" id="hy-paste" style="min-height:4rem" placeholder="+ 答えを貼る(【案】【反論】などの印はそのまま印になる)">' + esc(c.paste || "") + '</textarea><div style="text-align:right"><button class="mini" data-ha="paste">発言録に入れる</button></div></div></div>' +
+    (c.showLink || c.link ? '<div class="card"><div class="ch"><b>会話のリンク</b></div><div class="cb"><input class="fi" data-hin="clink" value="' + esc(c.link) + '" placeholder="https://claude.ai/chat/…"></div></div>' : "") +
+    '<div class="links">' + (c.showLink || c.link ? "<span></span>" : '<button data-ha="showlink">会話のリンクを付ける</button>') + '<button data-ha="skipconsult">今日は相談しない</button></div>' +
+    "</div>" + foot(s, nx, nextLabel(s, nx), nIdeas ? "案が " + nIdeas + " つ集まった" : "");
+}
+function buildPrompt(s){
+  const c = s.consult, seatId = c.seat || ((members().find(m => m.on && m.name === "慎重派") || members().find(m => m.on) || {}).id) || "neutral";
+  const m = seatId === "neutral" ? null : memberOf(seatId);
+  const L = [];
+  L.push("自分の生活と勉強のしかたを決める会議「最高評議会」の第" + s.no + "回です。自分の中の立場を「議員」として座らせて議論しています。");
+  L.push(m ? "あなたは議員「" + m.name + "」(" + (m.d || "") + ")の席に座って、この議論に加わってください。発言録の穴と、反対意見を出してください。" : "あなたは中立の参考人として、この議論の穴と、見落としている案を出してください。");
+  L.push("");
+  groups(s).forEach(g => {
+    L.push("■ 議題:" + g.title);
+    const a = g.agenda && D.agendas[g.agenda];
+    if (a && a.dec && D.decisions[a.dec]) { const dd = D.decisions[a.dec], r = (dd.results || []).slice(-1)[0]; L.push("前回の決定:" + dd.text + (r ? " → " + r.v + (r.note ? "(" + r.note + ")" : "") : "")); }
+    g.debates.forEach(d => {
+      L.push("□ 審議" + circ(dn(s, d)) + " 論点:" + (d.title || "(未記入)"));
+      d.e.forEach(e => {
+        if (e.k === "pause") return;
+        if (e.k === "shingi") L.push("- (自分のメモ)" + e.x.replace(/\n/g, " / "));
+        else if (e.k === "sum") L.push("- (まとめ)" + e.x.replace(/\n/g, " / "));
+        else L.push("- " + memberOf(e.m).name + ":" + e.x + (e.g ? "〔" + e.g + "〕" : ""));
+      });
+    });
+    L.push("");
+  });
+  L.push("答え方:");
+  L.push("- 1行に1つの発言にしてください(5〜8行)。");
+  L.push("- 行のはじめに【案】【反論】【問題】【原因】のどれかを付けてください。");
+  L.push("- 前置きや、最後のまとめの文はいりません。");
+  return L.join("\n");
+}
+function parseAnswer(txt){
+  return String(txt || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
+    l = l.replace(/^([-*・●]|\d+[.)．、])\s*/, "");
+    let g = null; const m = l.match(/^[【\[〔(（]\s*(案|反論|問題|原因)\s*[】\]〕)）]\s*[:：]?\s*/);
+    if (m) { g = m[1]; l = l.slice(m[0].length); }
+    const m2 = !g && l.match(/^(案|反論|問題|原因)\s*[:：]\s*/); if (m2) { g = m2[1]; l = l.slice(m2[0].length); }
+    return l ? { id: rid(), k: "say", m: "C", x: l, g, at: now() } : null;
+  }).filter(Boolean);
+}
+/* 6 議決 */
+function partResolve(s, p, i, n, nx){
+  const gs = groups(s);
+  if (!gs.length) return ptitle(p, i, n, "審議した議題がない。") + '<div class="body"><div class="card"><div class="cb"><div class="empty">今日は決めることがありません。構成から審議を足すこともできます。</div></div></div></div>' + foot(s, nx, nextLabel(s, nx));
+  if (!U.resTab || !gs.some(g => g.key === U.resTab)) U.resTab = gs[0].key;
+  const gi = gs.findIndex(g => g.key === U.resTab), g = gs[gi], r = resOf(s, g.key), ideas = ideasOf(s, g);
+  const sums = g.debates.map(d => ({ d, sm: d.e.filter(e => e.k === "sum").slice(-1)[0] }));
+  const tabs = gs.length > 1 ? '<div class="tabs">' + gs.map((x, k) => '<button class="' + (x.key === g.key ? "on" : "") + '" data-ha="restab" data-hv="' + x.key + '">' + circ(k + 1) + " " + esc(cut(x.title, 14)) + (s.res[x.key] && (s.res[x.key].text || s.res[x.key].cont) ? " ✓" : "") + "</button>").join("") + "</div>" : "";
+  const isLast = gi >= gs.length - 1;
+  const chipDays = [[3, "3日後"], [7, "1週間後"], [14, "2週間後"]];
+  if (r.cont) return ptitle(p, i, n, T.resolve.d) + '<div class="body">' + tabs + '<div class="card"><div class="cb"><div class="dt">' + esc(g.title) + '</div><div class="auto w">決めずに継続審議へ回す。次の会の議題選びのいちばん上に出る。</div><div class="links" style="margin-top:.5rem"><button data-ha="rescont" data-hv="' + g.key + '">やっぱり決める</button></div></div></div></div>' + foot(s, nx, isLast ? nextLabel(s, nx) : "次の議題へ", isLast ? "" : esc(cut(gs[gi + 1].title, 14)), "", !isLast);
+  return ptitle(p, i, n, T.resolve.d) + '<div class="body">' + tabs +
+    '<div class="card sumcard"><div class="ch"><b>審議のまとめ</b><span>各審議の「まとめ」が並ぶ</span></div>' +
+    sums.map(({ d, sm }) => '<div class="it2"><small>審議 ' + circ(dn(s, d)) + " " + esc(cut(d.title, 24)) + "</small><p" + (sm ? "" : ' style="color:var(--faint)"') + ">" + esc(sm ? sm.x : "まとめはまだない") + "</p></div>").join("") + "</div>" +
+    '<div class="card ans"><div class="ch"><b>出てきた案</b><span>押して選ぶ・2つ選ぶと合わせられる</span></div>' +
+    (ideas.length ? ideas.map(x => { const on = r.picked.includes(x.id); return '<button class="it2" data-ha="ridea" data-hk="' + g.key + '" data-hv="' + x.id + '"><span class="box' + (on ? " on" : "") + '">' + (on ? "✓" : "") + '</span><span class="m"><b>' + esc(x.x) + "</b><small>" + esc(x.by) + "</small></span></button>"; }).join("") : '<div class="cb"><div class="empty">「案」を付けた発言はない。決めたことを直接書いてよい。</div></div>') + "</div>" +
+    '<div class="card"><div class="ch"><b>決めたこと</b><span>選んだ案から入る。直してよい</span></div><div class="cb"><div class="dec"><textarea class="ta" data-hin="restext" data-hk="' + g.key + '" placeholder="決めたことを書く">' + esc(r.text) + '</textarea><span class="seal">決</span></div></div></div>' +
+    '<div class="card"><div class="ch"><b>確かめる日</b><span>' + (r.date ? md(r.date) : md(addDays(today(), r.every))) + '</span></div><div class="cb"><div class="chips">' +
+    chipDays.map(([v, l]) => '<button class="chip' + (!r.date && r.every === v ? " on" : "") + '" data-ha="revery" data-hk="' + g.key + '" data-hv="' + v + '">' + l + "</button>").join("") +
+    '<button class="chip' + (r.date ? " on" : "") + '" data-ha="rdate" data-hk="' + g.key + '">日付</button></div>' + (r.date || r.pickDate ? '<input type="date" class="fi" style="margin-top:.5rem" data-hin="resdate" data-hk="' + g.key + '" value="' + esc(r.date) + '" min="' + today() + '">' : "") + "</div></div>" +
+    '<div class="card"><div class="ch"><b>決め方</b></div><div class="cb"><div class="chips"><button class="chip' + (r.mode === "rule" ? " on" : "") + '" data-ha="rmode" data-hk="' + g.key + '" data-hv="rule">決まりにする</button><button class="chip' + (r.mode === "trial" ? " on" : "") + '" data-ha="rmode" data-hk="' + g.key + '" data-hv="trial">期間を決めて試す</button></div>' +
+    (r.showHow || r.how ? '<div class="line"><div class="lbl">確かめ方</div><input class="fi" data-hin="reshow" data-hk="' + g.key + '" value="' + esc(r.how) + '" placeholder="例:1週間で守れた日が5日以上"></div>' : "") + "</div></div>" +
+    '<div class="links">' + (r.showHow || r.how ? "<span></span>" : '<button data-ha="showhow" data-hk="' + g.key + '">確かめ方を書く</button>') + '<button data-ha="rescont" data-hv="' + g.key + '">決めずに継続審議へ</button></div>' +
+    "</div>" + foot(s, nx, isLast ? nextLabel(s, nx) : "次の議題へ", isLast ? "" : esc(cut(gs[gi + 1].title, 14)), "", !isLast);
+}
+/* 7 閉会 */
+function sessCounts(s){
+  const gs = groups(s), decs = gs.filter(g => { const r = s.res[g.key]; return r && !r.cont && r.text.trim(); }).length;
+  return { checks: Object.values(s.checks).filter(c => c.val).length, agendas: gs.length, decs };
+}
+function partClose(s, p, i, n){
+  const c = sessCounts(s), mins = Math.round(liveElapsed(s) / 60000), kini = s.kini.filter(x => !x.del);
+  const nextT = nextTeirei(), checks = groups(s).map(g => s.res[g.key]).filter(r => r && !r.cont && r.text.trim()).map(r => r.date || addDays(today(), r.every));
+  return ptitle(p, i, n, T.close.d) + '<div class="body">' +
+    '<div class="card"><div class="ch"><b>今日の会</b><span>自動でまとまる</span></div><div class="grid4"><div><b>' + c.checks + "</b>検証</div><div><b>" + c.agendas + "</b>議題</div><div><b>" + c.decs + "</b>決定</div><div><b>" + mins + "</b>分</div></div></div>" +
+    '<div class="card"><div class="ch"><b>気になったこと</b><span>' + (kini.length ? kini.length + " 件を振り分ける" : "なし") + "</span></div>" +
+    (kini.length ? kini.map(k => '<div class="out"><em>' + esc(k.x) + '</em><span class="s3">' + [["box", "議題箱"], ["later", "あとで"], ["del", "消す"]].map(([v, l]) => '<button class="' + ((k.dest || "box") === v ? "on" : "") + '" data-ha="kdest" data-hk="' + k.id + '" data-hv="' + v + '">' + l + "</button>").join("") + "</span></div>").join("") : '<div class="cb"><div class="empty">会の途中で気になったことは、左下の黄色いボタンから書ける。</div></div>') + "</div>" +
+    '<div class="card"><div class="ch"><b>集中できたか</b></div><div class="cb"><div class="dots">' + [1, 2, 3, 4, 5].map(v => '<button class="' + (s.focus === v ? "on" : "") + '" data-ha="focus" data-hv="' + v + '">' + v + "</button>").join("") + "</div></div></div>" +
+    '<div class="card"><div class="ch"><b>次の会</b></div><div class="cb"><div class="fld" style="font-size:.88rem;line-height:1.7">定例 <b>' + md(nextT) + "</b>" + (checks.length ? "<br>確かめる日 " + checks.map(md).join("・") : "") + "</div></div></div>" +
+    '</div><div class="spacer"></div><div class="dock"><div class="wrap"><button class="bigbtn" style="--bc:var(--ink);margin-top:0" data-ha="close">閉会して議事録に残す<small>第' + s.no + "回・" + mins + "分・決定 " + c.decs + " 件</small></button></div></div>";
+}
+
+/* ───────── ホーム(開会) ───────── */
+function viewHome(){
+  const st = D.settings, due = dueDecisions(), box = boxAgendas(), cont = contAgendas();
+  const paused = Object.values(D.sessions).find(s => !s.del && !s.closed && s.id === D.cur);
+  const last = closedSessions()[0];
+  const isTeirei = new Date().getDay() === st.teirei;
+  const rs = [];
+  if (due.length) rs.push('<div class="rs" style="--rc:var(--p6);--rs:#F6E2DC"><div class="ic">検</div><div class="m"><b>確かめる日が来た決定が ' + due.length + ' 件</b><span>決めたことが効いたかを確かめる</span><ul>' + due.slice(0, 3).map(x => "<li><i>" + md(x.at).replace(/\(.\)/, "") + " 決定</i>" + esc(x.text) + "</li>").join("") + (due.length > 3 ? "<li><i>ほか" + (due.length - 3) + "件</i></li>" : "") + "</ul></div></div>");
+  if (cont.length) rs.push('<div class="rs" style="--rc:var(--gold);--rs:#F7EDCF"><div class="ic">継</div><div class="m"><b>継続審議が ' + cont.length + ' 件</b><span>前回「効かなかった」もの。スムーズになるまで続ける</span><ul>' + cont.slice(0, 3).map(a => "<li><i>" + (a.contN || 1) + "回目</i>" + esc(a.x) + "</li>").join("") + "</ul></div></div>");
+  if (box.length) rs.push('<div class="rs' + (box.length >= st.boxOpen ? "" : " none") + '" style="--rc:var(--p2);--rs:#E3E9F4"><div class="ic">箱</div><div class="m"><b>議題箱に ' + box.length + " 件(" + st.boxOpen + '件で開く)</b><span>いちばん古いもの:' + ago(box[0].at) + "前</span></div></div>");
+  if (isTeirei) rs.push('<div class="rs" style="--rc:var(--p1);--rs:#E1EEE4"><div class="ic">定</div><div class="m"><b>定例日(毎週' + WD[st.teirei] + '曜)</b><span>決まった曜日に入れてある会</span></div></div>');
+  const hasReason = due.length || cont.length || box.length >= st.boxOpen || isTeirei;
+  const daysSince = last ? daysBetween(last.date, today()) : null;
+  let resume = "";
+  if (paused) {
+    const s = paused, cp = curPart(s), lp = (s.pauses || []).slice(-1)[0] || {};
+    const d = cp && cp.d && s.debates[cp.d];
+    const nSay = Object.values(s.debates).reduce((a, x) => a + x.e.filter(e => e.k !== "pause").length, 0), nIdea = Object.values(s.debates).reduce((a, x) => a + x.e.filter(e => e.g === "案").length, 0);
+    resume = '<div class="resume"><div class="rh">休会中の会があります<span>' + (lp.at ? "休会から " + ago(lp.at) : "") + '</span></div><div class="rb"><b>第' + s.no + "回 " + esc(PRESETS[s.kind].n) + "</b>" + stepsBar(s, "minisegs") +
+      '<div class="meta">' + esc(partLabel(s, cp)) + "の途中<br>発言 " + nSay + "・案 " + nIdea + "・会の時間 " + Math.round(liveElapsed(s) / 60000) + "分" + (d ? "・審議の残り " + ms2(d.min * 60000 - d.used) : "") + "</div>" +
+      '<div class="why">' + (lp.why ? "<i>" + esc(lp.why) + "</i>" : "") + (s.place ? esc(s.place) : "") + (lp.when ? "・再開の目安:" + esc(lp.when) : "") + "</div>" +
+      '<div class="rbtns"><button class="go2" data-ha="resume">続きから再開</button><button class="end2" data-ha="resumeclose">ここで閉会</button></div></div></div>';
+  }
+  const later = Object.values(D.later).filter(x => !x.del && !x.done);
+  const pauseStat = pauseSummary();
+  return '<div class="home">' + (EMB.back || "") + '<header class="head"><h1>最高評議会</h1><button data-ha="view" data-hv="set">設定・議員 ⚙</button></header>' +
+    (resume ? '<div style="margin-top:1rem">' + resume + "</div>" : "") +
+    '<div class="hseal"' + (paused ? ' style="display:none"' : "") + '><div class="mark">第<br>' + st.nextNo + '回</div><div><b>' + (hasReason ? "今日、開く理由がある" : "今日は開く理由はない") + "</b><span>" + (last ? "前回(第" + last.no + "回)から " + daysSince + "日" : "はじめての会") + "</span></div></div>" +
+    '<div class="stats"><div class="' + (due.length ? "warn" : "") + '"><b>' + due.length + "</b>確かめる日が<br>来た決定</div><div><b>" + box.length + "</b>議題箱</div><div><b>" + cont.length + "</b>継続審議</div></div>" +
+    (rs.length ? '<h2 class="hh2">開く理由<small>あてはまるものが自動で並ぶ</small></h2><div class="reasons">' + rs.join("") + "</div>" : "") +
+    (paused ? "" : '<h2 class="hh2">今日の会の長さ</h2><div class="len"><button aria-pressed="' + (U.len === "short") + '" data-ha="len" data-hv="short"><b>短い会</b><span>確かめる日が来た決定の検証だけして閉じる</span><em>およそ 15分</em></button><button aria-pressed="' + (U.len === "full") + '" data-ha="len" data-hv="full"><b>本会議</b><span>検証のあと、議題を1〜2つ審議して決める</span><em>およそ 60分</em></button></div>' +
+      '<p class="note">構成は会の途中でも変えられる。Claude に相談したいだけなら <button class="mini" data-ha="len" data-hv="consult" style="font-size:.7rem">相談だけ</button>' + (U.len === "consult" ? " を選んでいる" : "") + "</p>") +
+    '<h2 class="hh2">議題箱<small>思いついたら、会の外でも入れておける</small></h2><div class="card" style="--pc:var(--p3)">' +
+    box.concat(cont).map(a => '<div class="item' + (a.st === "cont" ? " pin" : "") + '"><span class="m"><b>' + esc(a.x) + "</b><span" + (a.st === "cont" ? ' class="cs"' : "") + ">" + (a.st === "cont" ? "継続審議・" + (a.contN || 1) + "回目" : ago(a.at) + "前") + '</span></span><button class="x" data-ha="delag" data-hv="' + a.id + '" aria-label="消す">×</button></div>').join("") +
+    '<div class="add"><input id="hy-newag" placeholder="+ 議題を書く" enterkeyhint="done"><button data-ha="addag">入れる</button></div></div>' +
+    (later.length ? '<h2 class="hh2">あとでやること<small>閉会で「あとで」にしたもの</small></h2><div class="card" style="--pc:var(--p7)">' + later.map(x => '<button class="chk" data-ha="laterdone" data-hv="' + x.id + '"><span class="box"></span><span><b>' + esc(x.x) + '</b><span class="s">第' + x.no + "回から</span></span></button>").join("") + "</div>" : "") +
+    (last ? '<h2 class="hh2">前回の会</h2><div class="last"><b>第' + last.no + "回</b><span>" + md(last.date) + (last.place ? "・" + esc(last.place) : "") + "・" + Math.round(last.elapsed / 60000) + "分・決定 " + (last.nDec || 0) + " 件" + (last.focus ? "・集中 " + last.focus + "/5" : "") + "</span></div>" : "") +
+    (pauseStat ? '<p class="note">' + pauseStat + "</p>" : "") +
+    (closedSessions().length ? '<h2 class="hh2">議事録</h2><div class="card">' + closedSessions().slice(0, 30).map(histRow).join("") + "</div>" : "") +
+    '<p class="note" style="margin:1.2rem 0 .3rem">最高評議会 ' + APP_VERSION + "・" + (NET.conn ? "同期:" + esc(NET.conn.repo) + (NET.state === "err" ? "(つながらない)" : "") : "同期していない(省の設定でつなぐ)") + "</p>" +
+    "</div>" + (paused ? "" : '<div class="spacer"></div><div class="dock"><div class="wrap"><div class="foot"><button class="go" data-ha="open">開 会<small>押すと「1 場づくり」へ。会の時計が動き出す</small></button></div></div></div>');
+}
+function pauseSummary(){
+  const all = []; closedSessions().concat(S() ? [S()] : []).forEach(s => (s.pauses || []).forEach(p => all.push({ why: p.why, place: s.place })));
+  if (!all.length) return "";
+  const c = {}; all.forEach(p => { const k = p.why || "?"; c[k] = c[k] || { n: 0, pl: {} }; c[k].n++; if (p.place) c[k].pl[p.place] = (c[k].pl[p.place] || 0) + 1; });
+  return "これまでの休会:" + Object.entries(c).sort((a, b) => b[1].n - a[1].n).map(([k, v]) => k + " " + v.n + "回" + (Object.keys(v.pl).length ? "(" + Object.entries(v.pl).map(([p, n]) => p + n).join("・") + ")" : "")).join("、");
+}
+function histRow(s){
+  const open = U.open[s.id];
+  let body = "";
+  if (open) {
+    const decs = decisionList().filter(x => x.sess === s.id);
+    const sums = Object.values(s.debates || {}).map(d => ({ d, sm: d.e.filter(e => e.k === "sum").slice(-1)[0] }));
+    body = '<div class="histbody">' + (decs.length ? "<h4>決めたこと</h4>" + decs.map(x => '<div class="dline">' + esc(x.text) + "<i>" + ({ active: "確かめ待ち " + md(x.checkAt), ended: "終結", cont: "継続審議" }[x.st] || x.st) + "</i></div>").join("") : "") +
+      (sums.length ? "<h4>審議</h4>" + sums.map(({ d, sm }) => '<div class="dline"><b>' + circ(dn(s, d)) + " " + esc(d.title || "") + "</b>" + (sm ? "<br>" + esc(sm.x) : "") + "<i>発言 " + d.e.filter(e => e.k !== "pause").length + "</i></div>").join("") : "") +
+      (Object.keys(s.checks || {}).length ? "<h4>検証</h4>" + Object.entries(s.checks).filter(([, c]) => c.val).map(([id, c]) => '<div class="dline">' + esc(D.decisions[id] ? D.decisions[id].text : "") + "<i>" + esc(c.val) + "</i></div>").join("") : "") +
+      ((s.pauses || []).length ? "<h4>休会</h4>" + s.pauses.map(p => '<div class="dline">' + esc(p.why || "") + (p.back ? "・" + ago2(p.back - p.at) + "後に再開" : "") + "</div>").join("") : "") +
+      (s.consult && s.consult.link ? '<h4>相談</h4><div class="dline"><a href="' + esc(s.consult.link) + '" target="_blank" rel="noopener">会話を開く</a></div>' : "") + "</div>";
+  }
+  return '<button class="hist" data-ha="hist" data-hv="' + s.id + '"><b>第' + s.no + "回</b><span>" + md(s.date) + (s.place ? "・" + esc(s.place) : "") + "・" + Math.round(s.elapsed / 60000) + "分・決定 " + (s.nDec || 0) + "</span>" + (open ? "▴" : "▾") + "</button>" + body;
+}
+
+/* ───────── 設定 ───────── */
+function viewSettings(){
+  const st = D.settings, c = NET.conn || {};
+  return '<div class="home set" style="padding-bottom:40px"><header class="head"><h1>最高評議会の設定</h1><button data-ha="view" data-hv="home">← もどる</button></header>' +
+    '<h2 class="hh2">議員</h2><div class="card" style="--pc:var(--p4)"><button class="addbtn" style="border-top:0" data-ha="sheet" data-hs="members">' + members().filter(m => m.on).map(m => esc(m.name)).join("・") + " ほか — 席を変える</button></div>" +
+    '<h2 class="hh2">会の決まり</h2><div class="card" style="--pc:var(--p1)"><div class="cb">' +
+    '<div class="f"><label>定例の曜日</label><div class="chips">' + [1, 2, 3, 4, 5, 6, 0].map(d => '<button class="chip' + (st.teirei === d ? " on" : "") + '" data-ha="setteirei" data-hv="' + d + '">' + WD[d] + "</button>").join("") + "</div></div>" +
+    '<div class="f"><label>議題選びで選べる数</label><div class="chips">' + [1, 2, 3].map(d => '<button class="chip' + (st.maxPick === d ? " on" : "") + '" data-ha="setmax" data-hv="' + d + '">' + d + "つ</button>").join("") + "</div></div>" +
+    '<div class="f"><label>議題箱が何件たまったら「開く理由」にするか</label><div class="chips">' + [2, 3, 4, 5].map(d => '<button class="chip' + (st.boxOpen === d ? " on" : "") + '" data-ha="setbox" data-hv="' + d + '">' + d + "件</button>").join("") + "</div></div>" +
+    '<div class="f"><label>次の会の番号</label><input class="fi" type="number" min="1" data-hin="nextno" value="' + st.nextNo + '" style="max-width:8rem"></div></div></div>' +
+    '<h2 class="hh2">場所</h2><div class="card" style="--pc:var(--p1)">' + st.places.map((p, i) => '<div class="item"><span class="m"><b>' + esc(p) + "</b>" + (st.placeStats[p] ? "<span>最後までいけた " + st.placeStats[p].fin + "/" + st.placeStats[p].use + "</span>" : "") + '</span><button class="x" data-ha="delplace" data-hv="' + i + '">×</button></div>').join("") + '<div class="add"><input id="hy-newplace" placeholder="+ 場所を足す"><button data-ha="addplace2">足す</button></div></div>' +
+    '<h2 class="hh2">準備</h2><div class="card" style="--pc:var(--p1)">' + st.prep.filter(x => !x.del).map(x => '<div class="item"><span class="m"><b>' + esc(x.x) + "</b>" + (x.s ? "<span>" + esc(x.s) + "</span>" : "") + '</span><button class="x" data-ha="delprep" data-hv="' + x.id + '">×</button></div>').join("") + '<div class="add"><input id="hy-newprep" placeholder="+ 準備を足す"><button data-ha="addprep">足す</button></div></div>' +
+    '<h2 class="hh2">同期</h2><div class="card"><div class="cb"><p class="note" style="margin:0">省の設定でつないだトークンをそのまま使う。' + (NET.conn ? "いまのつなぎ先:" + esc(NET.conn.owner + "/" + NET.conn.repo) : "まだつながっていない。") + "<br>保存先:" + DATA_PATH + "</p></div></div>" +
+    '<p class="note">最高評議会 ' + APP_VERSION + "</p></div>";
+}
+
+/* ───────── シート ───────── */
+function sheetWrap(inner, top){ return '<div class="dim" data-ha="sheetclose"></div><div class="bs" role="dialog" aria-modal="true"' + (top ? ' style="max-height:' + top + '"' : "") + '><div class="grab"></div>' + inner + "</div>"; }
+function viewSheet(){
+  const s = S();
+  switch (U.sheet) {
+    case "parts": return sheetParts(s);
+    case "members": return sheetMembers();
+    case "pause": return sheetPause(s);
+    case "kini": return sheetKini(s);
+    case "issue": return sheetIssue(s);
+    case "entry": return sheetEntry(s);
+    case "addpart": return sheetAddPart(s);
+    case "retitle": return sheetRetitle(s);
+  }
+  return "";
+}
+function sheetParts(s){
+  if (!s) return "";
+  const cp = curPart(s);
+  return sheetWrap('<h3>今日の構成</h3><p class="d">会の途中でも、並べかえ・足す・はずすができる。済んだパーツはそのまま。審議は論点ごとに足せる。</p>' +
+    '<div class="presets">' + Object.entries(PRESETS).map(([k, v]) => '<button class="' + (s.kind === k ? "on" : "") + '" data-ha="preset" data-hv="' + k + '">' + v.n + "</button>").join("") + "</div>" +
+    '<div class="card">' + s.parts.map((p, i) => {
+      const d = p.d && s.debates[p.d], here = p === cp;
+      const title = p.t === "debate" ? "審議 " + (d ? circ(dn(s, d)) + " " + esc(cut(d.title || "(論点はまだ)", 22)) : "") : esc(T[p.t].n);
+      const sub = here ? "いまここ" + (d && d.from && s.debates[d.from] ? "・" + circ(dn(s, s.debates[d.from])) + "から分かれた" : "") : (d ? "発言 " + d.e.filter(e => e.k !== "pause").length + "・案 " + d.e.filter(e => e.g === "案").length + (d.from && s.debates[d.from] ? "・" + circ(dn(s, s.debates[d.from])) + "から" : "") : (p.on ? "" : "今日ははずす"));
+      return '<div class="pr' + (here ? " here" : "") + (p.on ? "" : " off") + '"><span class="mv"><button data-ha="pmove" data-hv="' + p.id + '" data-hd="-1"' + (i ? "" : " disabled") + ' aria-label="上へ">▲</button><button data-ha="pmove" data-hv="' + p.id + '" data-hd="1"' + (i < s.parts.length - 1 ? "" : " disabled") + ' aria-label="下へ">▼</button></span><span class="cl" style="--c:' + T[p.t].c + '"></span><span class="m"><b>' + title + "</b>" + (sub ? "<span>" + sub + "</span>" : "") + "</span>" +
+        (p.done && !here ? '<button class="donechip" data-ha="goto" data-hv="' + p.id + '">✓ 済・戻る</button>' : (!here && p.on ? '<button class="jump" data-ha="goto" data-hv="' + p.id + '">ここへ</button>' : "")) +
+        (here ? "" : '<button class="sw' + (p.on ? " on" : "") + '" data-ha="ptoggle" data-hv="' + p.id + '" aria-label="入切"></button>') + "</div>";
+    }).join("") +
+    '<button class="addbtn" data-ha="sheet" data-hs="issue">+ 審議を足す(新しい論点)</button><button class="addbtn" data-ha="sheet" data-hs="addpart">+ ほかのパーツ</button></div>');
+}
+function sheetAddPart(s){
+  return sheetWrap('<h3>パーツを足す</h3><p class="d">足したパーツは、いまのパーツのすぐ後ろに入る。</p><div class="card">' +
+    ["place", "verify", "pick", "consult", "resolve", "close"].map(t => '<button class="chk" data-ha="addpart" data-hv="' + t + '"><span class="box" style="background:' + T[t].c + ';border-color:' + T[t].c + '"></span><span><b>' + T[t].n + "</b></span></button>").join("") + "</div>");
+}
+function sheetMembers(){
+  const list = D.settings.members.filter(m => !m.del);
+  return sheetWrap('<h3>議員</h3><p class="d">席に座らせる自分の中の立場。審議ではこの中から選んで発言する。並べた順で席に出る。名前を押すと直せる。</p><div class="card">' +
+    list.map((m, i) => '<div class="pr memrow' + (m.on ? "" : " off") + '"><span class="mv"><button data-ha="mmove" data-hv="' + m.id + '" data-hd="-1"' + (i ? "" : " disabled") + ' aria-label="上へ">▲</button><button data-ha="mmove" data-hv="' + m.id + '" data-hd="1"' + (i < list.length - 1 ? "" : " disabled") + ' aria-label="下へ">▼</button></span><span class="av" style="--c:' + m.c + '">' + esc(m.s) + '</span><button class="tapzone" data-ha="medit" data-hv="' + m.id + '"><span class="m"><b>' + esc(m.name) + "</b><span>" + esc(m.d) + '</span></span></button><button class="sw' + (m.on ? " on" : "") + '" data-ha="mtoggle" data-hv="' + m.id + '" aria-label="席に出す"></button></div>' +
+      (U.editMem === m.id ? '<div class="edrow"><div class="two"><input class="fi" data-hin="mem" data-hv="' + m.id + '" data-hf="s" value="' + esc(m.s) + '" maxlength="2" aria-label="一文字"><input class="fi" data-hin="mem" data-hv="' + m.id + '" data-hf="name" value="' + esc(m.name) + '" aria-label="名前"></div><input class="fi" data-hin="mem" data-hv="' + m.id + '" data-hf="d" value="' + esc(m.d) + '" placeholder="ひとこと(どんな立場か)"><div class="palette">' + PALETTE.map(c => '<button class="' + (m.c === c ? "on" : "") + '" style="--c:' + c + '" data-ha="mcolor" data-hv="' + m.id + '" data-hc="' + c + '" aria-label="色"></button>').join("") + '</div><div style="display:flex;justify-content:space-between"><button class="mini" data-ha="mdel" data-hv="' + m.id + '">この議員を消す</button><button class="mini" data-ha="medit" data-hv="">閉じる</button></div></div>' : "")).join("") +
+    '<button class="addbtn" data-ha="madd">+ 議員を足す</button></div><p class="note">Claude 相談の答えは「Claude(参考人)」の発言として入る。</p>');
+}
+function sheetPause(s){
+  const a = U.arg || (U.arg = { why: null, when: "今日中" });
+  const t = nextTeirei();
+  return sheetWrap('<h3>休会する</h3><p class="d">ここまでの内容は、打つたびに保存されている。次に開くと、この続きから再開できる。</p>' +
+    '<div class="lbl">休会のわけ・記録に残る</div><div class="reason">' + PAUSE_WHY.map(w => '<button class="' + (a.why === w ? "on" : "") + '" data-ha="pwhy" data-hv="' + w + '">' + w + "</button>").join("") + "</div>" +
+    '<div class="lbl" style="margin-top:.9rem">いつ再開する</div><div class="chips" style="--pc:var(--ink)">' + ["今日中", "明日", "次の定例(" + md(t).replace(/\(.\)/, "") + ")"].map(w => '<button class="chip' + (a.when === w ? " on" : "") + '" data-ha="pwhen" data-hv="' + w + '">' + w + "</button>").join("") + "</div>" +
+    '<p class="note">再開の目安は、次に開いたときの「休会中の会」のカードに出る。</p><button class="bigbtn" data-ha="dopause">休会する<small>会の時計は止まる</small></button>');
+}
+function sheetKini(s){
+  if (!s) return "";
+  const list = s.kini.filter(x => !x.del);
+  return sheetWrap('<h3>気になったこと</h3><p class="d">いまの議論と関係ないことは、ここに置いて頭から出す。閉会のときに議題箱か「あとで」に振り分ける。</p>' +
+    '<div class="card">' + list.map(k => '<div class="item"><span class="m"><b>' + esc(k.x) + "</b><span>" + esc(k.where || "") + '</span></span><button class="x" data-ha="kdel" data-hv="' + k.id + '">×</button></div>').join("") +
+    '<div class="add"><input id="hy-newkini" placeholder="気になったことを書く" enterkeyhint="done"><button data-ha="addkini">置く</button></div></div><p class="note">書いたら、すぐ審議に戻る。</p>');
+}
+function sheetIssue(s){
+  if (!s) return "";
+  const a = U.arg || (U.arg = {});
+  const cp = curPart(s), d = cp && cp.d && s.debates[cp.d];
+  const e = a.entry && d ? d.e.find(x => x.id === a.entry) : null;
+  const dest = a.dest || "after";
+  return sheetWrap("<h3>" + (e ? "論点が変わった" : "審議を足す") + '</h3><p class="d">' + (e ? "この発言から、新しい論点で審議を足す。今の審議はそのまま残り、あとで戻れる。" : "新しい論点で審議を足す。今の審議はそのまま残る。") + "</p>" +
+    (e ? '<div class="card">' + entryHTML(e) + "</div>" : "") +
+    '<div class="lbl" style="margin-top:.7rem">新しい論点</div><input class="fi" id="hy-issuetx" placeholder="何を決めたいか" value="' + esc(a.x || "") + '">' +
+    '<div class="lbl" style="margin-top:.7rem">どこに足す</div><div class="chips" style="--pc:var(--p4)">' + [["after", d ? "今の審議のすぐ後" : "いまのすぐ後"], ["consult", "相談のあと"], ["box", "議題箱へ"]].map(([v, l]) => '<button class="chip' + (dest === v ? " on" : "") + '" data-ha="idest" data-hv="' + v + '">' + l + "</button>").join("") + "</div>" +
+    '<button class="bigbtn" style="--bc:var(--p4)" data-ha="doissue">' + (dest === "box" ? "議題箱に入れる" : "審議を足して移る") + "</button>");
+}
+function sheetEntry(s){
+  const a = U.arg || {}, cp = s && curPart(s), d = cp && cp.d && s.debates[cp.d];
+  const e = d && d.e.find(x => x.id === a.entry) || (s && s.consult.ans.find(x => x.id === a.entry));
+  if (!e) return "";
+  const inConsult = s.consult.ans.includes(e);
+  return sheetWrap('<h3>この発言</h3><div class="card" style="margin-top:.6rem">' + entryHTML(e) + "</div>" +
+    (e.k === "say" ? '<div class="lbl">印</div><div class="tgs" style="gap:.4rem;margin-bottom:.8rem">' + TAGS.map(([t, c]) => '<button style="font-size:.8rem;padding:.35rem .7rem" class="' + c + (e.g === t ? " on" : "") + '" data-ha="etag" data-hv="' + t + '">' + t + "</button>").join("") + "</div>" : "") +
+    '<div class="lbl">書き直す</div><textarea class="fi" id="hy-etx">' + esc(e.x) + "</textarea>" +
+    '<div class="chips" style="margin-top:.8rem;--pc:var(--p4)"><button class="chip on" data-ha="esave">直す</button>' + (inConsult ? "" : '<button class="chip" data-ha="eissue">ここから論点を変える</button>') + '<button class="chip" data-ha="edel">消す</button></div>');
+}
+function sheetRetitle(s){
+  const cp = curPart(s), d = cp && s.debates[cp.d]; if (!d) return "";
+  return sheetWrap('<h3>論点を直す</h3><input class="fi" id="hy-rtx" style="margin-top:.6rem" value="' + esc(d.title) + '"><div class="lbl" style="margin-top:.7rem">この審議の時間</div><div class="chips">' + [10, 15, 20, 25, 30, 40].map(m => '<button class="chip' + (d.min === m ? " on" : "") + '" data-ha="dmin" data-hv="' + m + '">' + m + "分</button>").join("") + '</div><button class="bigbtn" style="--bc:var(--p4)" data-ha="dortitle">直す</button>');
+}
+
+/* ───────── 操作 ───────── */
+function goPart(s, id){
+  flush(s); s.cur = id; U.nextArm = null; U.verifyIdx = 0;
+  const p = partOf(s, id); if (p && p.t === "resolve") U.resTab = null;
+  window.scrollTo(0, 0);
+}
+function insertAfterCur(s, part){ const i = s.parts.indexOf(curPart(s)); s.parts.splice(i + 1, 0, part); }
+function postEntry(){
+  const s = S(), cp = s && curPart(s), d = cp && s.debates[cp.d]; if (!d) return;
+  const el = $("#hy-comp"); if (!el) return; const x = el.value.trim(); if (!x) { el.focus(); return; }
+  const seat = U.seat === "sh" || !members().some(m => m.id === U.seat && m.on) ? "sh" : U.seat;
+  mut(() => {
+    if (seat === "sh") d.e.push({ id: rid(), k: U.smode === "sum" ? "sum" : "shingi", x, at: now() });
+    else d.e.push({ id: rid(), k: "say", m: seat, x, g: U.tag, at: now() });
+    delete U.drafts[d.id + ":" + seat]; U.tag = null;
+    if (U.smode === "sum") U.smode = "shingi";
+    if (s.recap && s.recap.d === d.id) U.recapOff[s.recap.at] = 1;
+  });
+  const e2 = $("#hy-comp"); if (e2) e2.focus({ preventScroll: true });
+  const end = $("#hy-logend"); if (end) { const r = end.getBoundingClientRect(), dock = $(".dock"); const h = dock ? dock.offsetHeight : 0; if (r.bottom > window.innerHeight - h) window.scrollBy(0, r.bottom - (window.innerHeight - h) + 12); }
+}
+function finalize(s){
+  flush(s);
+  const gs = groups(s);
+  let nDec = 0;
+  gs.forEach(g => {
+    const r = s.res[g.key], a = g.agenda && D.agendas[g.agenda];
+    if (r && r.cont) {
+      if (a) { a.st = "cont"; a.contN = (a.contN || 0) + 1; touch(a); }
+      else { const na = { id: rid(), x: g.title, at: now(), st: "cont", contN: 1, u: now() }; D.agendas[na.id] = na; }
+    } else if (r && r.text.trim()) {
+      const every = r.date ? Math.max(1, daysBetween(today(), r.date)) : r.every;
+      const dec = { id: rid(), text: r.text.trim(), at: today(), no: s.no, sess: s.id, agenda: g.agenda || null, mode: r.mode, how: r.how || "", every, checkAt: r.date || addDays(today(), r.every), results: [], st: "active", u: now() };
+      D.decisions[dec.id] = dec; nDec++;
+      if (a) { a.st = "done"; a.doneAt = now(); touch(a); }
+      // 前の決定(継続審議のもと)は、新しい決定に置きかわる
+      if (a && a.dec && D.decisions[a.dec] && D.decisions[a.dec].st === "cont") touch(Object.assign(D.decisions[a.dec], { st: "replaced", by: dec.id }));
+    }
+  });
+  s.kini.filter(k => !k.del).forEach(k => {
+    const dest = k.dest || "box";
+    if (dest === "box") { const na = { id: rid(), x: k.x, at: now(), st: "box", u: now() }; D.agendas[na.id] = na; }
+    else if (dest === "later") { const l = { id: rid(), x: k.x, no: s.no, at: now(), u: now() }; D.later[l.id] = l; }
+  });
+  const st = D.settings; st.placeStats = st.placeStats || {};
+  if (s.place) { const x = st.placeStats[s.place] || (st.placeStats[s.place] = { use: 0, fin: 0 }); x.use++; if (!(s.pauses || []).length) x.fin++; }
+  touch(st);
+  s.run = false; s.closed = now(); s.nDec = nDec; s.parts.forEach(p => { if (p.t === "close") p.done = true; });
+  D.cur = null; D.curU = now();
+}
+function doPause(s, why, when){
+  flush(s); s.run = false;
+  const p = { at: now(), why: why || "", when: when || "", part: s.cur };
+  s.pauses = s.pauses || []; s.pauses.push(p);
+  const cp = curPart(s), d = cp && cp.d && s.debates[cp.d];
+  if (d && d.e.length && d.e[d.e.length - 1].k !== "pause") d.e.push({ id: rid(), k: "pause", at: p.at });
+}
+function doResume(s){
+  const t = now(); s.run = true; s.since = t;
+  const lp = (s.pauses || []).slice(-1)[0]; if (lp && !lp.back) lp.back = t;
+  const cp = curPart(s), d = cp && cp.d && s.debates[cp.d];
+  if (d) {
+    const pe = [...d.e].reverse().find(e => e.k === "pause"); if (pe && !pe.back) pe.back = t;
+    const real = d.e.filter(e => e.k !== "pause");
+    const lastSh = [...real].reverse().find(e => e.k === "sum" || e.k === "shingi") || real[real.length - 1];
+    const ideas = real.filter(e => e.g === "案");
+    if (real.length) s.recap = { d: d.id, at: t, text: (lastSh ? "「" + cut(lastSh.x.replace(/\n/g, " "), 60) + "」の話になっていた。" : "") + (ideas.length ? "案は" + ideas.slice(0, 3).map(e => "「" + cut(e.x, 16) + "」").join("") + "の" + ideas.length + "つ。" : "案はまだない。") };
+  }
+}
+
+function onClick(ev){
+  const b = ev.target.closest("[data-ha]"); if (!b) return;
+  const a = b.dataset.ha, v = b.dataset.hv, s = S();
+  switch (a) {
+    case "view": U.view = v; saveUI(); render(); window.scrollTo(0, 0); return;
+    case "len": U.len = v; saveUI(); render(); return;
+    case "open": mut(() => openSession(U.len || "full")); window.scrollTo(0, 0); return;
+    case "resume": mut(() => { doResume(S()); U.view = "sess"; }); window.scrollTo(0, 0); return;
+    case "resumeclose": mut(() => { const x = S(); doResume(x); const c = x.parts.find(p => p.t === "close") || (x.parts.push(mkPart("close")), x.parts[x.parts.length - 1]); c.on = true; goPart(x, c.id); U.view = "sess"; }); return;
+    case "sheet": U.sheet = b.dataset.hs; U.arg = v ? { dest: v } : null; render(); return;
+    case "sheetclose": U.sheet = null; U.arg = null; U.editMem = null; render(); return;
+    case "pause": U.sheet = "pause"; U.arg = null; render(); return;
+    case "pwhy": U.arg.why = v; render(); return;
+    case "pwhen": U.arg.when = v; render(); return;
+    case "dopause": { const x = U.arg || {}; U.sheet = null; U.arg = null; mut(() => { doPause(s, x.why || "わけなし", x.when); U.view = "home"; }); window.scrollTo(0, 0); return; }
+    case "hist": U.open[v] = !U.open[v]; render(); return;
+    case "next": {
+      const cp = curPart(s);
+      if (cp.t === "verify") { const list = verifyList(s); if (list.length && U.verifyIdx < list.length - 1) { U.verifyIdx++; render(); window.scrollTo(0, 0); return; } }
+      if (cp.t === "resolve") { const gs = groups(s), gi = gs.findIndex(g => g.key === U.resTab); if (gi >= 0 && gi < gs.length - 1) { U.resTab = gs[gi + 1].key; render(); window.scrollTo(0, 0); return; } }
+      if (cp.t === "debate") { const d = s.debates[cp.d]; if (d && d.e.length && !d.e.some(e => e.k === "sum") && U.nextArm !== cp.id) { U.nextArm = cp.id; render(); toast("まとめを書くと、議決のときに見やすい。もう一度押すと進む。"); return; } }
+      const nx = nextPart(s); mut(() => { cp.done = true; if (nx) goPart(s, nx.id); }); if (!nx) toast("最後のパーツ。閉会は構成から足せる。"); return;
+    }
+    case "goto": U.sheet = null; mut(() => goPart(s, v)); return;
+    case "ptoggle": mut(() => { const p = partOf(s, v); p.on = !p.on; }); return;
+    case "pmove": mut(() => { const i = s.parts.findIndex(p => p.id === v), j = i + (+b.dataset.hd); if (j < 0 || j >= s.parts.length) return; const [p] = s.parts.splice(i, 1); s.parts.splice(j, 0, p); }); return;
+    case "preset": mut(() => {
+      const want = PRESETS[v].parts; s.kind = v;
+      s.parts.forEach(p => { if (p.done || p === curPart(s)) return; if (p.t === "debate") p.on = v !== "short"; else p.on = want.includes(p.t); });
+      want.forEach(t => { if (t !== "debate" && !s.parts.some(p => p.t === t)) s.parts.push(mkPart(t)); });
+      if (v !== "short" && !s.parts.some(p => p.t === "debate") && v === "consult") { const d = newDebate(s, { title: "", min: 25 }); const ci = s.parts.findIndex(p => p.t === "consult"); s.parts.splice(ci < 0 ? s.parts.length : ci, 0, mkPart("debate", { d: d.id })); }
+    }); return;
+    case "addpart": U.sheet = "parts"; mut(() => insertAfterCur(s, mkPart(v))); return;
+    case "place": mut(() => { s.place = s.place === v ? null : v; }); return;
+    case "addplace": { const x = (prompt("場所の名前") || "").trim(); if (!x) return; mut(() => { if (!D.settings.places.includes(x)) D.settings.places.push(x); touch(D.settings); s.place = x; }); return; }
+    case "prep": mut(() => { s.prep[v] = !s.prep[v]; }); return;
+    case "check": mut(() => applyCheck(s, D.decisions[b.dataset.hd], (s.checks[b.dataset.hd] || {}).val === v ? null : v)); return;
+    case "keep": mut(() => { const d = D.decisions[v]; d.st = "active"; d.keep = true; d.checkAt = addDays(today(), d.every || 7); touch(d); }); return;
+    case "vprev": U.verifyIdx = Math.max(0, U.verifyIdx - 1); render(); return;
+    case "vnext": U.verifyIdx++; render(); return;
+    case "pick": mut(() => pickAgenda(s, v, !s.picks[v])); return;
+    case "pmin": mut(() => { let m = s.picks[v] + 5; if (m > 60) m = 10; s.picks[v] = m; Object.values(s.debates).forEach(d => { if (d.agenda === v && !d.from) d.min = m; }); }); return;
+    case "addag": { const el = b.parentElement.querySelector("input"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } mut(() => { const na = { id: rid(), x, at: now(), st: "box", u: now() }; D.agendas[na.id] = na; }); const e2 = $("#hy-newag"); if (e2) e2.focus({ preventScroll: true }); return; }
+    case "delag": if (!confirm("この議題を消しますか。")) return; mut(() => touch(Object.assign(D.agendas[v], { del: true }))); return;
+    case "laterdone": mut(() => touch(Object.assign(D.later[v], { done: true }))); return;
+    case "seat": U.seat = v; saveUI(); render(); { const c = $("#hy-comp"); if (c) c.focus({ preventScroll: true }); } return;
+    case "smode": U.smode = v; saveUI(); render(); { const c = $("#hy-comp"); if (c) c.focus({ preventScroll: true }); } return;
+    case "tag": U.tag = U.tag === v ? null : v; render(); { const c = $("#hy-comp"); if (c) c.focus({ preventScroll: true }); } return;
+    case "post": postEntry(); return;
+    case "entry": U.sheet = "entry"; U.arg = { entry: v }; render(); return;
+    case "etag": mut(() => { const e = findEntry(s, U.arg.entry); if (e) e.g = e.g === v ? null : v; }); return;
+    case "esave": { const x = ($("#hy-etx").value || "").trim(); if (!x) return; mut(() => { const e = findEntry(s, U.arg.entry); if (e) e.x = x; U.sheet = null; }); return; }
+    case "edel": mut(() => { const cp = curPart(s), d = cp && s.debates[cp.d]; if (d) d.e = d.e.filter(e => e.id !== U.arg.entry); s.consult.ans = s.consult.ans.filter(e => e.id !== U.arg.entry); U.sheet = null; }); return;
+    case "eissue": U.sheet = "issue"; U.arg = { entry: U.arg.entry, dest: "after" }; render(); { const i = $("#hy-issuetx"); if (i) i.focus(); } return;
+    case "idest": U.arg = Object.assign(U.arg || {}, { dest: v, x: ($("#hy-issuetx") || {}).value || "" }); render(); return;
+    case "doissue": {
+      const x = ($("#hy-issuetx").value || "").trim(); if (!x) { $("#hy-issuetx").focus(); return; }
+      const arg = U.arg || {}, dest = arg.dest || "after";
+      U.sheet = null; U.arg = null;
+      mut(() => {
+        if (dest === "box") { const na = { id: rid(), x, at: now(), st: "box", u: now() }; D.agendas[na.id] = na; toast("議題箱に入れた"); return; }
+        const cp = curPart(s), cd = cp && cp.d && s.debates[cp.d];
+        const d = newDebate(s, { title: x, agenda: cd ? (cd.agenda || rootOf(s, cd).agenda) : null, from: cd ? cd.id : null, min: 15 });
+        if (arg.entry && cd) { const e = cd.e.find(y => y.id === arg.entry); if (e) d.e.push(Object.assign({}, e, { id: rid(), at: now() })); }
+        const part = mkPart("debate", { d: d.id });
+        if (dest === "consult") { const ci = s.parts.findIndex(p => p.t === "consult"); s.parts.splice(ci < 0 ? s.parts.indexOf(curPart(s)) + 1 : ci + 1, 0, part); toast("相談のあとに審議" + circ(dn(s, d)) + "を足した"); }
+        else { const after = s.parts.indexOf(cp); s.parts.splice(after + 1, 0, part); goPart(s, part.id); }
+      }); return;
+    }
+    case "retitle": U.sheet = "retitle"; U.arg = null; render(); return;
+    case "dmin": mut(() => { const d = s.debates[curPart(s).d]; d.min = +v; }); return;
+    case "dortitle": { const x = ($("#hy-rtx").value || "").trim(); U.sheet = null; mut(() => { const d = s.debates[curPart(s).d]; if (x) d.title = x; }); return; }
+    case "extend": mut(() => { const d = s.debates[curPart(s).d]; d.min += 5; }); return;
+    case "recapoff": U.recapOff[v] = 1; saveUI(); render(); return;
+    case "cseat": mut(() => { s.consult.seat = v; }); return;
+    case "copyprompt": copyText(buildPrompt(s)).then(ok => toast(ok ? "コピーした。Claude に貼る" : "コピーできなかった")); return;
+    case "paste": { const el = $("#hy-paste"), list = parseAnswer(el ? el.value : ""); if (!list.length) { el && el.focus(); return; } mut(() => { s.consult.ans.push(...list); s.consult.paste = ""; }); toast(list.length + " 行を発言録に入れた"); return; }
+    case "showlink": mut(() => { s.consult.showLink = true; }); return;
+    case "skipconsult": { const cp = curPart(s), nx = nextPart(s); mut(() => { s.consult.skip = true; cp.done = true; if (nx) goPart(s, nx.id); }); return; }
+    case "restab": U.resTab = v; render(); window.scrollTo(0, 0); return;
+    case "ridea": mut(() => {
+      const r = resOf(s, b.dataset.hk); const i = r.picked.indexOf(v); if (i >= 0) r.picked.splice(i, 1); else r.picked.push(v);
+      if (!r.edited) { const g = groups(s).find(x => x.key === b.dataset.hk), ideas = ideasOf(s, g); r.text = r.picked.map(id => (ideas.find(x => x.id === id) || {}).x).filter(Boolean).join("。").replace(/。。/g, "。"); }
+    }); return;
+    case "revery": mut(() => { const r = resOf(s, b.dataset.hk); r.every = +v; r.date = ""; r.pickDate = false; }); return;
+    case "rdate": mut(() => { const r = resOf(s, b.dataset.hk); r.pickDate = true; }); return;
+    case "rmode": mut(() => { resOf(s, b.dataset.hk).mode = v; }); return;
+    case "showhow": mut(() => { resOf(s, b.dataset.hk).showHow = true; }); return;
+    case "rescont": mut(() => { const r = resOf(s, v); r.cont = !r.cont; }); return;
+    case "kdest": mut(() => { const k = s.kini.find(x => x.id === b.dataset.hk); if (k) k.dest = v; }); return;
+    case "focus": mut(() => { s.focus = +v; }); return;
+    case "addkini": { const el = $("#hy-newkini"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } const cp = curPart(s); U.sheet = null; mut(() => s.kini.push({ id: rid(), x, where: partLabel(s, cp) + "で", at: now() })); toast("置いた。審議に戻る"); return; }
+    case "kdel": mut(() => { const k = s.kini.find(x => x.id === v); if (k) k.del = true; }); return;
+    case "close": {
+      const nx = s; const mins = Math.round(liveElapsed(nx) / 60000);
+      mut(() => { finalize(nx); U.view = "home"; }); window.scrollTo(0, 0); toast("第" + nx.no + "回を閉会した(" + mins + "分)"); return;
+    }
+    // 議員
+    case "mtoggle": mut(() => { const m = D.settings.members.find(x => x.id === v); m.on = !m.on; touch(D.settings); }); return;
+    case "mmove": mut(() => { const l = D.settings.members, i = l.findIndex(x => x.id === v); let j = i + (+b.dataset.hd); while (j >= 0 && j < l.length && l[j].del) j += +b.dataset.hd; if (j < 0 || j >= l.length) return; const [m] = l.splice(i, 1); l.splice(j, 0, m); touch(D.settings); }); return;
+    case "medit": U.editMem = v || null; render(); return;
+    case "mcolor": mut(() => { const m = D.settings.members.find(x => x.id === v); m.c = b.dataset.hc; touch(D.settings); }); return;
+    case "mdel": if (!confirm("この議員を消しますか。今までの発言は残ります。")) return; mut(() => { const m = D.settings.members.find(x => x.id === v); m.del = true; m.on = false; touch(D.settings); U.editMem = null; }); return;
+    case "madd": mut(() => { const used = D.settings.members.map(m => m.c); const m = { id: rid(), name: "新しい議員", s: "新", d: "", c: PALETTE.find(c => !used.includes(c)) || PALETTE[0], on: true }; D.settings.members.push(m); touch(D.settings); U.editMem = m.id; }); return;
+    // 設定
+    case "setteirei": mut(() => { D.settings.teirei = +v; touch(D.settings); }); return;
+    case "setmax": mut(() => { D.settings.maxPick = +v; touch(D.settings); }); return;
+    case "setbox": mut(() => { D.settings.boxOpen = +v; touch(D.settings); }); return;
+    case "delplace": mut(() => { D.settings.places.splice(+v, 1); touch(D.settings); }); return;
+    case "addplace2": { const el = $("#hy-newplace"), x = el.value.trim(); if (!x) return; mut(() => { if (!D.settings.places.includes(x)) D.settings.places.push(x); touch(D.settings); }); return; }
+    case "delprep": mut(() => { const p = D.settings.prep.find(x => x.id === v); p.del = true; touch(D.settings); }); return;
+    case "addprep": { const el = $("#hy-newprep"), x = el.value.trim(); if (!x) return; mut(() => { D.settings.prep.push({ id: rid(), x, s: "" }); touch(D.settings); }); return; }
+    case "connect": {
+      const c = { owner: $("#hy-c-owner").value.trim(), repo: $("#hy-c-repo").value.trim() || "notion-daily", branch: $("#hy-c-branch").value.trim() || "main", token: $("#hy-c-token").value.trim() };
+      if (!c.owner || !c.token) { toast("ユーザー名とトークンを入れる"); return; }
+      NET.conn = c; NET.sha = null; lsSet(K_CONN, c); pull().then(() => toast(NET.state === "err" ? "つながらなかった" : "つないだ")); return;
+    }
+  }
+}
+function findEntry(s, id){ if (!s) return null; for (const d of Object.values(s.debates)) { const e = d.e.find(x => x.id === id); if (e) return e; } return s.consult.ans.find(x => x.id === id) || null; }
+function onInput(ev){
+  const t = ev.target, s = S();
+  if (t.id === "hy-comp") { U.drafts[t.dataset.hdk] = t.value; saveUI(); return; }
+  if (t.id === "hy-paste" && s) { s.consult.paste = t.value; saveLocal(); return; }
+  if (t.id === "hy-dtitle") return;
+  const k = t.dataset.hin; if (!k) return;
+  const quiet = fn => { fn(); if (s) touch(s); saveLocal(); queuePush(); };
+  switch (k) {
+    case "checknote": quiet(() => { const c = s.checks[t.dataset.hd] || (applyCheck(s, D.decisions[t.dataset.hd], null), s.checks[t.dataset.hd]); c.note = t.value; const r = (D.decisions[t.dataset.hd].results || []).find(x => x.sess === s.id); if (r) { r.note = t.value; touch(D.decisions[t.dataset.hd]); } }); return;
+    case "restext": quiet(() => { const r = resOf(s, t.dataset.hk); r.text = t.value; r.edited = !!t.value.trim(); }); return;
+    case "reshow": quiet(() => { resOf(s, t.dataset.hk).how = t.value; }); return;
+    case "resdate": quiet(() => { const r = resOf(s, t.dataset.hk); r.date = t.value; }); render(); return;
+    case "clink": quiet(() => { s.consult.link = t.value.trim(); }); return;
+    case "nextno": { const n = Math.round(+t.value); if (n >= 1) quiet(() => { D.settings.nextNo = n; touch(D.settings); }); return; }
+    case "mem": quiet(() => { const m = D.settings.members.find(x => x.id === t.dataset.hv); m[t.dataset.hf] = t.value; touch(D.settings); }); return;
+  }
+}
+function onKey(ev){
+  if (ev.key !== "Enter" || ev.isComposing || ev.keyCode === 229) return;
+  const t = ev.target;
+  if (t.id === "hy-comp" && t.tagName === "INPUT") { ev.preventDefault(); postEntry(); return; }
+  if (t.id === "hy-comp" && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); postEntry(); return; }
+  if (t.id === "hy-newag") { ev.preventDefault(); const b = t.parentElement.querySelector("[data-ha=addag]"); b && b.click(); return; }
+  if (t.id === "hy-newkini") { ev.preventDefault(); $("[data-ha=addkini]").click(); return; }
+  if (t.id === "hy-dtitle") { ev.preventDefault(); t.blur(); return; }
+  if (t.id === "hy-issuetx") { ev.preventDefault(); $("[data-ha=doissue]").click(); return; }
+}
+function onChange(ev){
+  const t = ev.target, s = S();
+  if (t.id === "hy-dtitle" && s) { const x = t.value.trim(); if (x) mut(() => { s.debates[curPart(s).d].title = x; }); }
+}
+async function copyText(t){
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
+  try { const ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); const ok = document.execCommand("copy"); ta.remove(); return ok; } catch (e) { return false; }
+}
+let toastT = null;
+function toast(msg){ if (!mounted()) return; let el = $(".toast"); if (!el) { el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); ROOT.appendChild(el); } el.textContent = msg; el.style.display = "block"; clearTimeout(toastT); toastT = setTimeout(() => { el.style.display = "none"; }, 2400); }
+
+/* ───────── 時計 ───────── */
+let lastAlive = 0;
+function tick(force){
+  const s = S(); if (!s) return;
+  const tm = $("#hy-tm"); if (tm) tm.textContent = hms(liveElapsed(s));
+  const cp = curPart(s), d = cp && cp.d && s.debates[cp.d], dt = $("#hy-dtm");
+  if (d && dt) { const left = d.min * 60000 - debUsed(s, d); dt.textContent = "残り " + ms2(left); dt.classList.toggle("w", left < 120000);
+    if (!force && left < 180000 && left > 178500 && U.view === "sess") render(); }
+  if (s.run && now() - lastAlive > 10000) { lastAlive = now(); alive(); }
+}
+
+/* ───────── 同期(notion-daily に 1 つのファイル) ─────────
+   手元が正。開いたとき・戻ったときに取りに行って混ぜ、変えたら少し待って送る。
+   混ぜ方:議題・決定・会・あとで は id ごとに新しいほう(u)、設定と「いまの会」も新しいほう。 */
+function merge(a, b){
+  if (!b) return a; if (!a) return b;
+  const out = normalize(JSON.parse(JSON.stringify(a)));
+  ["agendas", "decisions", "sessions", "later"].forEach(k => { Object.entries(b[k] || {}).forEach(([id, x]) => { const y = out[k][id]; if (!y || (x.u || 0) > (y.u || 0)) out[k][id] = x; }); });
+  if ((b.settings && b.settings.u || 0) > (out.settings.u || 0)) out.settings = Object.assign(defaults().settings, b.settings);
+  if ((b.curU || 0) > (out.curU || 0)) { out.cur = b.cur; out.curU = b.curU; }
+  out.settings.nextNo = Math.max(out.settings.nextNo || 1, (b.settings && b.settings.nextNo) || 1, ...Object.values(out.sessions).filter(s => !s.del).map(s => (s.no || 0) + 1));
+  return out;
+}
+const b64e = s => btoa(unescape(encodeURIComponent(s)));
+const b64d = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ""))));
+const api = () => "https://api.github.com/repos/" + encodeURIComponent(NET.conn.owner) + "/" + encodeURIComponent(NET.conn.repo) + "/contents/" + DATA_PATH;
+const hdr = x => Object.assign({ "Authorization": "Bearer " + NET.conn.token, "Accept": "application/vnd.github+json" }, x || {});
+async function fetchRemote(){
+  const r = await fetch(api() + "?ref=" + encodeURIComponent(NET.conn.branch || "main") + "&t=" + now(), { headers: hdr(), cache: "no-store" });
+  if (r.status === 404) { NET.sha = null; return null; }
+  if (!r.ok) throw new Error("読み込み " + r.status);
+  const j = await r.json(); NET.sha = j.sha;
+  let txt = j.content ? b64d(j.content) : null;
+  if (!txt && j.download_url) { const r2 = await fetch(j.download_url, { cache: "no-store" }); txt = await r2.text(); }
+  return txt ? JSON.parse(txt) : null;
+}
+async function pull(){
+  if (!NET.conn || !NET.conn.token) return;
+  NET.busy = true; updSaved();
+  try {
+    const remote = await fetchRemote();
+    const before = JSON.stringify(D);
+    D = merge(D, remote); saveLocal();
+    NET.state = "";
+    const changed = JSON.stringify(D) !== before;
+    if (!remote || JSON.stringify(remote) !== JSON.stringify(D)) NET.dirty = true;
+    NET.busy = false;
+    if (changed) { checkSudden(); render(); } else updSaved();
+    if (NET.dirty) queuePush(300);
+  } catch (e) { NET.busy = false; NET.state = "err"; updSaved(); console.warn(e); }
+}
+function queuePush(ms){ NET.dirty = true; updSaved(); clearTimeout(NET.timer); NET.timer = setTimeout(push, ms == null ? 1500 : ms); }
+async function push(){
+  if (!NET.conn || !NET.conn.token || !NET.dirty) { updSaved(); return; }
+  if (NET.busy) { queuePush(800); return; }
+  NET.busy = true;
+  try {
+    for (let tries = 0; tries < 3; tries++) {
+      const body = { message: "最高評議会を更新", content: b64e(JSON.stringify(D)), branch: NET.conn.branch || "main" };
+      if (NET.sha) body.sha = NET.sha;
+      const r = await fetch(api(), { method: "PUT", headers: hdr({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
+      if (r.ok) { const j = await r.json(); NET.sha = j.content && j.content.sha; NET.dirty = false; NET.state = ""; break; }
+      if (r.status === 409 || r.status === 422) { const remote = await fetchRemote(); D = merge(D, remote); saveLocal(); continue; }
+      throw new Error("保存 " + r.status);
+    }
+  } catch (e) { NET.state = "err"; console.warn(e); }
+  NET.busy = false; updSaved();
+}
+function updSaved(){ const el = $(".saved"); if (el) el.outerHTML = savedLabel(); }
+function findConn(){
+  const sho = lsGet("sho-conn", null);
+  if (sho && sho.token && sho.owner) return { owner: sho.owner, repo: sho.repo || "notion-daily", branch: sho.branch || "main", token: sho.token, from: "省" };
+  const mine = lsGet(K_CONN, null); if (mine && mine.token) return mine;
+  // ほかのアプリ(同じ nisenonamae.github.io)で入れたトークンを借りる
+  const keys = ["sho-conn", "kenseiin-conn"]; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/conn/i.test(k) && !keys.includes(k) && k !== K_CONN) keys.push(k); } } catch (e) {}
+  for (const k of keys) { const c = lsGet(k, null); if (c && typeof c === "object" && c.token && c.owner) { const x = { owner: c.owner, repo: "notion-daily", branch: c.branch || "main", token: c.token, from: k.replace(/-conn$/, "") }; if (c.repo === "notion-daily" || !c.repo) { lsSet(K_CONN, x); return x; } } }
+  return null;
+}
+
+/* ───────── 急に閉じたとき ───────── */
+function checkSudden(){
+  const s = S(); if (!s || !s.run) return;
+  const la = Math.max(+(localStorage.getItem(K_ALIVE) || 0), s.u || 0, s.since);
+  if (now() - la < 120000) return;                 // すぐ戻ってきたなら、そのまま続ける
+  s.elapsed += Math.max(0, la - s.since); const cp = curPart(s); if (cp && cp.d && s.debates[cp.d]) s.debates[cp.d].used += Math.max(0, la - s.since);
+  s.since = la; s.run = false; s.pauses = s.pauses || []; s.pauses.push({ at: la, why: "急に閉じた", when: "", part: s.cur });
+  const d = cp && cp.d && s.debates[cp.d]; if (d && d.e.length && d.e[d.e.length - 1].k !== "pause") d.e.push({ id: rid(), k: "pause", at: la });
+  touch(s); U.view = "home"; saveLocal(); queuePush();
+}
+
+/* ───────── 起動(省の「政府 › 最高評議会」に組み込む) ─────────
+   省の renderSupreme が HY.mount(箱, { back, legacy }) を呼ぶ。省が描き直すたびに呼ばれてよい。 */
+const EMB = { back: "" };
+let started = false, pulledAt = 0;
+function inRoot(ev){ return mounted() && ROOT.contains(ev.target); }
+function start(){
+  if (started) return; started = true;
+  document.addEventListener("click", ev => { if (inRoot(ev)) onClick(ev); });
+  document.addEventListener("input", ev => { if (inRoot(ev)) onInput(ev); });
+  document.addEventListener("keydown", ev => { if (inRoot(ev)) onKey(ev); });
+  document.addEventListener("change", ev => { if (inRoot(ev)) onChange(ev); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") { const s = S(); if (s && s.run) alive(); if (NET.dirty) push(); }
+    else { checkSudden(); if (mounted()) render(); pull(); }
+  });
+  window.addEventListener("pagehide", () => { alive(); });
+  checkSudden();
+  if (U.view === "sess" && !S()) U.view = "home";
+  if (S() && !S().run) U.view = "home";
+  NET.conn = findConn();
+  setInterval(() => { if (mounted()) tick(false); else document.body.classList.remove("hy-full"); }, 1000);
+  if (NET.conn) pull();
+  // 会の途中で省を開き直したら、そのまま最高評議会を開く
+  const s = S(); if (s && s.run && typeof window.__shoOpenSupreme === "function") setTimeout(() => window.__shoOpenSupreme(), 0);
+}
+function mount(box, opt){
+  opt = opt || {}; EMB.back = opt.back || "";
+  start();
+  if (!NET.conn) { NET.conn = findConn(); if (NET.conn) pull(); }
+  ROOT = box; ROOT.id = "hy";
+  if (!ROOT.querySelector("#hy-app")) ROOT.innerHTML = '<div id="hy-app"></div><div id="hy-sheet"></div>';
+  render();
+  if (NET.conn && now() - pulledAt > 60000) { pulledAt = now(); pull(); }
+}
+window.HY = { mount, running: () => { const s = S(); return !!(s && s.run); }, get D(){ return D; }, U, merge, parseAnswer, buildPrompt: () => buildPrompt(S()), groups: () => groups(S()), render };
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
+})();
+</script>
 </body>
 </html>
