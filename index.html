@@ -945,6 +945,12 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .ast.c{background:#FBF0DC;color:#7a5a00}
 #hy .ast.n{background:var(--sheet);color:var(--sub)}
 #hy .ast.s{background:#EEE8F6;color:var(--p4)}
+#hy .tpls button.auto[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+#hy .tpls button.auto[aria-pressed="true"] span{color:rgba(246,243,236,.75)}
+#hy .rec{margin:.6rem 0 .45rem;border:1.5px solid var(--rule);border-radius:10px;background:var(--white);padding:.2rem .7rem}
+#hy .rec .rr{display:flex;gap:.55rem;align-items:baseline;padding:.4rem 0;border-top:1px dashed var(--rule);font-size:.8rem;line-height:1.55}
+#hy .rec .rr:first-child{border-top:0}
+#hy .rec .rr i{flex:0 0 4.6rem;font-style:normal;font-size:.66rem;font-weight:800;color:var(--sub)}
 body.hy-full{padding-bottom:0!important}
 body.hy-full nav.tabs{display:none!important}
 body.hy-full>.wrap{max-width:none;padding:0}
@@ -1006,7 +1012,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r127";
+const APP_VERSION = "2026-11-20 r128";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5395,7 +5401,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h4.31";
+const APP_VERSION = "h4.40";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -5513,7 +5519,8 @@ const decisionList = () => Object.values(D.decisions).filter(x => !x.del);
 const closedSessions = () => Object.values(D.sessions).filter(s => !s.del && s.closed).sort((a, b) => b.no - a.no || b.at - a.at);
 
 function saveLocal(){ lsSet(K_DATA, D); }
-function saveUI(){ lsSet(K_UI, { view: U.view, seat: U.seat, smode: U.smode, len: U.len, drafts: U.drafts, recapOff: U.recapOff, histOpen: U.histOpen }); }
+if (!U.autoV) { U.len = "auto"; U.autoV = 1; }
+function saveUI(){ lsSet(K_UI, { autoV: U.autoV, view: U.view, seat: U.seat, smode: U.smode, len: U.len, drafts: U.drafts, recapOff: U.recapOff, histOpen: U.histOpen }); }
 function mut(fn, opt){
   fn();
   const s = S(); if (s) touch(s);
@@ -5535,8 +5542,24 @@ function alive(){ try { localStorage.setItem(K_ALIVE, String(now())); } catch (e
 
 /* ───────── 議題・決定の見方 ───────── */
 function dueDecisions(){ const t = today(); return decisionList().filter(x => x.st === "active" && x.checkAt && x.checkAt <= t).sort((a, b) => a.checkAt < b.checkAt ? -1 : 1); }
+/* おまかせ:いまの状態から、次の会でやることを決める(どの会を開くか覚えなくていい) */
+function recNext(){
+  const due = dueDecisions(), cont = contAgendas(), max = D.settings.maxPick || 3;
+  const kids = agendaList().filter(a => a.st === "box" && a.parent && D.agendas[a.parent] && D.agendas[a.parent].st === "split")
+    .sort((a, b) => (((D.agendas[a.parent].split || {}).at || "") < ((D.agendas[b.parent].split || {}).at || "") ? -1 : ((D.agendas[a.parent].split || {}).at || "") > ((D.agendas[b.parent].split || {}).at || "") ? 1 : a.at - b.at));
+  const box = boxAgendas().filter(a => !a.parent), pk = cont.concat(kids).slice(0, max), why = [];
+  if (due.length) why.push(["検証", "確かめる日が来た決定が " + due.length + " つ。はじめに確かめる"]);
+  pk.forEach(a => why.push([a.st === "cont" ? "継続" : "分けた論点", a.x + (a.parent && D.agendas[a.parent] ? "(「" + cut(D.agendas[a.parent].x, 12) + "」から)" : "")]));
+  if (!pk.length && box.length) why.push(["議題", "議題箱から選ぶ。何も選ばなければ、議題を決めずに話せる"]);
+  if (!pk.length && !box.length && !due.length) why.push(["議題", "議題を決めずに話し始める"]);
+  why.push(["目的", "議題が大きすぎたら、目的の審議で「論点を分ける」。分けた論点は次のおまかせで出てくる"]);
+  const tpl = !pk.length && !box.length && due.length ? "short" : "full";
+  return { tpl, picks: pk.map(a => a.id), why };
+}
+// 今日選ぶ議題:自分で押したらそれ、押していなければおまかせの分
+function picksNow(){ return D.settings.nextPicksTouched || U.len !== "auto" ? nextPicks() : recNext().picks; }
 function nextPicks(){ return (D.settings.nextPicks || []).filter(id => D.agendas[id] && !D.agendas[id].del && (D.agendas[id].st === "box" || D.agendas[id].st === "cont")); }
-function nextAutoTitle(){ const ps = nextPicks().map(id => D.agendas[id].x); return ps.length ? ps[0] + (ps.length > 1 ? " ほか" + (ps.length - 1) + "件" : "") : ""; }
+function nextAutoTitle(){ const ps = picksNow().map(id => D.agendas[id].x); return ps.length ? ps[0] + (ps.length > 1 ? " ほか" + (ps.length - 1) + "件" : "") : ""; }
 /* 議題の親子:分けた大きい議題(st:"split")の下に、小さい論点(parent)が並ぶ */
 const kidsOf = id => agendaList().filter(a => a.parent === id).sort((a, b) => a.at - b.at);
 const isOpenAg = a => a && !a.del && (a.st === "box" || a.st === "cont" || a.st === "split");
@@ -5568,7 +5591,7 @@ function openSession(kind){
   const s = { id: rid(), no: nextNo(), kind, tpl: tp.parts.slice(), splitMain: tp.id === "split" || (tp.parts.includes("splitsum") && !tp.parts.includes("debate")), title: (st.nextTitle || "").trim(), limit: tp.limit != null ? tp.limit : 60, at: now(), date: today(), elapsed: 0, run: true, since: now(), parts: [], cur: null,
     place: null, prep: {}, checks: {}, picks: {}, debates: {}, consult: { seat: null, ans: [], link: "", skip: false, paste: "" },
     res: {}, kini: [], focus: 0, pauses: [], recap: null, u: now() };
-  const hasPick = tp.parts.includes("pick"), hasDeb = tp.parts.includes("debate") || tp.parts.includes("goal"), pre = nextPicks();
+  const hasPick = tp.parts.includes("pick"), hasDeb = tp.parts.includes("debate") || tp.parts.includes("goal"), pre = picksNow();
   tp.parts.forEach(t => { if (t === "goal" || t === "debate" || t === "detail") return; s.parts.push(mkPart(t)); });
   // ホームで選んだ議題があれば、それを審議する(議題選びでは最初から選ばれている)
   if (pre.length && (hasPick || hasDeb)) pre.forEach(id => pickAgenda(s, id, true));
@@ -5578,7 +5601,7 @@ function openSession(kind){
   else if (hasPick && !s.splitMain) contAgendas().slice(0, st.maxPick).forEach(a => pickAgenda(s, a.id, true));
   s.cur = s.parts[0].id;
   if (st.noManual) st.nextNo = s.no + 1;
-  st.nextTitle = ""; st.nextPicks = []; touch(st);
+  st.nextTitle = ""; st.nextPicks = []; st.nextPicksTouched = false; touch(st);
   D.sessions[s.id] = s; D.cur = s.id; D.curU = now();
   U.view = "sess"; U.verifyIdx = 0; U.resTab = null; U.seat = "sh"; U.smode = "shingi";
 }
@@ -6430,15 +6453,15 @@ function viewHome(){
   }
   const later = Object.values(D.later).filter(x => !x.del && !x.done);
   const pauseStat = pauseSummary();
-  const tpSel = tplOf(U.len), kind = tpSel.id;
+  const auto = U.len === "auto", rc = recNext(), tpSel = auto ? tplOf(rc.tpl) : tplOf(U.len), kind = tpSel.id;
   // 次の会(番号と前回)
   const nextCard = paused ? "" : '<div class="card" style="--pc:var(--p6)"><div class="ch"><b>次の会</b><span>' + (last ? "前回 第" + last.no + "回・" + md(last.date) + "・" + daysBetween(last.date, today()) + "日前" : "まだ記録がない") + '</span></div><div class="cb nextno">' +
     (U.editNo ? '<span class="nolbl">第</span><input type="number" min="1" inputmode="numeric" class="noin" data-hin="nextno" value="' + nextNo() + '" aria-label="次の会の番号"><span class="nolbl">回</span><button class="mini" data-ha="editno">これでいい</button>'
       : '<b class="no">第' + nextNo() + '回</b><button class="mini" data-ha="editno">番号を直す</button>') + "</div>" +
     '<div class="cb" style="border-top:1px solid var(--rule)"><div class="lbl">今日の議題<span style="font-weight:400;margin-left:.4rem">押すと、議題選びで最初から選ばれる</span></div>' +
-    (cont.concat(box).length ? '<div class="chips" style="--pc:var(--p3)">' + cont.concat(box).map(a => '<button class="chip' + (nextPicks().includes(a.id) ? " on" : "") + '" data-ha="nextpick" data-hv="' + a.id + '">' + (a.st === "cont" ? "継続・" : "") + (a.parent && D.agendas[a.parent] ? esc(cut(D.agendas[a.parent].x, 6)) + "›" : "") + esc(cut(a.x, 18)) + "</button>").join("") + "</div>" : '<p class="note" style="margin:0">議題箱が空。下の議題箱に入れておける。</p>') +
+    (cont.concat(box).length ? '<div class="chips" style="--pc:var(--p3)">' + cont.concat(box).map(a => '<button class="chip' + (picksNow().includes(a.id) ? " on" : "") + '" data-ha="nextpick" data-hv="' + a.id + '">' + (a.st === "cont" ? "継続・" : "") + (a.parent && D.agendas[a.parent] ? esc(cut(D.agendas[a.parent].x, 6)) + "›" : "") + esc(cut(a.x, 18)) + "</button>").join("") + "</div>" : '<p class="note" style="margin:0">議題箱が空。下の議題箱に入れておける。</p>') +
     '<div class="lbl" style="margin-top:.8rem">会の名前</div><input class="fi" id="hy-nexttitle" data-hin="nexttitle" value="' + esc(st.nextTitle || "") + '" placeholder="' + esc(nextAutoTitle() || "空なら、審議した議題が名前になる") + '">' +
-    '<p class="note" style="margin:.4rem 0 0">' + (nextPicks().length && !(st.nextTitle || "").trim() ? "空のままなら、会の中で選び直しても名前がついてくる。" : "空のままでもよい。そのときは、審議した議題が名前になる。") + "</p></div></div>";
+    '<p class="note" style="margin:.4rem 0 0">' + (picksNow().length && !(st.nextTitle || "").trim() ? "空のままなら、会の中で選び直しても名前がついてくる。" : "空のままでもよい。そのときは、審議した議題が名前になる。") + "</p></div></div>";
   // 開く理由(自分で決める)
   const reasonCard = '<div class="card" style="--pc:var(--p6)"><div class="ch"><b>開く理由</b><span>自分で決める。押すと直せる</span></div>' +
     reasons.map(r => U.editReason === r.id
@@ -6451,8 +6474,8 @@ function viewHome(){
     (due.length ? '<div class="cb sub2">' + due.slice(0, 3).map(x => '<div class="li"><i>確かめる</i>' + esc(x.text) + "</div>").join("") + (due.length > 3 ? '<div class="li"><i>ほか</i>' + (due.length - 3) + "件</div>" : "") + "</div>" : "") + "</div>";
   // 今日の会(長さと時間)
   const todayCard = paused ? "" : '<div class="card" style="--pc:var(--ink)"><div class="ch"><b>今日の会</b><span>テンプレートを選ぶ・会の途中でも変えられる</span></div><div class="cb">' +
-    '<div class="tpls">' + tpls().map(t => '<button aria-pressed="' + (kind === t.id) + '" data-ha="len" data-hv="' + t.id + '"><b>' + esc(t.n) + "</b><span>" + limTx(t.limit) + "</span></button>").join("") + '<button class="add" data-ha="tplnew" aria-label="テンプレートを作る"><b>＋</b><span>作る</span></button></div>' +
-    '<p class="note" style="margin:.55rem 0 .4rem">' + esc(tpSel.d || "") + "</p>" + tplFlow(tpSel.parts) +
+    '<div class="tpls"><button class="auto" aria-pressed="' + auto + '" data-ha="len" data-hv="auto"><b>おまかせ</b><span>いまの状態から</span></button>' + tpls().map(t => '<button aria-pressed="' + (!auto && kind === t.id) + '" data-ha="len" data-hv="' + t.id + '"><b>' + esc(t.n) + "</b><span>" + limTx(t.limit) + "</span></button>").join("") + '<button class="add" data-ha="tplnew" aria-label="テンプレートを作る"><b>＋</b><span>作る</span></button></div>' +
+    (auto ? '<div class="rec">' + rc.why.map(([k, x]) => '<div class="rr"><i>' + k + "</i><span>" + esc(x) + "</span></div>").join("") + '<div class="rr"><i>会</i><span>「' + esc(tpSel.n) + "」の並びで開く・" + limTx(tpSel.limit) + "</span></div></div>" : '<p class="note" style="margin:.55rem 0 .4rem">' + esc(tpSel.d || "") + "</p>") + tplFlow(tpSel.parts) +
     '<div class="links" style="margin:.2rem 0 .7rem"><span></span><button data-ha="sheet" data-hs="tpl" data-hv="' + tpSel.id + '">「' + esc(cut(tpSel.n, 10)) + "」を編集する</button></div>" +
     '<div class="lbl">会の時間</div><div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">' + minCtl("lim:" + kind) +
     '<span class="chips">' + noLimChip("lim:" + kind) + [15, 30, 45, 60, 90, 120].map(m => '<button class="chip' + (tpSel.limit === m ? " on" : "") + '" data-ha="msetv" data-hk="lim:' + kind + '" data-hv="' + m + '">' + m + "</button>").join("") + "</span></div>" +
@@ -6470,7 +6493,7 @@ function viewHome(){
   return '<div class="home">' + (EMB.back || "") + '<header class="head"><h1>最高評議会</h1><button data-ha="view" data-hv="set">設定・議員 ⚙</button></header>' +
     '<div class="stack">' + resume + activeCard() + nextCard + reasonCard + stateCard + todayCard + boxCard + laterCard + histCard + "</div>" +
     '<p class="note" style="margin:.4rem 0 .3rem">最高評議会 ' + APP_VERSION + "・" + (NET.conn ? "同期:" + esc(NET.conn.repo) + (NET.state === "err" ? "(つながらない)" : "") : "同期していない(省の設定でつなぐ)") + "</p>" +
-    "</div>" + (paused ? "" : '<div class="dock"><div class="wrap"><div class="foot"><button class="go" data-ha="open">開 会<small>第' + nextNo() + "回 " + esc(cut((st.nextTitle || "").trim() || tpSel.n, 18)) + "・" + limTx(tpSel.limit) + "。押すと会の時計が動き出す</small></button></div></div></div>");
+    "</div>" + (paused ? "" : '<div class="dock"><div class="wrap"><div class="foot"><button class="go" data-ha="open">開 会<small>第' + nextNo() + "回 " + esc(cut((st.nextTitle || "").trim() || nextAutoTitle() || tpSel.n, 18)) + "・" + limTx(tpSel.limit) + "。押すと会の時計が動き出す</small></button></div></div></div>");
 }
 function pauseSummary(){
   const all = []; closedSessions().concat(S() ? [S()] : []).forEach(s => (s.pauses || []).forEach(p => all.push({ why: p.why, place: s.place })));
@@ -6807,7 +6830,7 @@ function onClick(ev){
   switch (a) {
     case "view": U.view = v; saveUI(); render(); window.scrollTo(0, 0); return;
     case "len": U.len = v; saveUI(); render(); return;
-    case "open": mut(() => openSession(U.len || "full")); window.scrollTo(0, 0); return;
+    case "open": mut(() => openSession(U.len === "auto" ? recNext().tpl : (U.len || "full"))); window.scrollTo(0, 0); return;
     case "resume": mut(() => { doResume(S()); U.view = "sess"; }); window.scrollTo(0, 0); return;
     case "resumeclose": mut(() => { const x = S(); doResume(x); const c = x.parts.find(p => p.t === "close") || (x.parts.push(mkPart("close")), x.parts[x.parts.length - 1]); c.on = true; goPart(x, c.id); U.view = "sess"; }); return;
     case "sheet": U.sheet = b.dataset.hs; U.arg = v ? { dest: v } : null; render(); return;
@@ -6887,7 +6910,7 @@ function onClick(ev){
     case "freetalkgo": mut(() => { const cp = curPart(s); setFree(s, true); const fd = freeDeb(s); if (!fd) return;
       const blk = s.parts.filter(p => p.d === fd.id || (s.debates[p.d] && s.debates[p.d].gkey === "d:" + fd.id));
       const ci = s.parts.indexOf(cp); s.parts = s.parts.filter(p => !blk.includes(p)); s.parts.splice(s.parts.indexOf(cp), 0, ...blk.sort((a, b) => (a.t === "goal" ? 0 : 1) - (b.t === "goal" ? 0 : 1))); goPart(s, blk[0].id); }); window.scrollTo(0, 0); return;
-    case "nextpick": mut(() => { const l = D.settings.nextPicks = nextPicks(), i = l.indexOf(v); if (i >= 0) l.splice(i, 1); else l.push(v); touch(D.settings); }); return;
+    case "nextpick": mut(() => { const l = D.settings.nextPicks = picksNow(), i = l.indexOf(v); D.settings.nextPicksTouched = true; if (i >= 0) l.splice(i, 1); else l.push(v); touch(D.settings); }); return;
     case "ttlauto": mut(() => { s.title = ""; }); return;
     case "ttlpick": { const el = $("#hy-ttx"); if (el) { el.value = v; el.focus(); } return; }
     case "ttlsave": { const x = ($("#hy-ttx").value || "").trim(); U.sheet = null; mut(() => { s.title = x; }); return; }
@@ -6936,7 +6959,7 @@ function onClick(ev){
     case "yowhy": { const e = findEntry(s, v); if (!e) return; U.arg.why = (e.m ? memberOf(e.m).name : "議長") + "「" + cut(e.x, 30) + "」で動いた"; render(); return; }
     case "yosave": { U.arg.why = ($("#hy-yowhy") || {}).value || ""; yoCommit(s); U.sheet = null; U.arg = null; render(); return; }
     case "gmode": mut(() => { const gl = goalOf(resOf(s, b.dataset.hk)); gl.mode = v; gl.tent = v === "tent"; }); return;
-    case "subadd": { const el = $("#hy-subnew"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } mut(() => { const gl = goalOf(resOf(s, b.dataset.hk)); (gl.subs = gl.subs || []).push({ id: rid(), x, when: s.splitMain ? "later" : "now" }); }); { const e2 = $("#hy-subnew"); if (e2) e2.focus({ preventScroll: true }); } return; }
+    case "subadd": { const el = $("#hy-subnew"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } mut(() => { const gl = goalOf(resOf(s, b.dataset.hk)); (gl.subs = gl.subs || []).push({ id: rid(), x, when: s.splitMain || (gl.subs || []).some(y => !y.made && y.when !== "later") ? "later" : "now" }); }); { const e2 = $("#hy-subnew"); if (e2) e2.focus({ preventScroll: true }); } return; }
     case "subwhen": mut(() => { const gl = goalOf(resOf(s, b.dataset.hk)); gl.subs[+v].when = b.dataset.hd; }); return;
     case "subrm": mut(() => { const gl = goalOf(resOf(s, b.dataset.hk)); gl.subs.splice(+v, 1); }); return;
     case "dosplit": { const key = b.dataset.hk, gl = goalOf(resOf(s, key)), cp = curPart(s), gd = s.debates[cp.d];
