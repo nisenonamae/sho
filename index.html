@@ -777,6 +777,9 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .hist .hm{flex:1;min-width:0;display:flex;flex-direction:column;gap:.1rem}
 #hy .hist .hm b{font-size:.88rem;line-height:1.45;color:var(--ink)}
 #hy .hist .hm span{font-size:.74rem}
+#hy .hd{margin:.3rem 0 .1rem}
+#hy .hd summary{font-size:.74rem;color:var(--p7);cursor:pointer;font-weight:700}
+#hy .hx{margin:.35rem 0 0;font-size:.8rem;line-height:1.7;white-space:pre-wrap;color:var(--ink)}
 @media (prefers-reduced-motion:reduce){}
 body.hy-full{padding-bottom:0!important}
 body.hy-full nav.tabs{display:none!important}
@@ -839,7 +842,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r110";
+const APP_VERSION = "2026-11-20 r111";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2535,10 +2538,9 @@ function renderSupreme(box){
   const pol = gov.council.supreme.slice().reverse(), pLive = pol.filter(p => !p.closedAt), pDone = pol.filter(p => p.closedAt);
   // 会そのもの(開会〜閉会)は「最高評議会」のしくみ(window.HY)が描く。前のしくみの記録は、その下にたたんで残す
   const oldPol = pLive.length + pDone.length, oldAm = aLive.length + aDone.length;
-  const legacy = '<div class="sec"><h3>改憲の審議</h3>' + (movedToKenseiin() ? kenseiinNote("改憲の審議は、憲政院アプリの最高評議会で行います。")
-      : (aLive.length ? aLive.map(aRow).join("") : '<div class="empty">審議を待っている改憲案はありません。</div>') + foldHtml("これまでの改憲", aDone.map(aRow).join(""), aDone.length)) + "</div>" +
-    (oldPol ? '<div class="sec"><h3>重大国策(前のしくみ)</h3>' + pLive.map(pRow).join("") + foldHtml("これまでの議決", pDone.map(pRow).join(""), pDone.length) + "</div>" : "") +
-    archiveHtml("supreme", "Notionの記録") +
+  // 前のしくみ(Notion の記録と重大国策)は、最高評議会の議事録(第1〜26回)に作り直したので、ここには出さない
+  const legacy = (movedToKenseiin() ? kenseiinNote("改憲の審議は、憲政院アプリの最高評議会で行います。")
+      : '<div class="sec"><h3>改憲の審議</h3>' + (aLive.length ? aLive.map(aRow).join("") : '<div class="empty">審議を待っている改憲案はありません。</div>') + foldHtml("これまでの改憲", aDone.map(aRow).join(""), aDone.length) + "</div>") +
     '<span class="status" id="gov-msg"></span>';
   let root = box.querySelector(":scope > #hy");
   if (!root || !window.HY) { box.innerHTML = '<div id="hy"></div><div class="hy-legacy">' + legacy + "</div>"; root = box.querySelector("#hy"); }
@@ -5229,7 +5231,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h2.04";
+const APP_VERSION = "h2.05";
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
 
@@ -5454,7 +5456,8 @@ function nextNo(){
   const st = D.settings;
   if (st.noManual) return st.nextNo;
   // これまでの回数は、省から渡された数と、前に覚えた数の大きいほう(省の読み込みが遅れても第1回にならない)
-  return Math.max(EMB.past || 0, st.past || 0) + Object.values(D.sessions).filter(x => !x.del).length + 1;
+  const mx = Math.max(0, ...Object.values(D.sessions).filter(x => !x.del).map(x => x.no || 0));
+  return Math.max(mx, EMB.past || 0, st.past || 0) + 1;
 }
 // 会の名前(何の会か)。なければ、審議した議題から作る
 function autoTitle(s){ const gs = groups(s).map(g => g.title).filter(Boolean); return gs.length ? gs[0] + (gs.length > 1 ? " ほか" + (gs.length - 1) + "件" : "") : (Object.keys(s.checks || {}).length ? "決定の検証" : ""); }
@@ -5729,7 +5732,7 @@ function viewHome(){
   const pauseStat = pauseSummary();
   const kind = U.len || "full";
   // 次の会(番号と前回)
-  const nextCard = paused ? "" : '<div class="card" style="--pc:var(--p6)"><div class="ch"><b>次の会</b><span>' + (last ? "前回 第" + last.no + "回・" + md(last.date) + "・" + daysBetween(last.date, today()) + "日前" : "前回までの記録は、いちばん下の「重大国策(前のしくみ)」") + '</span></div><div class="cb nextno">' +
+  const nextCard = paused ? "" : '<div class="card" style="--pc:var(--p6)"><div class="ch"><b>次の会</b><span>' + (last ? "前回 第" + last.no + "回・" + md(last.date) + "・" + daysBetween(last.date, today()) + "日前" : "まだ記録がない") + '</span></div><div class="cb nextno">' +
     (U.editNo ? '<span class="nolbl">第</span><input type="number" min="1" inputmode="numeric" class="noin" data-hin="nextno" value="' + nextNo() + '" aria-label="次の会の番号"><span class="nolbl">回</span><button class="mini" data-ha="editno">これでいい</button>'
       : '<b class="no">第' + nextNo() + '回</b><button class="mini" data-ha="editno">番号を直す</button>') + "</div>" +
     '<div class="cb" style="border-top:1px solid var(--rule)"><div class="lbl">何の会か</div><input class="fi" id="hy-nexttitle" data-hin="nexttitle" value="' + esc(st.nextTitle || "") + '" placeholder="例:バイトが始まったあとの時間の組み方">' +
@@ -5756,7 +5759,10 @@ function viewHome(){
     box.concat(cont).map(a => '<div class="item' + (a.st === "cont" ? " pin" : "") + '"><span class="m"><b>' + esc(a.x) + "</b><span" + (a.st === "cont" ? ' class="cs"' : "") + ">" + (a.st === "cont" ? "継続審議・" + (a.contN || 1) + "回目" : ago(a.at) + "前") + '</span></span><button class="x" data-ha="delag" data-hv="' + a.id + '" aria-label="消す">×</button></div>').join("") +
     '<div class="add"><input id="hy-newag" placeholder="+ 議題を書く" enterkeyhint="done"><button data-ha="addag">入れる</button></div></div>';
   const laterCard = later.length ? '<div class="card" style="--pc:var(--p7)"><div class="ch"><b>あとでやること</b><span>閉会で「あとで」にしたもの</span></div>' + later.map(x => '<button class="chk" data-ha="laterdone" data-hv="' + x.id + '"><span class="box"></span><span><b>' + esc(x.x) + '</b><span class="s">第' + x.no + "回から</span></span></button>").join("") + "</div>" : "";
-  const histCard = closedSessions().length ? '<div class="card" style="--pc:var(--p7)"><div class="ch"><b>議事録</b><span>押すと中身が出る</span></div>' + closedSessions().slice(0, 30).map(histRow).join("") + (pauseStat ? '<div class="cb" style="border-top:1px solid var(--rule)"><p class="note" style="margin:0">' + pauseStat + "</p></div>" : "") + "</div>" : "";
+  const hs = closedSessions(), hsShow = U.histAll ? hs : hs.slice(0, 10);
+  const histCard = hs.length ? '<div class="card" style="--pc:var(--p7)"><div class="ch"><b>議事録</b><span>' + hs.length + '回・押すと中身が出る</span></div>' + hsShow.map(histRow).join("") +
+    (hs.length > 10 ? '<button class="addbtn" data-ha="histall">' + (U.histAll ? "新しい10回だけにする" : "すべて見る(" + hs.length + "回)") + "</button>" : "") +
+    (pauseStat ? '<div class="cb" style="border-top:1px solid var(--rule)"><p class="note" style="margin:0">' + pauseStat + "</p></div>" : "") + "</div>" : "";
   return '<div class="home">' + (EMB.back || "") + '<header class="head"><h1>最高評議会</h1><button data-ha="view" data-hv="set">設定・議員 ⚙</button></header>' +
     '<div class="stack">' + resume + nextCard + reasonCard + stateCard + todayCard + boxCard + laterCard + histCard + "</div>" +
     '<p class="note" style="margin:.4rem 0 .3rem">最高評議会 ' + APP_VERSION + "・" + (NET.conn ? "同期:" + esc(NET.conn.repo) + (NET.state === "err" ? "(つながらない)" : "") : "同期していない(省の設定でつなぐ)") + "</p>" +
@@ -5773,14 +5779,16 @@ function histRow(s){
   let body = "";
   if (open) {
     const decs = decisionList().filter(x => x.sess === s.id);
-    const sums = Object.values(s.debates || {}).map(d => ({ d, sm: d.e.filter(e => e.k === "sum").slice(-1)[0] }));
-    body = '<div class="histbody">' + (decs.length ? "<h4>決めたこと</h4>" + decs.map(x => '<div class="dline">' + esc(x.text) + "<i>" + ({ active: "確かめ待ち " + md(x.checkAt), ended: "終結", cont: "継続審議" }[x.st] || x.st) + "</i></div>").join("") : "") +
-      (sums.length ? "<h4>審議</h4>" + sums.map(({ d, sm }) => '<div class="dline"><b>' + circ(dn(s, d)) + " " + esc(d.title || "") + "</b>" + (sm ? "<br>" + esc(sm.x) : "") + "<i>発言 " + d.e.filter(e => e.k !== "pause").length + "</i></div>").join("") : "") +
+    const sums = Object.values(s.debates || {}).map(d => ({ d, sm: d.e.filter(e => e.k === "sum").slice(-1)[0], body: d.e.filter(e => e.k === "shingi" || e.k === "say") }));
+    body = '<div class="histbody">' + (decs.length ? "<h4>決めたこと</h4>" + decs.map(x => '<div class="dline">' + esc(x.text) + "<i>" + ({ active: "確かめ待ち " + md(x.checkAt), ended: "終結", cont: "継続審議", replaced: "決め直した", old: "決定" }[x.st] || x.st) + "</i></div>").join("") : "") +
+      (sums.length ? "<h4>審議</h4>" + sums.map(({ d, sm, body }) => '<div class="dline"><b>' + (s.old ? "" : circ(dn(s, d)) + " ") + esc(d.title || "") + "</b>" + (s.old ? "" : "<i>発言 " + d.e.filter(e => e.k !== "pause").length + "</i>") +
+        (body.length ? '<details class="hd"><summary>審議の中身を見る</summary>' + body.map(e => '<p class="hx">' + (e.k === "say" ? "<b>" + esc(memberOf(e.m).name) + "</b> " : "") + esc(e.x) + "</p>").join("") + "</details>" : "") + "</div>").join("") : "") +
+      (s.unfinished ? '<div class="dline" style="color:var(--sub)">結論が出ないまま終わった。議題箱に入れてある。</div>' : "") +
       (Object.keys(s.checks || {}).length ? "<h4>検証</h4>" + Object.entries(s.checks).filter(([, c]) => c.val).map(([id, c]) => '<div class="dline">' + esc(D.decisions[id] ? D.decisions[id].text : "") + "<i>" + esc(c.val) + "</i></div>").join("") : "") +
       ((s.pauses || []).length ? "<h4>休会</h4>" + s.pauses.map(p => '<div class="dline">' + esc(p.why || "") + (p.back ? "・" + ago2(p.back - p.at) + "後に再開" : "") + "</div>").join("") : "") +
       (s.consult && s.consult.link ? '<h4>相談</h4><div class="dline"><a href="' + esc(s.consult.link) + '" target="_blank" rel="noopener">会話を開く</a></div>' : "") + "</div>";
   }
-  return '<button class="hist" data-ha="hist" data-hv="' + s.id + '"><span class="hm"><b>第' + s.no + "回 " + esc(titleOf(s)) + "</b><span>" + md(s.date) + (s.place ? "・" + esc(s.place) : "") + "・" + Math.round(s.elapsed / 60000) + "分・決定 " + (s.nDec || 0) + "</span></span>" + (open ? "▴" : "▾") + "</button>" + body;
+  return '<button class="hist" data-ha="hist" data-hv="' + s.id + '"><span class="hm"><b>第' + s.no + "回 " + esc(titleOf(s)) + "</b><span>" + md(s.date) + (s.place ? "・" + esc(s.place) : "") + (s.elapsed ? "・" + Math.round(s.elapsed / 60000) + "分" : "") + "・決定 " + (s.nDec || 0) + (s.unfinished ? "・途中で終わった" : "") + "</span></span>" + (open ? "▴" : "▾") + "</button>" + body;
 }
 
 /* ───────── 設定 ───────── */
@@ -6019,6 +6027,7 @@ function onClick(ev){
     case "titlefrom": { const a = D.agendas[v]; if (!a) return; mut(() => { D.settings.nextTitle = a.x; touch(D.settings); }); return; }
     case "ttlpick": { const el = $("#hy-ttx"); if (el) { el.value = v; el.focus(); } return; }
     case "ttlsave": { const x = ($("#hy-ttx").value || "").trim(); U.sheet = null; mut(() => { s.title = x; }); return; }
+    case "histall": U.histAll = !U.histAll; render(); return;
     case "editno": U.editNo = !U.editNo; render(); if (U.editNo) { const n = $(".noin"); if (n) { n.focus(); n.select(); } } return;
     case "addreason": { const el = $("#hy-newreason"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } mut(() => { D.settings.reasons = D.settings.reasons || []; D.settings.reasons.push({ id: rid(), x }); touch(D.settings); }); const e2 = $("#hy-newreason"); if (e2) e2.focus({ preventScroll: true }); return; }
     case "reasonedit": U.editReason = v; render(); { const e = $("#hy-reasonedit"); if (e) e.focus(); } return;
