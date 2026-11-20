@@ -839,7 +839,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r109";
+const APP_VERSION = "2026-11-20 r110";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -2188,6 +2188,7 @@ async function loadGov(){
   gov.amend = (a.data && a.data.items) ? a.data : { items: [] }; gov.amendSha = a.sha;
   gov.council = Object.assign({ supreme: [], standing: [] }, k.data || {}); gov.councilSha = k.sha;
   await loadNaisei().catch(() => {});
+  if (gov.view === "最高評議会" && !gov.open) renderGov();   // 先に最高評議会を開いていたら、回の数などを入れて描き直す
 }
 
 // 保存。別の端末で先に変わっていたら読み直して同じ操作をかけ直す
@@ -5228,7 +5229,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h2.03";
+const APP_VERSION = "h2.04";
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
 
@@ -5452,7 +5453,8 @@ function minCtl(key, step){
 function nextNo(){
   const st = D.settings;
   if (st.noManual) return st.nextNo;
-  return (EMB.past || 0) + Object.values(D.sessions).filter(x => !x.del).length + 1;
+  // これまでの回数は、省から渡された数と、前に覚えた数の大きいほう(省の読み込みが遅れても第1回にならない)
+  return Math.max(EMB.past || 0, st.past || 0) + Object.values(D.sessions).filter(x => !x.del).length + 1;
 }
 // 会の名前(何の会か)。なければ、審議した議題から作る
 function autoTitle(s){ const gs = groups(s).map(g => g.title).filter(Boolean); return gs.length ? gs[0] + (gs.length > 1 ? " ほか" + (gs.length - 1) + "件" : "") : (Object.keys(s.checks || {}).length ? "決定の検証" : ""); }
@@ -6264,6 +6266,7 @@ function start(){
 }
 function mount(box, opt){
   opt = opt || {}; EMB.back = opt.back || ""; EMB.past = opt.past || 0;
+  if (EMB.past > (D.settings.past || 0)) { D.settings.past = EMB.past; touch(D.settings); saveLocal(); queuePush(); }
   start();
   if (!NET.conn) { NET.conn = findConn(); if (NET.conn) pull(); }
   ROOT = box; ROOT.id = "hy";
