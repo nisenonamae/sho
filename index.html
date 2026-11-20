@@ -856,8 +856,9 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .wrow{display:flex;align-items:center;gap:.5rem;padding:.45rem .8rem;border-top:1px dashed var(--rule)}
 #hy .wrow .nm2{flex:1;font-size:.86rem;font-weight:700}
 #hy .wrow .nm2 small{display:block;font-weight:400;font-size:.68rem;color:var(--sub)}
-#hy .wsel{display:flex;gap:3px}
-#hy .wsel button{border:1.5px solid var(--rule);background:var(--white);border-radius:8px;padding:.25rem .45rem;font-size:.74rem;font-weight:700;color:var(--sub);cursor:pointer}
+#hy .wsel{display:flex;gap:3px;flex:none}
+#hy .wsel button{border:1.5px solid var(--rule);background:var(--white);border-radius:8px;padding:.25rem 0;min-width:1.85rem;text-align:center;font-size:.74rem;font-weight:700;color:var(--sub);cursor:pointer}
+#hy .wsel button:first-child{padding:.25rem .4rem}
 #hy .wsel button.on{background:var(--ink);border-color:var(--ink);color:var(--white)}
 #hy .basis{display:flex;flex-direction:column;gap:.35rem}
 #hy .basis button{display:flex;gap:.55rem;align-items:flex-start;text-align:left;border:1.5px solid var(--rule);background:var(--white);border-radius:10px;padding:.5rem .65rem;cursor:pointer;font-family:inherit}
@@ -959,7 +960,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r120";
+const APP_VERSION = "2026-11-20 r121";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5348,7 +5349,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h4.14";
+const APP_VERSION = "h4.15";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -5834,8 +5835,9 @@ function goalCard(s, g, r){
   return '<div class="card" style="--pc:#22201C"><div class="ch"><b>議長が決める目的</b><span>何がよくなれば成功か</span></div><div class="cb">' +
     (kj.length ? '<div class="lbl">基準から引く</div><div class="chips" style="margin-bottom:.5rem;--pc:var(--ink)">' + kj.slice(0, 6).map(k => '<button class="chip' + (goal.kijunFrom === k.id ? " on" : "") + '" data-ha="kjpick" data-hk="' + esc(g.key) + '" data-hv="' + k.id + '">' + esc(cut(k.name, 14)) + "</button>").join("") + "</div>" : "") +
     '<textarea class="fi" style="min-height:2.6rem;font-weight:800" data-hin="goaltx" data-hk="' + esc(g.key) + '" placeholder="例:授業の日も、復習が0にならない">' + esc(goal.text) + "</textarea></div>" +
-    '<div class="ch" style="border-top:1px solid var(--rule)"><b>物差しの重み</b><span>「物差しで比べる」で使う</span></div>' +
-    crits().map(c => '<div class="wrow"><span class="nm2">' + esc(c.name) + (r.yc && r.yc[c.id] != null ? "<small>世論 " + r.yc[c.id] + "%</small>" : "") + '</span><span class="wsel">' + [0, 1, 2, 3].map(v => '<button class="' + ((goal.w[c.id] || 0) === v ? "on" : "") + '" data-ha="gw" data-hk="' + esc(g.key) + '" data-hd="' + c.id + '" data-hv="' + v + '">' + (v ? "×" + v : "外す") + "</button>").join("") + "</span></div>").join("") +
+    '<div class="ch" style="border-top:1px solid var(--rule)"><b>物差しの重み</b><span>0〜5・「物差しで比べる」で使う</span></div>' +
+    (r.yc && Object.keys(r.yc).length ? '<div class="ctl2" style="padding:.45rem .8rem 0"><button data-ha="gwyo" data-hk="' + esc(g.key) + '">世論の割合から入れる</button></div>' : "") +
+    crits().map(c => '<div class="wrow"><span class="nm2">' + esc(c.name) + (r.yc && r.yc[c.id] != null ? "<small>世論 " + r.yc[c.id] + "%</small>" : "") + '</span><span class="wsel">' + [0, 1, 2, 3, 4, 5].map(v => '<button class="' + ((goal.w[c.id] || 0) === v ? "on" : "") + '" data-ha="gw" data-hk="' + esc(g.key) + '" data-hd="' + c.id + '" data-hv="' + v + '"' + (v ? ' aria-label="重み' + v + '"' : "") + ">" + (v ? v : "外す") + "</button>").join("") + "</span></div>").join("") +
     '<div class="ch" style="border-top:1px solid var(--rule)"><b>何に基づいて決めたか</b><span>1つ以上・理由は必ず</span></div><div class="cb"><div class="basis">' +
     [["yoron", "世論", "自分全体が、何を大事にしたがっているか"], ["fact", "事実", "時間・体力・前回の結果など、動かせないこと"], ["consist", "これまでとの一貫性", "前の基準や決定と合っているか"]].map(([k, n, d]) => '<button class="' + (goal.basis[k] ? "on" : "") + '" data-ha="gbasis" data-hk="' + esc(g.key) + '" data-hv="' + k + '"><i>' + (goal.basis[k] ? "✓" : "") + "</i><span><b>" + n + "</b>" + d + "</span></button>").join("") + "</div>" +
     '<div class="lbl" style="margin-top:.6rem">理由</div><textarea class="fi" style="min-height:2.6rem" data-hin="goalwhy" data-hk="' + esc(g.key) + '" placeholder="例:いちばん大きいのは「続けられる」。前回の朝は2回とも守れなかった">' + esc(goal.reason) + "</textarea>" + note + "</div>" +
@@ -6737,7 +6739,9 @@ function onClick(ev){
       if (c.natt === "少しずれている" || c.natt === "ずれている") { const a = { id: rid(), x: "目的の見直し:" + (dec.goal ? dec.goal.text : dec.text), at: now(), st: "box", fromDec: dec.id, u: now() }; D.agendas[a.id] = a; c.nag = a.id; }
       touch(dec); }); return;
     case "usegoal": mut(() => { D.settings.useGoal = !D.settings.useGoal; touch(D.settings); }); return;
-    case "critw": mut(() => { const c = D.settings.crits.find(x => x.id === v); c.w = c.w >= 3 ? 1 : c.w + 1; touch(D.settings); }); return;
+    case "critw": mut(() => { const c = D.settings.crits.find(x => x.id === v); c.w = c.w >= 5 ? 1 : c.w + 1; touch(D.settings); }); return;
+    case "gwyo": mut(() => { const r = resOf(s, b.dataset.hk), gl = goalOf(r), yc = r.yc || {}, mx = Math.max.apply(null, crits().map(c => yc[c.id] || 0)); if (!mx) return;
+      crits().forEach(c => { const p = yc[c.id]; if (p == null) return; gl.w[c.id] = p > 0 ? Math.max(1, Math.round(p / mx * 5)) : 0; }); gl.basis.yoron = true; }); toast("世論の割合を重み(いちばん大きいものを5)にした。あとは議長が直す"); return;
     case "critdel": mut(() => { const c = D.settings.crits.find(x => x.id === v); c.del = true; touch(D.settings); }); return;
     case "critadd": { const el = $("#hy-newcrit"), x = el && el.value.trim(); if (!x) return; mut(() => { D.settings.crits.push({ id: "c" + rid(), name: x, w: 2 }); touch(D.settings); }); return; }
     case "kjdel": if (!confirm("この基準を消しますか。")) return; mut(() => { touch(Object.assign(D.kijun[v], { del: true })); }); return;
