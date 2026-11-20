@@ -957,7 +957,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r117";
+const APP_VERSION = "2026-11-20 r118";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5346,7 +5346,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h4.11";
+const APP_VERSION = "h4.12";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -5529,15 +5529,30 @@ function pickAgenda(s, aid, on){
     const d = newDebate(s, { title: a.x, agenda: aid, min: s.picks[aid] });
     // 継続審議は、前回の決定とどこで止まったかを最初の審議に書いておく
     const od = a.dec && D.decisions[a.dec];
-    if (od && a.st === "cont") d.e.push({ id: rid(), k: "shingi", x: "前回の決定「" + od.text + "」→ " + (a.why || "うまくいかなかった") + (a.stopTx ? "。止まった所:「" + a.stopTx + "」" : "") + (a.harms && a.harms.length ? "。邪魔の候補:" + a.harms.join("・") : ""), at: now() });
+    if (od && a.st === "cont") d.e.push({ id: rid(), k: "shingi", x: "前回の決定「" + od.text + "」→ " + (a.why || "うまくいかなかった") + (a.stopTx ? "。止まった所:「" + a.stopTx + "」" : "") + (a.harms && a.harms.length ? "。邪魔の候補:" + a.harms.join("・") : ""), at: now(), auto: true });
     insertBlock(s, d, "a:" + aid, a.x);
   } else {
     delete s.picks[aid];
-    Object.values(s.debates).filter(d => d.agenda === aid && !d.from && !(d.stage === "goal" && goalOf(resOf(s, "a:" + aid)).text)).forEach(d => {
-      if (d.e.length) return;
-      s.parts = s.parts.filter(p => p.d !== d.id); delete s.debates[d.id];
-    });
+    // まだ話していなければ、その議題の目的の審議と審議を外す(自動で入れた「前回の決定」は話したうちに入れない)
+    const ds = Object.values(s.debates).filter(d => d.agenda === aid && !d.from);
+    const used = ds.some(d => d.e.some(e => !e.auto && e.k !== "pause")) || !!goalOf(resOf(s, "a:" + aid)).text;
+    if (!used) ds.forEach(d => { s.parts = s.parts.filter(p => p.d !== d.id); delete s.debates[d.id]; });
   }
+}
+function freeDeb(s){ return Object.values(s.debates).find(d => d.free && s.parts.some(p => p.d === d.id)); }
+function setFree(s, on){
+  const fd = freeDeb(s);
+  if (on) { if (fd) return; const d = newDebate(s, { title: "", min: 25 }); d.free = true; insertBlock(s, d, "d:" + d.id, ""); return; }
+  if (!fd) return;
+  const ids = [fd.id].concat(Object.values(s.debates).filter(x => x.gkey === "d:" + fd.id).map(x => x.id));
+  if (ids.some(id => s.debates[id].e.some(e => e.k !== "pause"))) { toast("もう話しているので、外さずに残した"); return; }
+  s.parts = s.parts.filter(p => !ids.includes(p.d)); ids.forEach(id => delete s.debates[id]);
+}
+// 目的の審議と審議は同じ論点。どちらで書いても、空いているほうにも入る
+function setDebTitle(s, d, x){
+  d.title = x;
+  if (d.stage === "goal" && /^d:/.test(d.gkey || "")) { const m = s.debates[d.gkey.slice(2)]; if (m && !m.title) m.title = x; }
+  else Object.values(s.debates).forEach(g => { if (g.stage === "goal" && g.gkey === "d:" + d.id && !g.title) g.title = x; });
 }
 function lastIndex(arr, f){ for (let i = arr.parts.length - 1; i >= 0; i--) if (f(arr.parts[i])) return i; return -1; }
 
@@ -5811,7 +5826,7 @@ function goalCard(s, g, r){
 /* 物差しで比べる */
 function partCompare(s, p, i, n, nx){
   const gs = groups(s);
-  if (!gs.length) return ptitle(p, i, n, "比べる議題がない。") + '<div class="body"><div class="card"><div class="cb"><div class="empty">審議した議題がないので、比べるものがありません。</div></div></div></div>' + foot(s, nx, nextLabel(s, nx));
+  if (!gs.length) return ptitle(p, i, n, "比べる議題がない。") + '<div class="body"><div class="card"><div class="cb"><div class="empty">審議した議題がないので、比べるものがありません。</div>' + talkBtn() + "</div></div></div>" + foot(s, nx, nextLabel(s, nx));
   if (!U.resTab || !gs.some(g => g.key === U.resTab)) U.resTab = gs[0].key;
   const gi = gs.findIndex(g => g.key === U.resTab), g = gs[gi], r = resOf(s, g.key), goal = r.goal;
   const opts = optsOf(s, g, r), cs = crits().filter(c => wOf(r, c) > 0); r.sc = r.sc || {};
@@ -5831,12 +5846,13 @@ function partCompare(s, p, i, n, nx){
     '<div class="ctl2"><button data-ha="xopt" data-hk="' + esc(g.key) + '">＋ 案を足す</button></div></div></div>' +
     foot(s, nx, isLast ? nextLabel(s, nx) : "次の議題へ", isLast ? "" : esc(cut(gs[gi + 1].title, 14)), "", !isLast);
 }
+function talkBtn(){ return '<div class="chips" style="margin-top:.6rem;--pc:var(--p4)"><button class="chip on" data-ha="freetalkgo">議題を決めずに話す審議を入れて、そこへ移る</button></div>'; }
 function tabsHTML(s, gs, g){ return gs.length > 1 ? '<div class="tabs">' + gs.map((x, k) => '<button class="' + (x.key === g.key ? "on" : "") + '" data-ha="restab" data-hv="' + x.key + '">' + circ(k + 1) + " " + esc(cut(x.title, 14)) + (resDecided(s.res[x.key]) || (s.res[x.key] && s.res[x.key].cont) ? " ✓" : "") + "</button>").join("") + "</div>" : ""; }
 /* 議長の裁定 */
 function verdictNeeds(s){ return groups(s).filter(g => { const r = s.res[g.key]; return r && !r.cont && ((r.text || "").trim() || (r.vopts || []).length) && !(r.why || "").trim(); }); }
 function partVerdict(s, p, i, n, nx){
   const gs = groups(s);
-  if (!gs.length) return ptitle(p, i, n, "裁定する議題がない。") + '<div class="body"><div class="card"><div class="cb"><div class="empty">審議した議題がありません。</div></div></div></div>' + foot(s, nx, nextLabel(s, nx));
+  if (!gs.length) return ptitle(p, i, n, "裁定する議題がない。") + '<div class="body"><div class="card"><div class="cb"><div class="empty">審議した議題がありません。</div>' + talkBtn() + "</div></div></div>" + foot(s, nx, nextLabel(s, nx));
   if (!U.resTab || !gs.some(g => g.key === U.resTab)) U.resTab = gs[0].key;
   const gi = gs.findIndex(g => g.key === U.resTab), g = gs[gi], r = resOf(s, g.key), opts = optsOf(s, g, r); r.vopts = r.vopts || [];
   const isLast = gi >= gs.length - 1, chipDays = [[3, "3日後"], [7, "1週間後"], [14, "2週間後"]];
@@ -5972,6 +5988,7 @@ function partPick(s, p, i, n, nx){
   picked.forEach(id => { const a = D.agendas[id]; if (a && !list.includes(a)) list.push(a); });
   const firstDeb = s.parts.find(q => q.t === "debate" && s.debates[q.d] && s.debates[q.d].agenda);
   const leftMin = s.limit ? Math.round(s.limit - liveElapsed(s) / 60000) : null;
+  const fd = freeDeb(s), canTalk = !s.tpl || s.tpl.includes("debate") || s.tpl.includes("goal");
   return ptitle(p, i, n, "今日は " + max + " つまで。時間は数字を打つか −/＋ で決める。") + '<div class="body">' +
     '<div class="card"><div class="ch"><b>議題箱</b><span>' + picked.length + " つ選んだ" + (s.limit ? "・" + mins + " 分" : "") + (leftMin != null ? '<br><span class="' + (mins > leftMin ? "w" : "") + '">会の残り ' + leftMin + " 分</span>" : "") + "</span></div>" +
     (list.length ? list.map(a => { const on = !!s.picks[a.id];
@@ -5979,8 +5996,9 @@ function partPick(s, p, i, n, nx){
         (a.st === "cont" ? "継続審議・" + (a.contN || 1) + "回目" + (a.why ? "(" + esc(a.why) + ")" : "") + (a.stopTx ? "・止まった所:" + esc(a.stopTx) : "") : ago(a.at) + "前から") + "</span></span></button>" +
         (on ? minCtl("pick:" + a.id) : "") + "</div>"; }).join("") : '<div class="cb"><div class="empty">議題箱は空です。下に書いて足せます。</div></div>') +
     '<div class="add"><input id="hy-newag" placeholder="+ 議題を書く" enterkeyhint="done"><button data-ha="addag">入れる</button></div></div>' +
+    (canTalk ? '<div class="card" style="--pc:var(--p4)"><div class="item"><button class="tapzone" data-ha="freetalk"><span class="box' + (fd ? " on" : "") + '">' + (fd ? "✓" : "") + '</span><span class="m"><b>議題を決めずに話し始める</b><span>論点は話しながら決める。話がまとまってきたら、審議の上で論点を書く。論点が変わったら、発言を押して分ける。</span></span></button></div></div>' : "") +
     (picked.length > max ? '<p class="note w">' + max + " つより多く選んでいる。時間が足りるか見直す。</p>" : "") +
-    "</div>" + foot(s, nx, nextLabel(s, nx), firstDeb ? "1つ目「" + esc(cut(s.debates[firstDeb.d].title, 8)) + "」から" : (picked.length ? "" : "選ばないと審議は飛ばす"));
+    "</div>" + foot(s, nx, !picked.length && !fd && canTalk && !s.parts.some(q => (q.t === "debate" || q.t === "goal") && q.on) ? "次へ:議題を決めずに話す" : nextLabel(s, nx), firstDeb ? "1つ目「" + esc(cut(s.debates[firstDeb.d].title, 8)) + "」から" : (picked.length || fd ? (fd && !picked.length ? "議題を決めずに話し始める" : "") : (canTalk ? "論点は話しながら決める" : "選ばないと審議は飛ばす")));
 }
 /* 4 審議 */
 function sayHTML(e, opts){
@@ -6092,7 +6110,7 @@ function parseAnswer(txt){
 const SUMG = [["goal", "目的と裁定", "#22201C"], ["check", "検証", "#2F4F8A"], ["sum", "審議のまとめ", "#6B4C9A"], ["idea", "出てきた案", "#6B4C9A"], ["voice", "議員と Claude の声", "#7A7266"], ["kini", "気になったこと", "#7a5a00"]];
 function partResolve(s, p, i, n, nx){
   const gs = groups(s);
-  if (!gs.length) return ptitle(p, i, n, "審議した議題がない。") + '<div class="body"><div class="card"><div class="cb"><div class="empty">今日は決めることがありません。構成から審議を足すこともできます。</div></div></div></div>' + foot(s, nx, nextLabel(s, nx));
+  if (!gs.length) return ptitle(p, i, n, "審議した議題がない。") + '<div class="body"><div class="card"><div class="cb"><div class="empty">今日は決めることがありません。</div>' + talkBtn() + "</div></div></div>" + foot(s, nx, nextLabel(s, nx));
   if (!U.resTab || !gs.some(g => g.key === U.resTab)) U.resTab = gs[0].key;
   const gi = gs.findIndex(g => g.key === U.resTab), g = gs[gi], r = resOf(s, g.key), m = mapOf(r);
   const tabs = gs.length > 1 ? '<div class="tabs">' + gs.map((x, k) => '<button class="' + (x.key === g.key ? "on" : "") + '" data-ha="restab" data-hv="' + x.key + '">' + circ(k + 1) + " " + esc(cut(x.title, 14)) + (resDecided(s.res[x.key]) || (s.res[x.key] && s.res[x.key].cont) ? " ✓" : "") + "</button>").join("") + "</div>" : "";
@@ -6571,6 +6589,7 @@ function onClick(ev){
     case "next": {
       const cp = curPart(s);
       if (cp.t === "verify") { const list = verifyList(s); if (list.length && U.verifyIdx < list.length - 1) { U.verifyIdx++; render(); window.scrollTo(0, 0); return; } }
+      if (cp.t === "pick" && !Object.keys(s.picks).some(id => D.agendas[id]) && !freeDeb(s) && !s.parts.some(p => (p.t === "debate" || p.t === "goal") && p.on) && (!s.tpl || s.tpl.includes("debate") || s.tpl.includes("goal"))) { mut(() => setFree(s, true), { render: false }); }
       if (cp.t === "goal") { const d = s.debates[cp.d], gl = d && goalOf(resOf(s, gkeyOfDebate(s, d))); if (gl && gl.text.trim() && !gl.reason.trim()) { toast("目的を決めた理由を書く(世論・事実・一貫性のどれに基づいたか)"); return; } }
       if (cp.t === "verdict") { const r = s.res[U.resTab]; if (r && !r.cont && ((r.text || "").trim() || (r.vopts || []).length) && !(r.why || "").trim()) { toast("裁定の理由を書く"); return; } }
       if (cp.t === "resolve" || cp.t === "compare" || cp.t === "verdict") { const gs = groups(s), gi = gs.findIndex(g => g.key === U.resTab); if (gi >= 0 && gi < gs.length - 1) { U.resTab = gs[gi + 1].key; render(); window.scrollTo(0, 0); return; } }
@@ -6620,6 +6639,10 @@ function onClick(ev){
     case "addag": { const el = b.parentElement.querySelector("input"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } mut(() => { const na = { id: rid(), x, at: now(), st: "box", u: now() }; D.agendas[na.id] = na; }); const e2 = $("#hy-newag"); if (e2) e2.focus({ preventScroll: true }); return; }
     case "delag": if (!confirm("この議題を消しますか。")) return; mut(() => touch(Object.assign(D.agendas[v], { del: true }))); return;
     case "titlefrom": { const a = D.agendas[v]; if (!a) return; mut(() => { D.settings.nextTitle = a.x; touch(D.settings); }); return; }
+    case "freetalk": mut(() => setFree(s, !freeDeb(s))); return;
+    case "freetalkgo": mut(() => { const cp = curPart(s); setFree(s, true); const fd = freeDeb(s); if (!fd) return;
+      const blk = s.parts.filter(p => p.d === fd.id || (s.debates[p.d] && s.debates[p.d].gkey === "d:" + fd.id));
+      const ci = s.parts.indexOf(cp); s.parts = s.parts.filter(p => !blk.includes(p)); s.parts.splice(s.parts.indexOf(cp), 0, ...blk.sort((a, b) => (a.t === "goal" ? 0 : 1) - (b.t === "goal" ? 0 : 1))); goPart(s, blk[0].id); }); window.scrollTo(0, 0); return;
     case "nextpick": mut(() => { const l = D.settings.nextPicks = nextPicks(), i = l.indexOf(v); if (i >= 0) l.splice(i, 1); else l.push(v); touch(D.settings); }); return;
     case "ttlauto": mut(() => { s.title = ""; }); return;
     case "ttlpick": { const el = $("#hy-ttx"); if (el) { el.value = v; el.focus(); } return; }
@@ -6729,7 +6752,7 @@ function onClick(ev){
     case "msetv": mut(() => setMin(b.dataset.hk, +v)); return;
     case "nolim": mut(() => { const [k, id] = b.dataset.hk.split(":"); if (k === "lim") { const t = tplOf(id); if (t) { t.limit = 0; touch(D.settings); } } else if (k === "slim" && s) s.limit = 0; }); return;
     case "dmin": mut(() => { const d = s.debates[curPart(s).d]; d.min = +v; }); return;
-    case "dortitle": { const x = ($("#hy-rtx").value || "").trim(); U.sheet = null; mut(() => { const d = s.debates[curPart(s).d]; if (x) d.title = x; }); return; }
+    case "dortitle": { const x = ($("#hy-rtx").value || "").trim(); U.sheet = null; mut(() => { const d = s.debates[curPart(s).d]; if (x) setDebTitle(s, d, x); }); return; }
     case "extend": mut(() => { const d = s.debates[curPart(s).d]; d.min += 5; }); return;
     case "recapoff": U.recapOff[v] = 1; saveUI(); render(); return;
     case "cseat": mut(() => { s.consult.seat = v; }); return;
@@ -6829,7 +6852,7 @@ function onKey(ev){
 function onChange(ev){
   const t = ev.target, s = S();
   if (t.dataset && t.dataset.hin === "min") { render(); return; }
-  if (t.id === "hy-dtitle" && s) { const x = t.value.trim(); if (x) mut(() => { s.debates[curPart(s).d].title = x; }); }
+  if (t.id === "hy-dtitle" && s) { const x = t.value.trim(); if (x) mut(() => { setDebTitle(s, s.debates[curPart(s).d], x); }); }
 }
 async function copyText(t){
   try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
