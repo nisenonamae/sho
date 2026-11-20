@@ -487,8 +487,10 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .top{position:sticky;top:0;z-index:20;background:var(--ink);color:var(--paper);padding:.6rem 16px .7rem}
 #hy .top .r1{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
 #hy .top b{font-size:.95rem;letter-spacing:.1em}
-#hy .top .tm{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.05rem;white-space:nowrap}
+#hy .top .tm{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.05rem;white-space:nowrap;border:0;background:none;color:var(--paper);padding:.1rem 0;font-family:inherit}
 #hy .top .tm small{font-size:.65rem;font-weight:400;opacity:.7;margin-right:.3rem}
+#hy .top .tm small.lim{margin:0 0 0 .3rem;opacity:.85;font-size:.72rem;border-bottom:1px dashed rgba(246,243,236,.5)}
+#hy .top .tm .over{color:#F2A08F}
 #hy .steps{display:flex;gap:3px;margin-top:.5rem}
 #hy .steps i{flex:1;height:6px;border-radius:3px;background:var(--c);opacity:.28}
 #hy .steps i.d{opacity:.9}
@@ -748,6 +750,11 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .edrow{padding:.5rem .7rem .7rem;border-top:1px dashed var(--rule);display:flex;flex-direction:column;gap:.4rem}
 #hy .edrow .two{display:flex;gap:.4rem}
 #hy .edrow .two .fi:first-child{flex:0 0 3.6rem;text-align:center}
+#hy .mctl{display:inline-flex;align-items:center;gap:.3rem;flex:none}
+#hy .mctl button{width:2rem;height:2rem;border-radius:8px;border:1.5px solid var(--rule);background:var(--white);font-weight:800;color:var(--sub);font-size:1rem;padding:0}
+#hy .mctl input{width:3.6rem;text-align:center;border:1.5px solid var(--pc,var(--rule));border-radius:8px;padding:.3rem .2rem;font-size:1rem;font-weight:800;background:var(--white);color:var(--ink);-moz-appearance:textfield}
+#hy .mctl input::-webkit-inner-spin-button,#hy .mctl input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+#hy .mctl>span{font-size:.8rem;color:var(--sub)}
 @media (prefers-reduced-motion:reduce){}
 body.hy-full{padding-bottom:0!important}
 body.hy-full nav.tabs{display:none!important}
@@ -5197,7 +5204,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h2.00";
+const APP_VERSION = "h2.01";
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
 
@@ -5250,7 +5257,7 @@ function defaults(){
   return {
     v: 1, cur: null, curU: 0,
     settings: { u: 0, nextNo: 1, teirei: 5, maxPick: 2, boxOpen: 3,
-      places: ["図書館", "自宅", "カフェ"], placeStats: {},
+      places: ["図書館", "自宅", "カフェ"], placeStats: {}, limits: { full: 60, short: 15, consult: 30 },
       prep: [{ id: "p1", x: "Freedom を入れた", s: "YouTube の動画と SNS を止める。音楽はそのまま" }, { id: "p2", x: "スマホを手の届かないところへ", s: "" }, { id: "p3", x: "飲み物とトイレ", s: "" }],
       members: [
         { id: "m1", name: "推進派", s: "推", d: "やってみよう、で前に進める", c: "#2F6FB0", on: true },
@@ -5267,6 +5274,7 @@ function normalize(d){
   d = d && typeof d === "object" ? d : base;
   ["agendas", "decisions", "sessions", "later"].forEach(k => { if (!d[k] || typeof d[k] !== "object") d[k] = {}; });
   d.settings = Object.assign(base.settings, d.settings || {});
+  d.settings.limits = Object.assign({ full: 60, short: 15, consult: 30 }, d.settings.limits || {});
   if (!("cur" in d)) d.cur = null; if (!d.curU) d.curU = 0;
   return d;
 }
@@ -5315,7 +5323,7 @@ function nextTeirei(from){ const d = new Date((from || today()) + "T00:00:00"); 
 function mkPart(t, extra){ return Object.assign({ id: rid(), t, on: true, done: false }, extra || {}); }
 function openSession(kind){
   const st = D.settings;
-  const s = { id: rid(), no: st.nextNo, kind, at: now(), date: today(), elapsed: 0, run: true, since: now(), parts: [], cur: null,
+  const s = { id: rid(), no: st.nextNo, kind, limit: st.limits[kind] || 60, at: now(), date: today(), elapsed: 0, run: true, since: now(), parts: [], cur: null,
     place: null, prep: {}, checks: {}, picks: {}, debates: {}, consult: { seat: null, ans: [], link: "", skip: false, paste: "" },
     res: {}, kini: [], focus: 0, pauses: [], recap: null, u: now() };
   PRESETS[kind].parts.forEach(t => { if (t === "debate") { const d = newDebate(s, { title: "", min: 25 }); s.parts.push(mkPart("debate", { d: d.id })); } else s.parts.push(mkPart(t)); });
@@ -5395,6 +5403,29 @@ function ideasOf(s, g){
 }
 const resOf = (s, key) => s.res[key] || (s.res[key] = { picked: [], text: "", edited: false, every: 7, date: "", mode: "rule", how: "", showHow: false, cont: false });
 
+/* ───────── 分を自由に決める ───────── */
+function getMin(key){
+  const s = S(), [k, id] = key.split(":");
+  if (k === "lim") return D.settings.limits[id] || 0;
+  if (k === "slim") return s ? s.limit || 0 : 0;
+  if (k === "dmin") { const cp = s && curPart(s), d = cp && s.debates[cp.d]; return d ? d.min : 0; }
+  if (k === "pick") return s && s.picks[id] || 0;
+  return 0;
+}
+function setMin(key, v){
+  v = Math.max(1, Math.min(600, Math.round(+v || 0))); if (!isFinite(v)) return;
+  const s = S(), [k, id] = key.split(":");
+  if (k === "lim") { D.settings.limits[id] = v; touch(D.settings); }
+  else if (k === "slim" && s) s.limit = v;
+  else if (k === "dmin" && s) { const cp = curPart(s), d = cp && s.debates[cp.d]; if (d) d.min = v; }
+  else if (k === "pick" && s) { s.picks[id] = v; Object.values(s.debates).forEach(d => { if (d.agenda === id && !d.from) d.min = v; }); }
+}
+function minCtl(key, step){
+  step = step || 5;
+  return '<span class="mctl"><button data-ha="mstep" data-hk="' + key + '" data-hv="-' + step + '" aria-label="' + step + '分へらす">−</button><input type="number" inputmode="numeric" min="1" max="600" data-hin="min" data-hk="' + key + '" value="' + getMin(key) + '" aria-label="分"><span>分</span><button data-ha="mstep" data-hk="' + key + '" data-hv="' + step + '" aria-label="' + step + '分ふやす">＋</button></span>';
+}
+const plannedMin = s => Object.keys(s.picks).filter(id => D.agendas[id]).reduce((a, id) => a + s.picks[id], 0);
+
 /* ───────── 描画 ───────── */
 function render(){
   if (!mounted()) { document.body.classList.remove("hy-full"); return; }
@@ -5427,7 +5458,7 @@ function nextPart(s){ const on = onParts(s), cp = curPart(s), i = on.indexOf(cp)
 
 function viewSession(){
   const s = S(), cp = curPart(s), on = onParts(s), idx = on.indexOf(cp) + 1, nx = nextPart(s);
-  const top = '<div class="top"><div class="wrap"><div class="r1"><b>第' + s.no + "回 " + esc(PRESETS[s.kind] ? PRESETS[s.kind].n : "会") + '</b><span class="tm"><small>会の時間</small><span id="hy-tm">' + hms(liveElapsed(s)) + "</span></span></div>" +
+  const top = '<div class="top"><div class="wrap"><div class="r1"><b>第' + s.no + "回 " + esc(PRESETS[s.kind] ? PRESETS[s.kind].n : "会") + '</b><button class="tm" data-ha="sheet" data-hs="limit" aria-label="会の時間を変える"><small>会の時間</small><span id="hy-tm" class="' + (s.limit && liveElapsed(s) > s.limit * 60000 ? "over" : "") + '">' + hms(liveElapsed(s)) + '</span><small class="lim">/ ' + (s.limit || "—") + "分</small></button></div>" +
     stepsBar(s) + '<div class="r2"><span>' + idx + " " + esc(partLabel(s, cp)) + (nx ? " → " + esc(partName(s, nx)) : "") + '</span><span class="bt">' + savedLabel() +
     '<button class="pill" data-ha="pause">❚❚ 休会</button><button class="pill" data-ha="sheet" data-hs="parts">✎ 構成</button></span></div></div></div>';
   const pc = T[cp.t].c, nc = nx ? T[nx.t].c : "#4A4540";
@@ -5489,12 +5520,13 @@ function partPick(s, p, i, n, nx){
   const list = contAgendas().concat(boxAgendas());
   picked.forEach(id => { const a = D.agendas[id]; if (a && !list.includes(a)) list.push(a); });
   const firstDeb = s.parts.find(q => q.t === "debate" && s.debates[q.d] && s.debates[q.d].agenda);
-  return ptitle(p, i, n, "今日は " + max + " つまで。時間は押すと 5 分ずつ変わる。") + '<div class="body">' +
-    '<div class="card"><div class="ch"><b>議題箱</b><span>' + picked.length + " つ選んだ・" + mins + " 分</span></div>" +
+  const leftMin = s.limit ? Math.round(s.limit - liveElapsed(s) / 60000) : null;
+  return ptitle(p, i, n, "今日は " + max + " つまで。時間は数字を打つか −/＋ で決める。") + '<div class="body">' +
+    '<div class="card"><div class="ch"><b>議題箱</b><span>' + picked.length + " つ選んだ・" + mins + " 分" + (leftMin != null ? '<br><span class="' + (mins > leftMin ? "w" : "") + '">会の残り ' + leftMin + " 分</span>" : "") + "</span></div>" +
     (list.length ? list.map(a => { const on = !!s.picks[a.id];
       return '<div class="item' + (a.st === "cont" ? " pin" : "") + '"><button class="tapzone" data-ha="pick" data-hv="' + a.id + '"><span class="box' + (on ? " on" : "") + '">' + (on ? "✓" : "") + '</span><span class="m"><b>' + esc(a.x) + "</b><span" + (a.st === "cont" ? ' class="cs"' : (now() - a.at > 10 * 864e5 ? ' class="w"' : "")) + ">" +
         (a.st === "cont" ? "継続審議・" + (a.contN || 1) + "回目" + (a.why ? "(" + esc(a.why) + ")" : "") : ago(a.at) + "前から") + "</span></span></button>" +
-        (on ? '<button class="min" data-ha="pmin" data-hv="' + a.id + '">' + s.picks[a.id] + "分</button>" : "") + "</div>"; }).join("") : '<div class="cb"><div class="empty">議題箱は空です。下に書いて足せます。</div></div>') +
+        (on ? minCtl("pick:" + a.id) : "") + "</div>"; }).join("") : '<div class="cb"><div class="empty">議題箱は空です。下に書いて足せます。</div></div>') +
     '<div class="add"><input id="hy-newag" placeholder="+ 議題を書く" enterkeyhint="done"><button data-ha="addag">入れる</button></div></div>' +
     (picked.length > max ? '<p class="note w">' + max + " つより多く選んでいる。時間が足りるか見直す。</p>" : "") +
     "</div>" + foot(s, nx, nextLabel(s, nx), firstDeb ? "1つ目「" + esc(cut(s.debates[firstDeb.d].title, 8)) + "」から" : (picked.length ? "" : "選ばないと審議は飛ばす"));
@@ -5671,7 +5703,9 @@ function viewHome(){
     '<div class="hseal"' + (paused ? ' style="display:none"' : "") + '><div class="mark">第<br>' + st.nextNo + '回</div><div><b>' + (hasReason ? "今日、開く理由がある" : "今日は開く理由はない") + "</b><span>" + (last ? "前回(第" + last.no + "回)から " + daysSince + "日" : "はじめての会") + "</span></div></div>" +
     '<div class="stats"><div class="' + (due.length ? "warn" : "") + '"><b>' + due.length + "</b>確かめる日が<br>来た決定</div><div><b>" + box.length + "</b>議題箱</div><div><b>" + cont.length + "</b>継続審議</div></div>" +
     (rs.length ? '<h2 class="hh2">開く理由<small>あてはまるものが自動で並ぶ</small></h2><div class="reasons">' + rs.join("") + "</div>" : "") +
-    (paused ? "" : '<h2 class="hh2">今日の会の長さ</h2><div class="len"><button aria-pressed="' + (U.len === "short") + '" data-ha="len" data-hv="short"><b>短い会</b><span>確かめる日が来た決定の検証だけして閉じる</span><em>およそ 15分</em></button><button aria-pressed="' + (U.len === "full") + '" data-ha="len" data-hv="full"><b>本会議</b><span>検証のあと、議題を1〜2つ審議して決める</span><em>およそ 60分</em></button></div>' +
+    (paused ? "" : '<h2 class="hh2">今日の会の長さ</h2><div class="len"><button aria-pressed="' + (U.len === "short") + '" data-ha="len" data-hv="short"><b>短い会</b><span>確かめる日が来た決定の検証だけして閉じる</span><em>' + D.settings.limits.short + '分</em></button><button aria-pressed="' + (U.len === "full") + '" data-ha="len" data-hv="full"><b>本会議</b><span>検証のあと、議題を1〜2つ審議して決める</span><em>' + D.settings.limits.full + '分</em></button></div>' +
+      '<div class="card" style="--pc:var(--ink);margin-top:.6rem"><div class="ch"><b>会の時間</b><span>' + esc(PRESETS[U.len] ? PRESETS[U.len].n : "") + 'の時間。会の途中でも上の時計を押すと変えられる</span></div><div class="cb"><div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">' + minCtl("lim:" + (U.len || "full")) +
+        '<span class="chips">' + [15, 30, 45, 60, 90, 120].map(m => '<button class="chip' + (D.settings.limits[U.len || "full"] === m ? " on" : "") + '" data-ha="msetv" data-hk="lim:' + (U.len || "full") + '" data-hv="' + m + '">' + m + "</button>").join("") + "</span></div></div></div>" +
       '<p class="note">構成は会の途中でも変えられる。Claude に相談したいだけなら <button class="mini" data-ha="len" data-hv="consult" style="font-size:.7rem">相談だけ</button>' + (U.len === "consult" ? " を選んでいる" : "") + "</p>") +
     '<h2 class="hh2">議題箱<small>思いついたら、会の外でも入れておける</small></h2><div class="card" style="--pc:var(--p3)">' +
     box.concat(cont).map(a => '<div class="item' + (a.st === "cont" ? " pin" : "") + '"><span class="m"><b>' + esc(a.x) + "</b><span" + (a.st === "cont" ? ' class="cs"' : "") + ">" + (a.st === "cont" ? "継続審議・" + (a.contN || 1) + "回目" : ago(a.at) + "前") + '</span></span><button class="x" data-ha="delag" data-hv="' + a.id + '" aria-label="消す">×</button></div>').join("") +
@@ -5733,6 +5767,7 @@ function viewSheet(){
     case "entry": return sheetEntry(s);
     case "addpart": return sheetAddPart(s);
     case "retitle": return sheetRetitle(s);
+    case "limit": return sheetLimit(s);
   }
   return "";
 }
@@ -5799,9 +5834,17 @@ function sheetEntry(s){
     '<div class="lbl">書き直す</div><textarea class="fi" id="hy-etx">' + esc(e.x) + "</textarea>" +
     '<div class="chips" style="margin-top:.8rem;--pc:var(--p4)"><button class="chip on" data-ha="esave">直す</button>' + (inConsult ? "" : '<button class="chip" data-ha="eissue">ここから論点を変える</button>') + '<button class="chip" data-ha="edel">消す</button></div>');
 }
+function sheetLimit(s){
+  if (!s) return "";
+  const el = Math.floor(liveElapsed(s) / 60000), cp = curPart(s), d = cp && cp.d && s.debates[cp.d];
+  return sheetWrap('<h3>会の時間</h3><p class="d">いま ' + el + ' 分たった。会の時間はいつでも変えられる。</p>' +
+    '<div class="lbl">この会の時間</div><div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">' + minCtl("slim") + '<span class="chips" style="--pc:var(--ink)">' + [5, 10, 15, 30].map(m => '<button class="chip" data-ha="mstep" data-hk="slim" data-hv="' + m + '">＋' + m + "</button>").join("") + "</span></div>" +
+    (d ? '<div class="lbl" style="margin-top:1rem">いまの審議 ' + circ(dn(s, d)) + ' の時間</div>' + minCtl("dmin") : "") +
+    '<button class="bigbtn" data-ha="sheetclose">これでいい</button>');
+}
 function sheetRetitle(s){
   const cp = curPart(s), d = cp && s.debates[cp.d]; if (!d) return "";
-  return sheetWrap('<h3>論点を直す</h3><input class="fi" id="hy-rtx" style="margin-top:.6rem" value="' + esc(d.title) + '"><div class="lbl" style="margin-top:.7rem">この審議の時間</div><div class="chips">' + [10, 15, 20, 25, 30, 40].map(m => '<button class="chip' + (d.min === m ? " on" : "") + '" data-ha="dmin" data-hv="' + m + '">' + m + "分</button>").join("") + '</div><button class="bigbtn" style="--bc:var(--p4)" data-ha="dortitle">直す</button>');
+  return sheetWrap('<h3>論点を直す</h3><input class="fi" id="hy-rtx" style="margin-top:.6rem" value="' + esc(d.title) + '"><div class="lbl" style="margin-top:.7rem">この審議の時間</div>' + minCtl("dmin") + '<button class="bigbtn" style="--bc:var(--p4)" data-ha="dortitle">直す</button>');
 }
 
 /* ───────── 操作 ───────── */
@@ -5944,6 +5987,8 @@ function onClick(ev){
       }); return;
     }
     case "retitle": U.sheet = "retitle"; U.arg = null; render(); return;
+    case "mstep": mut(() => setMin(b.dataset.hk, getMin(b.dataset.hk) + (+v))); return;
+    case "msetv": mut(() => setMin(b.dataset.hk, +v)); return;
     case "dmin": mut(() => { const d = s.debates[curPart(s).d]; d.min = +v; }); return;
     case "dortitle": { const x = ($("#hy-rtx").value || "").trim(); U.sheet = null; mut(() => { const d = s.debates[curPart(s).d]; if (x) d.title = x; }); return; }
     case "extend": mut(() => { const d = s.debates[curPart(s).d]; d.min += 5; }); return;
@@ -6007,6 +6052,7 @@ function onInput(ev){
     case "reshow": quiet(() => { resOf(s, t.dataset.hk).how = t.value; }); return;
     case "resdate": quiet(() => { const r = resOf(s, t.dataset.hk); r.date = t.value; }); render(); return;
     case "clink": quiet(() => { s.consult.link = t.value.trim(); }); return;
+    case "min": { const n = Math.round(+t.value); if (n >= 1) quiet(() => setMin(t.dataset.hk, n)); return; }
     case "nextno": { const n = Math.round(+t.value); if (n >= 1) quiet(() => { D.settings.nextNo = n; touch(D.settings); }); return; }
     case "mem": quiet(() => { const m = D.settings.members.find(x => x.id === t.dataset.hv); m[t.dataset.hf] = t.value; touch(D.settings); }); return;
   }
@@ -6023,6 +6069,7 @@ function onKey(ev){
 }
 function onChange(ev){
   const t = ev.target, s = S();
+  if (t.dataset && t.dataset.hin === "min") { render(); return; }
   if (t.id === "hy-dtitle" && s) { const x = t.value.trim(); if (x) mut(() => { s.debates[curPart(s).d].title = x; }); }
 }
 async function copyText(t){
@@ -6036,7 +6083,7 @@ function toast(msg){ if (!mounted()) return; let el = $(".toast"); if (!el) { el
 let lastAlive = 0;
 function tick(force){
   const s = S(); if (!s) return;
-  const tm = $("#hy-tm"); if (tm) tm.textContent = hms(liveElapsed(s));
+  const tm = $("#hy-tm"); if (tm) { tm.textContent = hms(liveElapsed(s)); tm.classList.toggle("over", !!s.limit && liveElapsed(s) > s.limit * 60000); }
   const cp = curPart(s), d = cp && cp.d && s.debates[cp.d], dt = $("#hy-dtm");
   if (d && dt) { const left = d.min * 60000 - debUsed(s, d); dt.textContent = "残り " + ms2(left); dt.classList.toggle("w", left < 120000);
     if (!force && left < 180000 && left > 178500 && U.view === "sess") render(); }
