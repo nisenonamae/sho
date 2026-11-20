@@ -990,6 +990,12 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .dtg span{font-size:.68rem}
 #hy .hsec{display:flex;justify-content:space-between;width:100%;border:0;border-top:1px solid var(--rule);background:none;font-size:.8rem;color:var(--sub);cursor:pointer;font-family:inherit;text-align:left}
 #hy .hsec span{font-size:.7rem}
+#hy .foot .back{flex:0 0 3.1rem;border:1.5px solid var(--rule);background:var(--white);border-radius:14px;font-size:1.3rem;font-weight:800;color:var(--sub);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;font-family:inherit;padding:.2rem}
+#hy .foot .back small{font-size:.52rem;font-weight:700;margin-top:.2rem;white-space:nowrap;overflow:hidden;max-width:100%}
+#hy .tbl .cnm{border:0;background:none;font:inherit;color:var(--ink);padding:0;cursor:pointer;text-decoration:underline dotted var(--rule);text-underline-offset:3px}
+#hy .tbl button.wt{border:1px solid var(--rule);border-radius:6px;background:var(--white);padding:0 .3rem;cursor:pointer;font-family:inherit}
+#hy .offc{margin-left:.5rem;font-size:.68rem;color:var(--sub)}
+#hy .offc button{border:1px dashed var(--rule);background:none;border-radius:6px;margin-left:.25rem;padding:.05rem .35rem;font-size:.68rem;color:var(--sub);cursor:pointer;font-family:inherit}
 body.hy-full{padding-bottom:0!important}
 body.hy-full nav.tabs{display:none!important}
 body.hy-full>.wrap{max-width:none;padding:0}
@@ -1051,7 +1057,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r131";
+const APP_VERSION = "2026-11-20 r132";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5440,7 +5446,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.10";
+const APP_VERSION = "h5.11";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -5949,6 +5955,8 @@ const MARKS = ["", "×", "△", "○", "◎"];   // 0=未記入 1=× 2=△ 3=○
 const markPt = v => v ? v - 1 : 0;
 const GCOL = ["#2F6FB0", "#9A5B2E", "#2E7D6B", "#C08A1E", "#8A4C7A", "#5B6B7A", "#3F7A55", "#B8432F"];
 const kijunList = () => Object.values(D.kijun || {}).filter(k => !k.del);
+const BASES0 = [["yoron", "世論", "自分全体が、何を大事にしたがっているか"], ["fact", "事実", "時間・体力・前回の結果など、動かせないこと"], ["consist", "これまでとの一貫性", "前の基準や決定と合っているか"]];
+function bases(){ return BASES0.concat((D.settings.bases || []).filter(b => !b.del).map(b => [b.id, b.n, b.d || "自分で足したもの"])); }
 function goalOf(r){ if (!r.goal) { r.goal = { text: "", w: {}, basis: {}, reason: "", keep: false, kijunFrom: null }; crits().forEach(c => r.goal.w[c.id] = c.w); } return r.goal; }
 const wOf = (r, c) => { const g = r.goal; return g && g.w && g.w[c.id] != null ? g.w[c.id] : c.w; };
 function gkeyOfDebate(s, d){ if (d.gkey) return d.gkey;
@@ -6048,7 +6056,8 @@ function goalCard(s, g, r){
     (r.yc && Object.keys(r.yc).length ? '<div class="ctl2" style="padding:.45rem .8rem 0"><button data-ha="gwyo" data-hk="' + esc(g.key) + '">世論の割合から入れる</button></div>' : "") +
     crits().map(c => '<div class="wrow"><span class="nm2">' + esc(c.name) + (r.yc && r.yc[c.id] != null ? "<small>世論 " + r.yc[c.id] + "%</small>" : "") + '</span><span class="wsel">' + [0, 1, 2, 3, 4, 5].map(v => '<button class="' + ((goal.w[c.id] || 0) === v ? "on" : "") + '" data-ha="gw" data-hk="' + esc(g.key) + '" data-hd="' + c.id + '" data-hv="' + v + '"' + (v ? ' aria-label="重み' + v + '"' : "") + ">" + (v ? v : "外す") + "</button>").join("") + "</span></div>").join("") +
     '<div class="ch" style="border-top:1px solid var(--rule)"><b>何に基づいて決めたか</b><span>1つ以上・理由は必ず</span></div><div class="cb"><div class="basis">' +
-    [["yoron", "世論", "自分全体が、何を大事にしたがっているか"], ["fact", "事実", "時間・体力・前回の結果など、動かせないこと"], ["consist", "これまでとの一貫性", "前の基準や決定と合っているか"]].map(([k, n, d]) => '<button class="' + (goal.basis[k] ? "on" : "") + '" data-ha="gbasis" data-hk="' + esc(g.key) + '" data-hv="' + k + '"><i>' + (goal.basis[k] ? "✓" : "") + "</i><span><b>" + n + "</b>" + d + "</span></button>").join("") + "</div>" +
+    bases().map(([k, n, d]) => '<button class="' + (goal.basis[k] ? "on" : "") + '" data-ha="gbasis" data-hk="' + esc(g.key) + '" data-hv="' + k + '"><i>' + (goal.basis[k] ? "✓" : "") + "</i><span><b>" + n + "</b>" + d + "</span></button>").join("") + "</div>" +
+    '<div class="add" style="margin-top:.4rem;border:1px dashed var(--rule);border-radius:10px"><input id="hy-basisnew" placeholder="+ 基づいたものを足す(例:お金・家族の都合)" enterkeyhint="done"><button data-ha="basisadd">足す</button></div>' +
     '<div class="lbl" style="margin-top:.6rem">理由</div><textarea class="fi" style="min-height:2.6rem" data-hin="goalwhy" data-hk="' + esc(g.key) + '" placeholder="例:いちばん大きいのは「続けられる」。前回の朝は2回とも守れなかった">' + esc(goal.reason) + "</textarea>" + note + "</div>" +
     '<button class="keep" data-ha="gkeep" data-hk="' + esc(g.key) + '"><span class="sw' + (goal.keep ? " on" : "") + '"></span><span>この目的と重みを<b>基準として残す</b>(似た論点で引いて使える)</span></button></div>';
 }
@@ -6067,7 +6076,8 @@ function partCompare(s, p, i, n, nx){
     (goal && goal.text ? '<div class="card" style="--pc:#22201C"><div class="ch"><b>目的</b><span>目的の審議で決めた</span></div><div class="cb"><b>' + esc(goal.text) + "</b></div></div>" : "") +
     '<div class="card" style="--pc:#22201C"><div class="ch"><b>物差しで比べる</b><span>押して ◎○△× を変える</span></div>' +
     (opts.length ? '<div class="tblw"><table class="tbl"><thead><tr><th>物差し<span class="wt">(重み)</span></th>' + opts.map((o, k) => "<th>" + String.fromCharCode(65 + k) + "<br>" + esc(cut(o.x, 6)) + "</th>").join("") + "</tr></thead><tbody>" +
-      cs.map(c => "<tr><td>" + esc(c.name) + '<span class="wt">×' + wOf(r, c) + "</span></td>" + opts.map(o => '<td><button class="mk" data-ha="mk" data-hk="' + esc(g.key) + '" data-hd="' + c.id + '" data-hv="' + esc(o.id) + '">' + (MARKS[(r.sc[o.id] || {})[c.id] || 0] || "・") + "</button></td>").join("") + "</tr>").join("") +
+      cs.map(c => '<tr><td><button class="cnm" data-ha="critoff" data-hk="' + esc(g.key) + '" data-hv="' + c.id + '" aria-label="この比べから外す">' + esc(c.name) + '</button><button class="wt" data-ha="cw" data-hk="' + esc(g.key) + '" data-hv="' + c.id + '" aria-label="重みを変える">×' + wOf(r, c) + "</button></td>" + opts.map(o => '<td><button class="mk" data-ha="mk" data-hk="' + esc(g.key) + '" data-hd="' + c.id + '" data-hv="' + esc(o.id) + '">' + (MARKS[(r.sc[o.id] || {})[c.id] || 0] || "・") + "</button></td>").join("") + "</tr>").join("") +
+      '<tr><td colspan="' + (opts.length + 1) + '" style="text-align:left;padding:.35rem .3rem"><button class="mini" data-ha="critnew" data-hk="' + esc(g.key) + '">＋ 物差しを足す</button>' + (crits().some(c => wOf(r, c) <= 0) ? '<span class="offc">外した:' + crits().filter(c => wOf(r, c) <= 0).map(c => '<button data-ha="critback" data-hk="' + esc(g.key) + '" data-hv="' + c.id + '">' + esc(c.name) + "</button>").join("") + "</span>" : "") + "</td></tr>" +
       '<tr class="tot"><td>合計</td>' + opts.map(o => '<td class="' + (best && o.id === best.id && tot(o) ? "best" : "") + '">' + tot(o) + "</td>").join("") + "</tr>" +
       "<tr><td>世論</td>" + opts.map(o => '<td class="' + (yoTop && o.id === yoTop.id ? "best2" : "") + '">' + (r.yo && r.yo[o.id] != null ? r.yo[o.id] + "%" : "—") + "</td>").join("") + "</tr></tbody></table></div>" +
       '<p class="note" style="margin:0;padding:.5rem .8rem .6rem">' + (best && tot(best) ? "物差しで1位:" + esc(cut(best.x, 14)) : "まだ押していない") + (yoTop ? "・世論で1位:" + esc(cut(yoTop.x, 14)) : "") + "</p>"
@@ -6158,7 +6168,7 @@ function zoomBar(s, cp){
   for (let k = i0 + 1; k < end; k++) { const q = s.parts[k]; if (lvOf(q) === lvOf(pp) + 1 && q.on !== false) kids.push(q); }
   const top0 = onParts(s).filter(p => !lvOf(p)), a0 = ancestors(s, cp)[0], ai = top0.indexOf(a0), x = top0.length ? ((ai + .5) / top0.length * 100) : 50;
   const cnt = q => { const qi = s.parts.indexOf(q), qe = subEnd(s, qi); return s.parts.slice(qi + 1, qe).filter(z => z.on !== false).length; };
-  const segs = [{ p: pp, own: true }].concat(kids.map(q => ({ p: q })));
+  const segs = kids.map(q => ({ p: q }));
   return '<div class="zoom" style="--x:' + x.toFixed(1) + '%"><div class="lb">「' + esc(cut(partTitle(s, pp), 18)) + "」の中" + (lvOf(cp) > 1 ? " ・ " + (lvOf(cp) + 1) + "段目" : "") + "</div>" +
     '<div class="zb">' + segs.map(o => { const q = o.p, n = o.own ? 0 : cnt(q), st = q === cp ? "c" : q.done ? "d" : ""; return n ? '<span class="zf ' + st + '" style="--c:' + T[q.t].c + '"><b>' + n + "</b></span>" : '<i class="' + st + '" style="--c:' + T[q.t].c + '"></i>'; }).join("") + "</div>" +
     '<div class="zn">' + segs.map(o => '<span class="' + (o.p === cp ? "c" : "") + '">' + (o.own ? "そのもの" : esc(cut(partTitle(s, o.p), 12)) + (cnt(o.p) ? " ▸" + cnt(o.p) : "")) + "</span>").join("") + "</div></div>";
@@ -6189,7 +6199,8 @@ function viewSession(){
 function ptitle(p, idx, total, desc){ return '<div class="ptitle"><small>' + idx + " / " + total + "</small><h2>" + esc(T[p.t].n) + "</h2>" + (desc ? "<p>" + desc + "</p>" : "") + "</div>"; }
 function foot(s, nx, label, sub, extra, stay){
   const k = s.kini.filter(x => !x.del).length;
-  return '<div class="spacer"></div><div class="dock"><div class="wrap">' + (extra || "") + '<div class="foot"><button class="memo" data-ha="sheet" data-hs="kini">✎ 気になった<br>こと ' + k + '</button><button class="next" data-ha="next"' + (stay ? ' style="background:var(--pc)"' : "") + '>' + label + (sub ? "<small>" + sub + "</small>" : "") + "</button></div></div></div>";
+  const on = onParts(s), pi = on.indexOf(curPart(s));
+  return '<div class="spacer"></div><div class="dock"><div class="wrap">' + (extra || "") + '<div class="foot">' + (pi > 0 ? '<button class="back" data-ha="prev" aria-label="前のパーツへ戻る">‹<small>' + esc(cut(partName(s, on[pi - 1]), 5)) + "</small></button>" : "") + '<button class="memo" data-ha="sheet" data-hs="kini">✎ 気になった<br>こと ' + k + '</button><button class="next" data-ha="next"' + (stay ? ' style="background:var(--pc)"' : "") + '>' + label + (sub ? "<small>" + sub + "</small>" : "") + "</button></div></div></div>";
 }
 function nextLabel(s, nx){ if (!nx) return "閉会へ"; const on = onParts(s); return "次へ:" + (on.indexOf(nx) + 1) + " " + esc(partName(s, nx)); }
 
@@ -7098,6 +7109,12 @@ function onClick(ev){
     case "yoback": { const a = U.arg; mut(() => { const r = resOf(s, a.k); if (a.kind === "crit") { delete (r.ycOff || {})[v]; if (r.yc && Object.keys(r.yc).length) r.yc[v] = 0; } else { delete (r.optOff || {})[v]; if (r.yo && Object.keys(r.yo).length) r.yo[v] = 0; } }); return; }
     case "xopt": { const x = (prompt("案を書く") || "").trim(); if (!x) return; mut(() => { const r = resOf(s, b.dataset.hk); (r.xopts = r.xopts || []).push({ id: "x" + rid(), x }); }); return; }
     case "gw": mut(() => { const r = resOf(s, b.dataset.hk); goalOf(r).w[b.dataset.hd] = +v; }); return;
+    case "basisadd": { const el = $("#hy-basisnew"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } const id = "b" + rid(); mut(() => { (D.settings.bases = D.settings.bases || []).push({ id, n: x }); touch(D.settings); const cp = curPart(s), d = cp && s.debates[cp.d]; if (d) goalOf(resOf(s, gkeyOfDebate(s, d))).basis[id] = true; }); return; }
+    case "critnew": { const x = (prompt("物差しを足す(例:お金・家族との時間)") || "").trim(); if (!x) return; mut(() => { const c = { id: "c" + rid(), name: x, w: 2 }; D.settings.crits.push(c); touch(D.settings); goalOf(resOf(s, b.dataset.hk)).w[c.id] = 2; }); return; }
+    case "critoff": if (!confirm("この物差しを、この比べから外しますか(重みを0にする)。")) return; mut(() => { goalOf(resOf(s, b.dataset.hk)).w[v] = 0; }); return;
+    case "critback": mut(() => { goalOf(resOf(s, b.dataset.hk)).w[v] = 2; }); return;
+    case "cw": mut(() => { const gl = goalOf(resOf(s, b.dataset.hk)), c = crits().find(x => x.id === v), w = gl.w[v] != null ? gl.w[v] : (c ? c.w : 2); gl.w[v] = w >= 5 ? 1 : w + 1; }); return;
+    case "prev": { const on = onParts(s), i = on.indexOf(curPart(s)); if (i > 0) mut(() => goPart(s, on[i - 1].id)); return; }
     case "gbasis": mut(() => { const gl = goalOf(resOf(s, b.dataset.hk)); gl.basis[v] = !gl.basis[v]; }); return;
     case "gkeep": mut(() => { const gl = goalOf(resOf(s, b.dataset.hk)); gl.keep = !gl.keep; }); return;
     case "kjpick": mut(() => { const gl = goalOf(resOf(s, b.dataset.hk)), k = D.kijun[v]; if (!k) return; if (gl.kijunFrom === v) { gl.kijunFrom = null; return; } gl.kijunFrom = v; if (!gl.text) gl.text = k.name; crits().forEach(c => { if (k.w[c.id] != null) gl.w[c.id] = k.w[c.id]; }); gl.basis.consist = true; }); return;
@@ -7267,6 +7284,7 @@ function onKey(ev){
   if (t.id === "hy-dtitle") { ev.preventDefault(); t.blur(); return; }
   if (t.id === "hy-ttx") { ev.preventDefault(); $("[data-ha=ttlsave]").click(); return; }
   if (t.id === "hy-nexttitle") { ev.preventDefault(); t.blur(); return; }
+  if (t.id === "hy-basisnew") { ev.preventDefault(); const b = $("[data-ha=basisadd]"); b && b.click(); return; }
   if (t.id === "hy-subnew") { ev.preventDefault(); const b = $("[data-ha=subadd]"); b && b.click(); return; }
   if (t.id === "hy-yonew") { ev.preventDefault(); const b = $("[data-ha=yonew]"); b && b.click(); return; }
   if (t.id === "hy-newreason") { ev.preventDefault(); $("[data-ha=addreason]").click(); return; }
