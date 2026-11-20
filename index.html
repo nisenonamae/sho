@@ -899,6 +899,8 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .tflow i{font-style:normal;font-size:.65rem;color:var(--faint)}
 #hy .pconly{display:none}
 @media (min-width:1000px){#hy .sv.talk>.top>.wrap{max-width:1100px}#hy .sv.talk>.wrap{max-width:1100px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:0 20px;align-items:start}#hy .sv.talk>.wrap>.body{grid-column:1;grid-row:1;padding-bottom:2rem}#hy .sv.talk>.wrap>.spacer{display:none}#hy .sv.talk>.wrap>.dock{position:sticky;top:var(--toph,96px);grid-column:2;grid-row:1;height:calc(100vh - var(--toph,96px));left:auto;right:auto;bottom:auto;z-index:5;pointer-events:auto;display:flex;flex-direction:column}#hy .sv.talk>.wrap>.dock>.wrap{background:none;padding:.7rem 16px 16px 0;max-width:none;margin:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:flex-end}#hy .sv.talk>.wrap>.dock>.wrap>*{flex:none}#hy .sv.talk .pconly{display:block;flex:0 1 auto!important;min-height:0;overflow-y:auto;scrollbar-width:thin}#hy .sv.talk .inp.tall textarea{min-height:5.5rem}#hy .sv.talk .mbonly{display:none}#hy .sv.talk .pconly .card{margin-bottom:.6rem}#hy .sv.talk .pconly .bubs{padding:.5rem .4rem .6rem;gap:.35rem}#hy .sv.talk .seats{flex-wrap:wrap;overflow:visible;white-space:normal}}
+#hy .inp.tall .tgs{gap:.3rem}
+#hy .inp.tall .tgs button{font-size:.74rem;padding:.3rem .55rem;border-radius:7px}
 body.hy-full{padding-bottom:0!important}
 body.hy-full nav.tabs{display:none!important}
 body.hy-full>.wrap{max-width:none;padding:0}
@@ -960,7 +962,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r121";
+const APP_VERSION = "2026-11-20 r122";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5349,7 +5351,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h4.15";
+const APP_VERSION = "h4.16";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6063,7 +6065,7 @@ function partDebate(s, p, i, n, nx){
   let inp;
   const sm = U.smode === "sum" || U.smode === "q" ? U.smode : "fact";
   if (seat === "sh") inp = '<div class="inp tall" style="--c:#22201C"><textarea id="hy-comp" rows="3" placeholder="' + ({ fact: "議長として:わかっている事実を置く", q: "議長として:いま何を決めるのか、問いを出す", sum: "議長として:ここまでを整理する(議決に出る)" })[sm] + '…" data-hdk="' + dk + '">' + esc(draft) + '</textarea><div class="bot"><span class="cmpk">' + [["fact", "事実"], ["q", "問い"], ["sum", "整理"]].map(([k, l]) => '<button class="' + (sm === k ? "on" : "") + '" data-ha="smode" data-hv="' + k + '">' + l + "</button>").join("") + '</span><button class="send" data-ha="post">書く</button></div></div>';
-  else { const m = memberOf(seat); inp = '<div class="inp" style="--c:' + m.c + '"><input id="hy-comp" placeholder="' + esc(m.name) + 'として発言…" data-hdk="' + dk + '" value="' + esc(draft) + '" enterkeyhint="send"><span class="tgs">' + TAGS.map(([t, c]) => '<button class="' + c + (U.tag === t ? " on" : "") + '" data-ha="tag" data-hv="' + t + '">' + t + "</button>").join("") + '</span><button class="send" data-ha="post">発言</button></div>'; }
+  else { const m = memberOf(seat); inp = '<div class="inp tall" style="--c:' + m.c + '"><textarea id="hy-comp" rows="3" placeholder="' + esc(m.name) + 'として発言…(Enter で改行)" data-hdk="' + dk + '">' + esc(draft) + '</textarea><div class="bot"><span class="tgs">' + TAGS.map(([t, c]) => '<button class="' + c + (U.tag === t ? " on" : "") + '" data-ha="tag" data-hv="' + t + '">' + t + "</button>").join("") + '</span><button class="send" data-ha="post">発言</button></div></div>'; }
   const sub = !hasSum && d.e.length ? "まとめがまだ" + (U.nextArm === p.id ? "・もう一度押すと進む" : "") : (hasSum ? "まとめが書けた" : "");
   // 世論は、スマホでは発言録の上、PC では右の列(入力欄の上)に出す
   const yo = yoCard(s, gObj, rr, isGoal ? "crit" : "opt"), yoM = '<div class="mbonly">' + yo + "</div>", yoP = '<div class="pconly">' + yo + "</div>";
