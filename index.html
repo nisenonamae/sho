@@ -966,7 +966,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r123";
+const APP_VERSION = "2026-11-20 r124";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5355,7 +5355,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h4.17";
+const APP_VERSION = "h4.18";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -5924,6 +5924,8 @@ function render(){
   $("#hy-sheet").innerHTML = U.sheet ? viewSheet() : "";
   const dock = $(".dock"); const sp = $(".spacer"); if (dock && sp) sp.style.setProperty("--sp", (dock.offsetHeight + 12) + "px");
   const sv = $(".sv"), tp = $(".sv>.top"); if (sv && tp) sv.style.setProperty("--toph", tp.offsetHeight + "px");
+  // 選んでいる席が横に隠れていたら、席の並びだけを横に動かして見せる
+  const sr = $(".seats"), so = sr && sr.querySelector(".seat.on"); if (so && sr.scrollWidth > sr.clientWidth) { const l = so.offsetLeft - sr.offsetLeft; if (l < sr.scrollLeft || l + so.offsetWidth > sr.scrollLeft + sr.clientWidth) sr.scrollLeft = l - 8; }
   if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
   if (aid) { const n = document.getElementById(aid); if (n && n !== ae && document.activeElement !== n) { n.focus({ preventScroll: true }); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
   tick(true);
@@ -6030,7 +6032,7 @@ function partPick(s, p, i, n, nx){
 /* 4 審議 */
 function sayHTML(e, opts){
   const m = memberOf(e.m), hl = opts && opts.hl ? " hl" : "";
-  return '<button class="say' + hl + '" style="--c:' + m.c + '" data-ha="entry" data-hv="' + e.id + '"><span class="av">' + esc(m.s) + '</span><span class="m"><span class="nm" style="display:block">' + esc(m.name) + '</span><span class="tx" style="display:block">' + esc(e.x) + "</span>" + (e.g ? '<span class="tg ' + tagCls(e.g) + '">' + esc(e.g) + "</span>" : "") + "</span></button>";
+  return '<button class="say' + hl + '" style="--c:' + m.c + '" data-ha="entry" data-hv="' + e.id + '"><span class="av">' + esc(m.s) + '</span><span class="m"><span class="nm" style="display:block">' + esc(m.name) + (e.mine ? "・自分で要約" : e.as ? "・" + esc(e.as) : "") + '</span><span class="tx" style="display:block">' + esc(e.x) + "</span>" + (e.g ? '<span class="tg ' + tagCls(e.g) + '">' + esc(e.g) + "</span>" : "") + "</span></button>";
 }
 function entryHTML(e, opts){
   if (e.k === "pause") return '<div class="divider">ここで休会(' + new Date(e.at).getHours() + ":" + pad(new Date(e.at).getMinutes()) + ")" + (e.back ? "・" + (e.back - e.at < 60000 ? "すぐ再開" : ago2(e.back - e.at) + "後に再開") : "") + "</div>";
@@ -6062,15 +6064,16 @@ function partDebate(s, p, i, n, nx){
   const near = s.limit ? left < 180000 : d.e.filter(e => e.k === "say" || e.k === "shingi").length >= 4;
   const closeCard = near ? '<div class="card" style="margin-top:.6rem"><div class="ch"><b>この審議を閉じる前に</b><span>' + (s.limit ? "時間が近づくと出る" : "発言がたまると出る") + '</span></div><div class="cb"><div class="empty">' + (hasSum ? "まとめは書けている。残った問いがあれば、新しい審議か議題箱へ。" : "下の入力を「まとめ」にして、2〜3行でまとめる。") + '</div><div class="chips" style="margin-top:.5rem"><button class="chip on" data-ha="sheet" data-hs="issue">新しい論点で審議を足す</button><button class="chip" data-ha="sheet" data-hs="issue" data-hv="box">議題箱へ</button>' + (s.limit ? '<button class="chip" data-ha="extend">5分のばす</button>' : "") + "</div></div></div>" : "";
   // 入力
-  const seat = U.seat === "sh" || !members().some(m => m.id === U.seat && m.on) ? "sh" : U.seat;
+  const seat = U.seat === "C" ? "C" : U.seat === "sh" || !members().some(m => m.id === U.seat && m.on) ? "sh" : U.seat;
   const seatsHTML = '<div class="seats"><button class="seat sh' + (seat === "sh" ? " on" : "") + '" style="--c:#22201C" data-ha="seat" data-hv="sh"><span class="av">議</span>議長</button>' +
     members().filter(m => m.on).map(m => '<button class="seat' + (seat === m.id ? " on" : "") + '" style="--c:' + m.c + '" data-ha="seat" data-hv="' + m.id + '"><span class="av">' + esc(m.s) + "</span>" + esc(m.name) + "</button>").join("") +
-    '<button class="seat ask" style="--c:' + CLAUDE.c + '" data-ha="sheet" data-hs="ask"><span class="av">' + esc(CLAUDE.s) + "</span>Claudeに聞く" + (d.ask && d.ask.wait ? '<i class="dot"></i>' : "") + "</button>" +
+    '<button class="seat ask' + (seat === "C" ? " on" : "") + '" style="--c:' + CLAUDE.c + '" data-ha="seat" data-hv="C"><span class="av">' + esc(CLAUDE.s) + "</span>Claude" + (d.ask && d.ask.wait ? '<i class="dot"></i>' : "") + "</button>" +
     '<button class="seat plus" style="--c:var(--sub)" data-ha="sheet" data-hs="members" aria-label="議員の設定">+</button></div>';
   const dk = d.id + ":" + seat, draft = U.drafts[dk] || "";
   let inp;
   const sm = U.smode === "sum" || U.smode === "q" ? U.smode : "fact";
   if (seat === "sh") inp = '<div class="inp tall" style="--c:#22201C"><textarea id="hy-comp" rows="3" placeholder="' + ({ fact: "議長として:わかっている事実を置く", q: "議長として:いま何を決めるのか、問いを出す", sum: "議長として:ここまでを整理する(議決に出る)" })[sm] + '…" data-hdk="' + dk + '">' + esc(draft) + '</textarea><div class="bot"><span class="cmpk">' + [["fact", "事実"], ["q", "問い"], ["sum", "整理"]].map(([k, l]) => '<button class="' + (sm === k ? "on" : "") + '" data-ha="smode" data-hv="' + k + '">' + l + "</button>").join("") + '</span><button class="send" data-ha="post">書く</button></div></div>';
+  else if (seat === "C") inp = '<div class="inp tall" style="--c:' + CLAUDE.c + '"><textarea id="hy-comp" rows="3" placeholder="Claude の答えを、自分の言葉で要約して書く…(Enter で改行)" data-hdk="' + dk + '">' + esc(draft) + '</textarea><div class="bot"><span class="tgs">' + TAGS.map(([t, c]) => '<button class="' + c + (U.tag === t ? " on" : "") + '" data-ha="tag" data-hv="' + t + '">' + t + "</button>").join("") + '</span><span style="display:flex;gap:.35rem"><button class="mini" data-ha="sheet" data-hs="ask">相談文を作る</button><button class="send" data-ha="post">書く</button></span></div></div>';
   else { const m = memberOf(seat); inp = '<div class="inp tall" style="--c:' + m.c + '"><textarea id="hy-comp" rows="3" placeholder="' + esc(m.name) + 'として発言…(Enter で改行)" data-hdk="' + dk + '">' + esc(draft) + '</textarea><div class="bot"><span class="tgs">' + TAGS.map(([t, c]) => '<button class="' + c + (U.tag === t ? " on" : "") + '" data-ha="tag" data-hv="' + t + '">' + t + "</button>").join("") + '</span><button class="send" data-ha="post">発言</button></div></div>'; }
   const sub = !hasSum && d.e.length ? "まとめがまだ" + (U.nextArm === p.id ? "・もう一度押すと進む" : "") : (hasSum ? "まとめが書けた" : "");
   // 世論は、スマホでは発言録の上、PC では右の列(入力欄の上)に出す
@@ -6561,10 +6564,10 @@ function insertAfterCur(s, part){ const i = s.parts.indexOf(curPart(s)); s.parts
 function postEntry(){
   const s = S(), cp = s && curPart(s), d = cp && s.debates[cp.d]; if (!d) return;
   const el = $("#hy-comp"); if (!el) return; const x = el.value.trim(); if (!x) { el.focus(); return; }
-  const seat = U.seat === "sh" || !members().some(m => m.id === U.seat && m.on) ? "sh" : U.seat;
+  const seat = U.seat === "C" ? "C" : U.seat === "sh" || !members().some(m => m.id === U.seat && m.on) ? "sh" : U.seat;
   mut(() => {
     if (seat === "sh") d.e.push(U.smode === "sum" ? { id: rid(), k: "sum", x, at: now() } : { id: rid(), k: "shingi", g: U.smode === "q" ? "問い" : "事実", x, at: now() });
-    else d.e.push({ id: rid(), k: "say", m: seat, x, g: U.tag, at: now() });
+    else d.e.push(Object.assign({ id: rid(), k: "say", m: seat, x, g: U.tag, at: now() }, seat === "C" ? { mine: true } : {}));
     delete U.drafts[d.id + ":" + seat]; U.tag = null;
     if (U.smode === "sum") U.smode = "fact";
     if (s.recap && s.recap.d === d.id) U.recapOff[s.recap.at] = 1;
