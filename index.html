@@ -839,7 +839,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .bb{position:relative;border-radius:50%;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 12%,var(--white));color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.3rem;line-height:1.2;text-align:center;font-family:inherit;cursor:pointer;transition:width .25s,height .25s}
 #hy .bb.top{background:color-mix(in srgb,var(--c) 24%,var(--white));box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent)}
 #hy .bb b{font-size:.92rem;color:var(--c)}
-#hy .bb span{font-size:.66rem;font-weight:700;word-break:break-all}
+#hy .bb span{font-size:.62rem;font-weight:700;word-break:break-all;line-height:1.15}
 #hy .bb .who{display:flex;gap:2px;margin-top:2px}
 #hy .bb .who i{font-style:normal;width:1rem;height:1rem;border-radius:50%;background:var(--wc);color:#fff;font-size:.55rem;display:flex;align-items:center;justify-content:center}
 #hy .ctl2{display:flex;justify-content:flex-end;padding:0 .8rem .6rem}
@@ -957,7 +957,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r118";
+const APP_VERSION = "2026-11-20 r119";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5346,7 +5346,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h4.12";
+const APP_VERSION = "h4.13";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -5761,7 +5761,22 @@ const kijunList = () => Object.values(D.kijun || {}).filter(k => !k.del);
 function goalOf(r){ if (!r.goal) { r.goal = { text: "", w: {}, basis: {}, reason: "", keep: false, kijunFrom: null }; crits().forEach(c => r.goal.w[c.id] = c.w); } return r.goal; }
 const wOf = (r, c) => { const g = r.goal; return g && g.w && g.w[c.id] != null ? g.w[c.id] : c.w; };
 function gkeyOfDebate(s, d){ if (d.gkey) return d.gkey; const r = rootOf(s, d), ag = d.agenda || r.agenda; return ag ? "a:" + ag : "d:" + r.id; }
-function optsOf(s, g, r){ return ideasOf(s, g).map(x => ({ id: x.id, x: x.x, by: x.by })).concat((r.xopts || []).filter(o => !o.del).map(o => ({ id: o.id, x: o.x, by: "議長が足した" }))); }
+function optsOf(s, g, r){ const off = r.optOff || {}; return ideasOf(s, g).filter(x => !off[x.id]).map(x => ({ id: x.id, x: x.x, by: x.by })).concat((r.xopts || []).filter(o => !o.del).map(o => ({ id: o.id, x: o.x, by: o.by || "議長が足した" }))); }
+function critItems(r){ const off = (r && r.ycOff) || {}; return crits().filter(c => !off[c.id]).map(c => ({ id: c.id, x: c.name })); }
+// 世論から外したら、残りで100になるように戻す
+function yoRenorm(map, ids){ Object.keys(map).forEach(k => { if (!ids.includes(k)) delete map[k]; }); const sum = ids.reduce((a, id) => a + (map[id] || 0), 0); if (!sum) return; ids.forEach(id => { if (map[id] != null) map[id] = Math.round(map[id] * 100 / sum); }); const s2 = ids.reduce((a, id) => a + (map[id] || 0), 0), big = ids.filter(id => map[id] != null).sort((a, b) => map[b] - map[a])[0]; if (big && s2 !== 100) map[big] += 100 - s2; }
+function sheetYoEdit(s){
+  const a = U.arg || {}, g = groups(s).find(x => x.key === a.k) || { key: a.k, debates: [], title: "" }, r = resOf(s, a.k), isC = a.kind === "crit";
+  const items = isC ? critItems(r) : optsOf(s, g, r), map = (isC ? r.yc : r.yo) || {};
+  const offC = isC ? crits().filter(c => (r.ycOff || {})[c.id]) : [], offO = !isC ? ideasOf(s, g).filter(x => (r.optOff || {})[x.id]) : [];
+  return sheetWrap('<h3>世論の勢力を足す・外す</h3><p class="d">' + (isC ? "物差しを足すと、ほかの論点でも使える。外すのはこの論点の世論だけ。" : "案は議員の発言からも集まる。ここで足した案は、物差しで比べる・議長の裁定にも出る。") + "足した・外したことは発言録に残る。</p>" +
+    '<div class="card">' + items.map((x, i) => '<div class="item"><span class="cl" style="--c:' + GCOL[i % GCOL.length] + ';flex:0 0 6px;align-self:stretch;border-radius:3px;background:var(--c)"></span><span class="m"><b>' + esc(x.x) + "</b><span>" + (map[x.id] != null ? map[x.id] + "%" : "まだ") + (x.by ? "・" + esc(x.by) : "") + '</span></span><button class="x" data-ha="yorm" data-hv="' + esc(x.id) + '" aria-label="外す">×</button></div>').join("") +
+      (items.length ? "" : '<div class="cb"><div class="empty">まだない。下から足す。</div></div>') +
+      '<div class="add"><input id="hy-yonew" placeholder="' + (isC ? "+ 物差しを足す(例:お金・家族との時間)" : "+ 案を足す") + '" enterkeyhint="done"><button data-ha="yonew">足す</button></div></div>' +
+    (offC.length || offO.length ? '<div class="lbl" style="margin-top:.7rem">外したもの(押すと戻す)</div><div class="chips" style="--pc:var(--ink)">' + offC.map(c => '<button class="chip" data-ha="yoback" data-hv="' + c.id + '">' + esc(c.name) + "</button>").join("") + offO.map(x => '<button class="chip" data-ha="yoback" data-hv="' + x.id + '">' + esc(cut(x.x, 14)) + "</button>").join("") + "</div>" : "") +
+    '<button class="bigbtn" data-ha="sheetclose">これでいい</button>');
+}
+function yoLog(s, k, kind, diff){ const g = groups(s).find(x => x.key === k), cp = curPart(s), d = cp && cp.d && s.debates[cp.d] || (g && g.debates[0]); if (d) d.e.push({ id: rid(), k: "yoron", kind, diff, x: "", at: now() }); }
 /* 世論:合計100になるように動かす */
 function yoInit(map, ids){ const have = ids.filter(id => map[id] != null); if (have.length === ids.length && have.length) return; const rest = 100 - have.reduce((a, id) => a + map[id], 0), miss = ids.filter(id => map[id] == null); miss.forEach((id, i) => map[id] = Math.max(0, Math.round(rest / miss.length) + (i === 0 ? rest - Math.round(rest / miss.length) * miss.length : 0))); }
 function yoAdjust(map, ids, id, delta){
@@ -5777,23 +5792,24 @@ function yoBubbles(items, map, k, kind){
   if (!items.length) return '<div class="cb"><div class="empty">' + (kind === "crit" ? "物差しがない。設定で足せる。" : "「案」を付けた発言か「＋ 案を足す」で、案がここに並ぶ。") + "</div></div>";
   const ids = items.map(x => x.id), has = ids.every(id => map && map[id] != null);
   const top = has ? ids.slice().sort((a, b) => map[b] - map[a])[0] : null;
-  return '<div class="bubs">' + items.map((x, i) => { const v = has ? map[x.id] : null, size = has ? 40 + Math.sqrt(v) * 7.5 : 64, col = GCOL[i % GCOL.length];
+  return '<div class="bubs">' + items.map((x, i) => { const v = has ? map[x.id] : null, size = has ? 62 + Math.sqrt(v) * 6.5 : 68, col = GCOL[i % GCOL.length];
     return '<button class="bb' + (x.id === top ? " top" : "") + '" style="--c:' + col + ";width:" + size + "px;height:" + size + 'px" data-ha="yo" data-hk="' + esc(k) + '" data-hd="' + kind + '" data-hv="' + esc(x.id) + '"><b>' + (has ? v + "%" : "?") + "</b><span>" + esc(cut(x.x || x.name, 12)) + "</span>" + (x.who && x.who.length ? '<span class="who">' + x.who.map(m => '<i style="--wc:' + m.c + '">' + esc(m.s) + "</i>").join("") + "</span>" : "") + "</button>"; }).join("") + "</div>";
 }
 /* 案を推している議員(その案に「案」を付けた議員と、案を支える発言の議員) */
 function whoFor(s, g, optId){ const out = []; g.debates.forEach(d => d.e.forEach(e => { if (e.id === optId && e.m) { const m = memberOf(e.m); if (!out.includes(m)) out.push(m); } })); const c = (s.consult.ans || []).find(e => e.id === optId); if (c && !out.includes(CLAUDE)) out.push(CLAUDE); return out; }
 function yoCard(s, g, r, kind){
   const k = g.key;
-  if (kind === "crit") { r.yc = r.yc || {}; return '<div class="card yr"><div class="ch"><b>世論(物差しの勢力)</b><span>自分全体は、どれを大事にしたいか・押して動かす</span></div>' + yoBubbles(crits().map(c => ({ id: c.id, x: c.name })), r.yc, k, "crit") + "</div>"; }
+  if (kind === "crit") { r.yc = r.yc || {}; return '<div class="card yr"><div class="ch"><b>世論(物差しの勢力)</b><span>自分全体は、どれを大事にしたいか・押して動かす</span></div>' + yoBubbles(critItems(r), r.yc, k, "crit") +
+    '<div class="ctl2"><button data-ha="yoedit" data-hk="' + esc(k) + '" data-hd="crit">＋ 足す・外す</button></div></div>'; }
   r.yo = r.yo || {};
   const opts = optsOf(s, g, r).map(o => Object.assign(o, { who: whoFor(s, g, o.id) }));
   return '<div class="card yr"><div class="ch"><b>世論</b><span>案はいくつでも・大きさ=自分全体の気持ち・押して動かす</span></div>' + yoBubbles(opts, r.yo, k, "opt") +
-    '<div class="ctl2"><button data-ha="xopt" data-hk="' + esc(k) + '">＋ 案を足す</button></div></div>';
+    '<div class="ctl2"><button data-ha="yoedit" data-hk="' + esc(k) + '" data-hd="opt">＋ 足す・外す</button></div></div>';
 }
 function yoronHTML(e){ return '<button class="shift" data-ha="entry" data-hv="' + e.id + '"><span class="nh">世論が動いた' + (e.kind === "crit" ? "(物差し)" : "") + "</span><b>" + esc(e.diff || "") + "</b>" + (e.x ? "<br>" + esc(e.x) : "") + "</button>"; }
 function sheetYo(s){
   const a = U.arg || {}, g = groups(s).find(x => x.key === a.k) || { key: a.k, debates: [], title: "" }, r = resOf(s, a.k);
-  const items = a.kind === "crit" ? crits().map(c => ({ id: c.id, x: c.name })) : optsOf(s, g, r);
+  const items = a.kind === "crit" ? critItems(r) : optsOf(s, g, r);
   const map = a.kind === "crit" ? (r.yc = r.yc || {}) : (r.yo = r.yo || {});
   const cp = curPart(s), d = cp && cp.d && s.debates[cp.d];
   const recent = d ? d.e.filter(e => e.k === "say" || e.k === "shingi" || e.k === "sum").slice(-3).reverse() : [];
@@ -6321,6 +6337,7 @@ function viewSheet(){
     case "mput": return sheetMput(s);
     case "tpl": return sheetTpl();
     case "yo": return sheetYo(s);
+    case "yoedit": return sheetYoEdit(s);
     case "mnode": return sheetMnode(s);
     case "mth": return sheetMth(s);
     case "mnew": return sheetMnew(s);
@@ -6685,12 +6702,21 @@ function onClick(ev){
       touch(dec);
     }); return;
     case "yo": { const g = groups(s).find(x => x.key === b.dataset.hk), r = resOf(s, b.dataset.hk), kind = b.dataset.hd;
-      const items = kind === "crit" ? crits().map(c => ({ id: c.id, x: c.name })) : optsOf(s, g || { debates: [] }, r), map = kind === "crit" ? (r.yc = r.yc || {}) : (r.yo = r.yo || {});
+      const items = kind === "crit" ? critItems(r) : optsOf(s, g || { debates: [] }, r), map = kind === "crit" ? (r.yc = r.yc || {}) : (r.yo = r.yo || {});
       U.sheet = "yo"; U.arg = { k: b.dataset.hk, kind, id: v, before: JSON.parse(JSON.stringify(map)), why: "" }; yoInit(map, items.map(x => x.id)); render(); return; }
-    case "yostep": { const a = U.arg, g = groups(s).find(x => x.key === a.k), r = resOf(s, a.k), items = a.kind === "crit" ? crits().map(c => ({ id: c.id, x: c.name })) : optsOf(s, g || { debates: [] }, r);
+    case "yostep": { const a = U.arg, g = groups(s).find(x => x.key === a.k), r = resOf(s, a.k), items = a.kind === "crit" ? critItems(r) : optsOf(s, g || { debates: [] }, r);
       a.why = ($("#hy-yowhy") || {}).value || a.why; mut(() => yoAdjust(a.kind === "crit" ? r.yc : r.yo, items.map(x => x.id), a.id, +v)); return; }
     case "yowhy": { const e = findEntry(s, v); if (!e) return; U.arg.why = (e.m ? memberOf(e.m).name : "議長") + "「" + cut(e.x, 30) + "」で動いた"; render(); return; }
     case "yosave": { U.arg.why = ($("#hy-yowhy") || {}).value || ""; yoCommit(s); U.sheet = null; U.arg = null; render(); return; }
+    case "yoedit": U.sheet = "yoedit"; U.arg = { k: b.dataset.hk, kind: b.dataset.hd }; render(); return;
+    case "yonew": { const el = $("#hy-yonew"), x = el && el.value.trim(); if (!x) { el && el.focus(); return; } const a = U.arg;
+      mut(() => { const r = resOf(s, a.k);
+        if (a.kind === "crit") { const c = { id: "c" + rid(), name: x, w: 2 }; D.settings.crits.push(c); touch(D.settings); r.yc = r.yc || {}; if (Object.keys(r.yc).length) r.yc[c.id] = 0; if (r.goal) r.goal.w[c.id] = 2; yoLog(s, a.k, "crit", "物差し「" + x + "」が加わった"); }
+        else { (r.xopts = r.xopts || []).push({ id: "x" + rid(), x, by: "議長が足した" }); r.yo = r.yo || {}; if (Object.keys(r.yo).length) r.yo[r.xopts[r.xopts.length - 1].id] = 0; yoLog(s, a.k, "opt", "案「" + x + "」が加わった"); } }); return; }
+    case "yorm": { const a = U.arg; mut(() => { const g = groups(s).find(x => x.key === a.k), r = resOf(s, a.k);
+        if (a.kind === "crit") { const c = crits().find(x => x.id === v); (r.ycOff = r.ycOff || {})[v] = true; r.yc = r.yc || {}; yoRenorm(r.yc, critItems(r).map(x => x.id)); yoLog(s, a.k, "crit", "物差し「" + (c ? c.name : "?") + "」を世論から外した"); }
+        else { const xo = (r.xopts || []).find(o => o.id === v), nm = xo ? xo.x : ((ideasOf(s, g || { debates: [] }).find(x => x.id === v) || {}).x || "?"); if (xo) xo.del = true; else (r.optOff = r.optOff || {})[v] = true; r.yo = r.yo || {}; yoRenorm(r.yo, optsOf(s, g || { debates: [] }, r).map(x => x.id)); if (r.vopts) r.vopts = r.vopts.filter(id => id !== v); yoLog(s, a.k, "opt", "案「" + cut(nm, 16) + "」を世論から外した"); } }); return; }
+    case "yoback": { const a = U.arg; mut(() => { const r = resOf(s, a.k); if (a.kind === "crit") { delete (r.ycOff || {})[v]; if (r.yc && Object.keys(r.yc).length) r.yc[v] = 0; } else { delete (r.optOff || {})[v]; if (r.yo && Object.keys(r.yo).length) r.yo[v] = 0; } }); return; }
     case "xopt": { const x = (prompt("案を書く") || "").trim(); if (!x) return; mut(() => { const r = resOf(s, b.dataset.hk); (r.xopts = r.xopts || []).push({ id: "x" + rid(), x }); }); return; }
     case "gw": mut(() => { const r = resOf(s, b.dataset.hk); goalOf(r).w[b.dataset.hd] = +v; }); return;
     case "gbasis": mut(() => { const gl = goalOf(resOf(s, b.dataset.hk)); gl.basis[v] = !gl.basis[v]; }); return;
@@ -6803,7 +6829,7 @@ function onClick(ev){
 // 世論の変化を発言録に残す(理由はなくてよい)
 function yoCommit(s){
   const a = U.arg; if (!a || !s) return;
-  const g = groups(s).find(x => x.key === a.k), r = resOf(s, a.k), items = a.kind === "crit" ? crits().map(c => ({ id: c.id, x: c.name })) : optsOf(s, g || { debates: [] }, r);
+  const g = groups(s).find(x => x.key === a.k), r = resOf(s, a.k), items = a.kind === "crit" ? critItems(r) : optsOf(s, g || { debates: [] }, r);
   const map = a.kind === "crit" ? r.yc : r.yo, diff = yoDiff(a.before || {}, map || {}, items); if (!diff) return;
   const cp = curPart(s), d = cp && cp.d && s.debates[cp.d] || (g && g.debates[0]); if (!d) return;
   mut(() => { d.e.push({ id: rid(), k: "yoron", kind: a.kind, diff, x: (a.why || "").trim(), snap: JSON.parse(JSON.stringify(map)), at: now() }); }, { render: false });
@@ -6844,6 +6870,7 @@ function onKey(ev){
   if (t.id === "hy-dtitle") { ev.preventDefault(); t.blur(); return; }
   if (t.id === "hy-ttx") { ev.preventDefault(); $("[data-ha=ttlsave]").click(); return; }
   if (t.id === "hy-nexttitle") { ev.preventDefault(); t.blur(); return; }
+  if (t.id === "hy-yonew") { ev.preventDefault(); const b = $("[data-ha=yonew]"); b && b.click(); return; }
   if (t.id === "hy-newreason") { ev.preventDefault(); $("[data-ha=addreason]").click(); return; }
   if (t.id === "hy-reasonedit") { ev.preventDefault(); $("[data-ha=reasonsave]").click(); return; }
   if (t.classList && t.classList.contains("noin")) { ev.preventDefault(); $("[data-ha=editno]").click(); return; }
