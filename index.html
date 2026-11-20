@@ -837,7 +837,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .yr .ch span{text-align:right}
 #hy .bubs{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.5rem;padding:.7rem .6rem .8rem}
 #hy .bb{position:relative;border-radius:50%;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 12%,var(--white));color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.3rem;line-height:1.2;text-align:center;font-family:inherit;cursor:pointer;transition:width .25s,height .25s}
-#hy .bb.top{background:color-mix(in srgb,var(--c) 24%,var(--white));box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent)}
+#hy .bb.lead{background:color-mix(in srgb,var(--c) 24%,var(--white));box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent)}
 #hy .bb b{font-size:.92rem;color:var(--c)}
 #hy .bb span{font-size:.62rem;font-weight:700;word-break:break-all;line-height:1.15}
 #hy .bb .who{display:flex;gap:2px;margin-top:2px}
@@ -896,6 +896,8 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .tflow{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem .2rem;margin:.1rem 0 .3rem}
 #hy .tflow span{font-size:.7rem;font-weight:700;padding:.15rem .45rem;border-radius:6px;background:color-mix(in srgb,var(--c) 13%,var(--white));color:var(--c);border-left:3px solid var(--c)}
 #hy .tflow i{font-style:normal;font-size:.65rem;color:var(--faint)}
+#hy .pconly{display:none}
+@media (min-width:1000px){#hy .sv.talk>.top>.wrap{max-width:1100px}#hy .sv.talk>.wrap{max-width:1100px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:0 20px;align-items:start}#hy .sv.talk>.wrap>.body{grid-column:1;grid-row:1;padding-bottom:2rem}#hy .sv.talk>.wrap>.spacer{display:none}#hy .sv.talk>.wrap>.dock{position:sticky;top:var(--toph,96px);grid-column:2;grid-row:1;height:calc(100vh - var(--toph,96px));left:auto;right:auto;bottom:auto;z-index:5;pointer-events:auto;display:flex;flex-direction:column}#hy .sv.talk>.wrap>.dock>.wrap{background:none;padding:.7rem 16px 16px 0;max-width:none;margin:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:flex-end}#hy .sv.talk>.wrap>.dock>.wrap>*{flex:none}#hy .sv.talk .pconly{display:block;flex:0 1 auto!important;min-height:0;overflow-y:auto;scrollbar-width:thin}#hy .sv.talk .inp.tall textarea{min-height:5.5rem}#hy .sv.talk .mbonly{display:none}#hy .sv.talk .pconly .card{margin-bottom:.6rem}#hy .sv.talk .pconly .bubs{padding:.5rem .4rem .6rem;gap:.35rem}#hy .sv.talk .seats{flex-wrap:wrap;overflow:visible;white-space:normal}}
 body.hy-full{padding-bottom:0!important}
 body.hy-full nav.tabs{display:none!important}
 body.hy-full>.wrap{max-width:none;padding:0}
@@ -957,7 +959,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r119";
+const APP_VERSION = "2026-11-20 r120";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5346,7 +5348,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h4.13";
+const APP_VERSION = "h4.14";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -5793,7 +5795,7 @@ function yoBubbles(items, map, k, kind){
   const ids = items.map(x => x.id), has = ids.every(id => map && map[id] != null);
   const top = has ? ids.slice().sort((a, b) => map[b] - map[a])[0] : null;
   return '<div class="bubs">' + items.map((x, i) => { const v = has ? map[x.id] : null, size = has ? 62 + Math.sqrt(v) * 6.5 : 68, col = GCOL[i % GCOL.length];
-    return '<button class="bb' + (x.id === top ? " top" : "") + '" style="--c:' + col + ";width:" + size + "px;height:" + size + 'px" data-ha="yo" data-hk="' + esc(k) + '" data-hd="' + kind + '" data-hv="' + esc(x.id) + '"><b>' + (has ? v + "%" : "?") + "</b><span>" + esc(cut(x.x || x.name, 12)) + "</span>" + (x.who && x.who.length ? '<span class="who">' + x.who.map(m => '<i style="--wc:' + m.c + '">' + esc(m.s) + "</i>").join("") + "</span>" : "") + "</button>"; }).join("") + "</div>";
+    return '<button class="bb' + (x.id === top ? " lead" : "") + '" style="--c:' + col + ";width:" + size + "px;height:" + size + 'px" data-ha="yo" data-hk="' + esc(k) + '" data-hd="' + kind + '" data-hv="' + esc(x.id) + '"><b>' + (has ? v + "%" : "?") + "</b><span>" + esc(cut(x.x || x.name, 12)) + "</span>" + (x.who && x.who.length ? '<span class="who">' + x.who.map(m => '<i style="--wc:' + m.c + '">' + esc(m.s) + "</i>").join("") + "</span>" : "") + "</button>"; }).join("") + "</div>";
 }
 /* 案を推している議員(その案に「案」を付けた議員と、案を支える発言の議員) */
 function whoFor(s, g, optId){ const out = []; g.debates.forEach(d => d.e.forEach(e => { if (e.id === optId && e.m) { const m = memberOf(e.m); if (!out.includes(m)) out.push(m); } })); const c = (s.consult.ans || []).find(e => e.id === optId); if (c && !out.includes(CLAUDE)) out.push(CLAUDE); return out; }
@@ -5913,6 +5915,7 @@ function render(){
   else { U.view = "home"; app.innerHTML = viewHome(); }
   $("#hy-sheet").innerHTML = U.sheet ? viewSheet() : "";
   const dock = $(".dock"); const sp = $(".spacer"); if (dock && sp) sp.style.setProperty("--sp", (dock.offsetHeight + 12) + "px");
+  const sv = $(".sv"), tp = $(".sv>.top"); if (sv && tp) sv.style.setProperty("--toph", tp.offsetHeight + "px");
   if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
   if (aid) { const n = document.getElementById(aid); if (n && n !== ae && document.activeElement !== n) { n.focus({ preventScroll: true }); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
   tick(true);
@@ -5940,7 +5943,7 @@ function viewSession(){
   let body = "";
   try { body = ({ place: partPlace, verify: partVerify, pick: partPick, debate: partDebate, goal: partDebate, compare: partCompare, verdict: partVerdict, consult: partConsult, resolve: partResolve, close: partClose })[cp.t](s, cp, idx, on.length, nx); }
   catch (e) { body = '<div class="body"><div class="card"><div class="cb">表示でつまずきました:' + esc(e.message) + "</div></div></div>"; console.error(e); }
-  return '<div style="--pc:' + pc + ";--nc:" + nc + '">' + top + '<div class="wrap">' + body + "</div></div>";
+  return '<div class="sv' + (cp.t === "debate" || cp.t === "goal" ? " talk" : "") + '" style="--pc:' + pc + ";--nc:" + nc + '">' + top + '<div class="wrap">' + body + "</div></div>";
 }
 function ptitle(p, idx, total, desc){ return '<div class="ptitle"><small>' + idx + " / " + total + "</small><h2>" + esc(T[p.t].n) + "</h2>" + (desc ? "<p>" + desc + "</p>" : "") + "</div>"; }
 function foot(s, nx, label, sub, extra, stay){
@@ -6060,10 +6063,12 @@ function partDebate(s, p, i, n, nx){
   if (seat === "sh") inp = '<div class="inp tall" style="--c:#22201C"><textarea id="hy-comp" rows="3" placeholder="' + ({ fact: "議長として:わかっている事実を置く", q: "議長として:いま何を決めるのか、問いを出す", sum: "議長として:ここまでを整理する(議決に出る)" })[sm] + '…" data-hdk="' + dk + '">' + esc(draft) + '</textarea><div class="bot"><span class="cmpk">' + [["fact", "事実"], ["q", "問い"], ["sum", "整理"]].map(([k, l]) => '<button class="' + (sm === k ? "on" : "") + '" data-ha="smode" data-hv="' + k + '">' + l + "</button>").join("") + '</span><button class="send" data-ha="post">書く</button></div></div>';
   else { const m = memberOf(seat); inp = '<div class="inp" style="--c:' + m.c + '"><input id="hy-comp" placeholder="' + esc(m.name) + 'として発言…" data-hdk="' + dk + '" value="' + esc(draft) + '" enterkeyhint="send"><span class="tgs">' + TAGS.map(([t, c]) => '<button class="' + c + (U.tag === t ? " on" : "") + '" data-ha="tag" data-hv="' + t + '">' + t + "</button>").join("") + '</span><button class="send" data-ha="post">発言</button></div>'; }
   const sub = !hasSum && d.e.length ? "まとめがまだ" + (U.nextArm === p.id ? "・もう一度押すと進む" : "") : (hasSum ? "まとめが書けた" : "");
-  if (isGoal) return '<div class="body" style="padding-top:.7rem">' + issue + recap + yoCard(s, gObj, rr, "crit") + log + goalCard(s, gObj, rr) + "</div>" +
-    foot(s, nx, nextLabel(s, nx), goalOf(rr).text ? ((goalOf(rr).reason || "").trim() ? "目的と重みが決まった" : "理由がまだ") : "目的がはっきりしていれば、一行で次へ", seatsHTML + inp + '<div style="height:.45rem"></div>');
-  return '<div class="body" style="padding-top:.7rem">' + issue + recap + tray + yoCard(s, gObj, rr, "opt") + log + closeCard + "</div>" +
-    foot(s, nx, nextLabel(s, nx), sub, seatsHTML + inp + '<div style="height:.45rem"></div>');
+  // 世論は、スマホでは発言録の上、PC では右の列(入力欄の上)に出す
+  const yo = yoCard(s, gObj, rr, isGoal ? "crit" : "opt"), yoM = '<div class="mbonly">' + yo + "</div>", yoP = '<div class="pconly">' + yo + "</div>";
+  if (isGoal) return '<div class="body" style="padding-top:.7rem">' + issue + recap + yoM + log + goalCard(s, gObj, rr) + "</div>" +
+    foot(s, nx, nextLabel(s, nx), goalOf(rr).text ? ((goalOf(rr).reason || "").trim() ? "目的と重みが決まった" : "理由がまだ") : "目的がはっきりしていれば、一行で次へ", yoP + seatsHTML + inp + '<div style="height:.45rem"></div>');
+  return '<div class="body" style="padding-top:.7rem">' + issue + recap + tray + yoM + log + closeCard + "</div>" +
+    foot(s, nx, nextLabel(s, nx), sub, yoP + seatsHTML + inp + '<div style="height:.45rem"></div>');
 }
 /* 5 Claude 相談 */
 function partConsult(s, p, i, n, nx){
