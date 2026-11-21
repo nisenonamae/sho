@@ -101,11 +101,11 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .bd u{position:absolute;height:9px;border-radius:4px;background:rgba(255,255,255,.38);box-shadow:inset 0 0 0 1px rgba(255,255,255,.5)}
 .bd s{position:absolute;bottom:5px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:#fff;opacity:.9}
 .cht.draw .bd{pointer-events:none}
-.pn{position:absolute;transform:translateX(-50%);border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;cursor:pointer;--c:#3F7A55}
+.pn{position:absolute;transform:translateX(-7px);border:0;background:none;padding:0;display:flex;flex-direction:row;align-items:center;height:28px;cursor:pointer;--c:#3F7A55}.pn.big{transform:translateX(-14px)}.chp.nolab .pn{height:14px;transform:translateX(-50%)}
 .pn.kw{--c:#2F4F8A}.pn.kh{--c:#8A5A9A}
-.pn i{font-style:normal;width:12px;height:12px;border-radius:50%;background:#fff;border:2.5px solid var(--c);display:flex;align-items:center;justify-content:center}
+.pn i{flex:none;font-style:normal;width:14px;height:14px;border-radius:50%;background:#fff;border:2.5px solid var(--c);display:flex;align-items:center;justify-content:center}
 .pn.big i{width:27px;height:27px;font-size:13px;box-shadow:0 2px 4px rgba(0,0,0,.2)}
-.pn span{font-size:.58rem;font-weight:500;background:rgba(255,255,255,.94);border-radius:5px;padding:0 .3rem;margin-top:2px;white-space:nowrap;color:var(--ink)}.pn.big span{font-weight:800}
+.pn span{font-size:.66rem;font-weight:500;background:#fff;border:1.5px solid var(--c);border-left:0;border-radius:0 8px 8px 0;padding:.05rem .45rem .05rem .5rem;margin-left:-5px;white-space:nowrap;color:var(--ink);line-height:1.5}.pn i{position:relative;z-index:1}.pn.big span{font-weight:800}
 .tdl{position:absolute;top:30px;bottom:0;width:2px;background:#B8432F;pointer-events:none}.tdl em{position:absolute;top:2px;left:5px;font-style:normal;font-size:.6rem;font-weight:900;color:#B8432F;white-space:nowrap}
 .pkl{position:absolute;top:30px;bottom:0;background:rgba(34,32,28,.16);pointer-events:none}
 .npk span{display:flex;gap:.3rem}
@@ -113,6 +113,7 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .sw{display:flex;gap:.4rem;flex-wrap:wrap}.sw button{width:2.1rem;height:2.1rem;border-radius:50%;border:3px solid transparent;cursor:pointer}.sw button.on{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
 .pmore{position:absolute;transform:translateX(-50%);border:1.5px solid var(--ink);border-radius:999px;background:var(--white);font-size:.62rem;font-weight:800;padding:.1rem .55rem;cursor:pointer;white-space:nowrap}
 .chp.nolab .pn.big i{width:17px;height:17px;font-size:9px;box-shadow:none}
+.chp{z-index:2}.chb{z-index:1}
 </style>
 </head>
 <body>
@@ -120,7 +121,7 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 <script>
 "use strict";
 /* 史記 — 毎日の情勢(出来事・行動)と主観(心の中)を記し、年表で眺める */
-const VER = "s1.21";
+const VER = "s1.22";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -224,14 +225,14 @@ function viewChron(all){
     bh += '<button class="bd' + (b.to ? "" : " open") + '" data-ha="bopen" data-hv="' + b.id + '" style="left:' + x0 + "px;top:" + (y * LH + 6) + "px;width:" + w + "px;height:" + (h * LH - 8) + "px;background:" + c + '"><b>' + esc(b.n) + "</b><small>" + mdS(b.from) + "〜" + (b.to ? mdS(b.to) : "いま") + (ks.length ? "・中に帯 " + ks.length : "") + (inside.length ? "・印 " + inside.length : "") + "</small>" + mini + "</button>"; });
   // 印(重ならないように段を分ける)
   const lab = dw >= 12, rows = []; let ph = "";
-  const MAXR = 6, over = {}, bucket = d => dw >= 40 ? d : dw >= 12 ? monOf(d) : d.slice(0, 7) + "-01";
-  pins.slice().sort((p, q) => (tops[q.day] === q.id ? 1 : 0) - (tops[p.day] === p.id ? 1 : 0) || (p.day < q.day ? -1 : 1)).forEach(x => { const big = tops[x.day] === x.id, cx = X(x.day) + dw / 2, wd = lab ? Math.min(150, nTitle(x, 12).length * 11 + 16) : 14, l = cx - wd / 2, r = cx + wd / 2; let k = 0; while (k < MAXR && rows[k] != null && rows[k].some(([a, b2]) => a < r + 4 && b2 > l - 4)) k++;
+  const RH = lab ? 34 : 20, MAXR = lab ? 8 : 6, over = {}, bucket = d => dw >= 40 ? d : dw >= 12 ? monOf(d) : d.slice(0, 7) + "-01";
+  pins.slice().sort((p, q) => (tops[q.day] === q.id ? 1 : 0) - (tops[p.day] === p.id ? 1 : 0) || (p.day < q.day ? -1 : 1)).forEach(x => { const big = tops[x.day] === x.id, cx = X(x.day) + dw / 2, wd = lab ? Math.min(170, nTitle(x, 12).length * 11.5 + 14) : 0, l = cx - (big ? 15 : 8), r = cx + (big ? 15 : 8) + wd; let k = 0; while (k < MAXR && rows[k] != null && rows[k].some(([a, b2]) => a < r + 4 && b2 > l - 4)) k++;
     if (k >= MAXR) { const g = bucket(x.day); over[g] = (over[g] || 0) + 1; return; } (rows[k] = rows[k] || []).push([l, r]);
-    ph += '<button class="pn k' + kindOf(x) + (big ? " big" : "") + '" data-ha="edit" data-hv="' + x.id + '" style="left:' + cx.toFixed(1) + "px;top:" + (k * (lab ? 50 : 20) + 8) + 'px"><i>' + (big ? emoOf(x) : "") + "</i>" + (lab ? "<span>" + esc(nTitle(x, 12)) + "</span>" : "") + "</button>"; });
+    ph += '<button class="pn k' + kindOf(x) + (big ? " big" : "") + '" data-ha="edit" data-hv="' + x.id + '" style="left:' + cx.toFixed(1) + "px;top:" + (k * RH + 8) + 'px"><i>' + (big ? emoOf(x) : "") + "</i>" + (lab ? "<span>" + esc(nTitle(x, 12)) + "</span>" : "") + "</button>"; });
   const rowsN = Math.max(1, rows.length), hasOver = Object.keys(over).length > 0;
   Object.entries(over).forEach(([g, n]) => { const g2 = dw >= 40 ? g : dw >= 12 ? addDays(g, 6) : ymd(new Date(+g.slice(0, 4), +g.slice(5, 7), 0)), gx = (Math.max(0, X(g)) + Math.min(W, X(g2) + dw)) / 2;
-    ph += '<button class="pmore" data-ha="list" data-hv="' + g + "|" + g2 + "|" + (cur ? cur.id : "") + '" style="left:' + gx.toFixed(1) + "px;top:" + (rowsN * (lab ? 50 : 20) + 8) + 'px">ほか ' + n + "</button>"; });
-  const bandsH = lanes * LH + 8, pinsH = rowsN * (lab ? 50 : 20) + (hasOver ? 46 : 20), tdx = td >= from && td <= to ? X(td) + dw / 2 : -1;
+    ph += '<button class="pmore" data-ha="list" data-hv="' + g + "|" + g2 + "|" + (cur ? cur.id : "") + '" style="left:' + gx.toFixed(1) + "px;top:" + (rowsN * RH + 8) + 'px">ほか ' + n + "</button>"; });
+  const bandsH = lanes * LH + 8, pinsH = rowsN * RH + (hasOver ? 46 : 20), tdx = td >= from && td <= to ? X(td) + dw / 2 : -1;
   const path = cur ? bPath(cur.id) : [];
   const head = '<div class="crumb"><button data-ha="bgo" data-hv=""' + (cur ? "" : ' class="on"') + ">全体</button>" + path.map((b, i) => "<i>›</i><button data-ha=\"bgo\" data-hv=\"" + b.id + '"' + (i === path.length - 1 ? ' class="on"' : "") + ">" + esc(cut(b.n, 12)) + "</button>").join("") + "</div>" +
     (cur ? '<div class="curb" style="--c:' + (cur.c || BCOL[0]) + '"><div><b>' + esc(cur.n) + "</b><span>" + md(cur.from) + " 〜 " + (cur.to ? md(cur.to) : "いまも続いている") + '</span></div><button data-ha="bedit" data-hv="' + cur.id + '">この帯を直す</button></div>' : "") +
