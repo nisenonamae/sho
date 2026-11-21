@@ -114,14 +114,28 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .pmore{position:absolute;transform:translateX(-50%);border:1.5px solid var(--ink);border-radius:999px;background:var(--white);font-size:.62rem;font-weight:800;padding:.1rem .55rem;cursor:pointer;white-space:nowrap}
 .chp.nolab .pn.big i{width:17px;height:17px;font-size:9px;box-shadow:none}
 .chp{z-index:2}.chb{z-index:1}
+.chp{background:linear-gradient(transparent calc(100% - 6px),#D6CDB8 calc(100% - 6px))}
+.tc,.tt,.tb,.tmore{position:absolute;border:0;padding:0;cursor:pointer;font-family:inherit}
+.tc{height:58px;background:#fff;border-radius:9px;border-top:5px solid var(--c);box-shadow:0 1px 4px rgba(0,0,0,.16);display:flex;gap:.25rem;align-items:flex-start;padding:.2rem .3rem;text-align:left;overflow:hidden}
+.tc i{font-style:normal;font-size:1.15rem;line-height:1.2;flex:none}.tc span{font-size:.62rem;line-height:1.35;color:var(--ink);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.tc.big{background:var(--c)}.tc.big span{color:#fff;font-weight:800}
+.tt{border-radius:7px;background:color-mix(in srgb,var(--c) 16%,#fff);box-shadow:inset 0 0 0 1.5px var(--c);font-size:.82rem;line-height:1;display:flex;align-items:center;justify-content:center}
+.tt.big{background:var(--c);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.tb{height:6px;border-radius:1.5px;background:var(--c);opacity:.78}.tb.big{opacity:1;box-shadow:0 0 0 1px #22201C}
+.tmore{border-radius:7px;background:var(--ink);color:#fff;font-size:.56rem;font-weight:800;display:flex;align-items:center;justify-content:center}.tmore.b{border-radius:1.5px}
+.tt:hover,.tc:hover,.tb:hover{transform:translateY(-2px);filter:brightness(1.05)}
+#tip{position:fixed;z-index:50;display:none;max-width:16rem;background:var(--ink);color:#fff;border-radius:9px;padding:.35rem .6rem;font-size:.74rem;line-height:1.5;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.25)}#tip.on{display:block}
+@media (hover:none){#tip{display:none!important}}
+.bnone{margin:0;padding:1.1rem .8rem;font-size:.68rem;color:var(--faint);position:sticky;left:0;width:max-content}
+.chb{background:rgba(34,32,28,.035)}
 </style>
 </head>
 <body>
-<div id="app"></div><div id="sheet"></div><div id="toast" role="status"></div>
+<div id="app"></div><div id="sheet"></div><div id="tip"></div><div id="toast" role="status"></div>
 <script>
 "use strict";
 /* 史記 — 毎日の情勢(出来事・行動)と主観(心の中)を記し、年表で眺める */
-const VER = "s1.23";
+const VER = "s1.30";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -213,7 +227,7 @@ function viewChron(all){
   else { const ds = all.map(x => x.day).concat(bandList().map(b => b.from)); from = ds.length ? ds.sort()[0] : td; to = td; from = addDays(from, -2); to = addDays(to, 4); }
   const span = daysBetween(from, to) + 1, vw = Math.min(window.innerWidth, 760) - 34;
   let z = U.z; if (!["f", "d", "w", "m"].includes(z)) z = "w"; if (!cur && z === "f") z = "w";
-  const dw = z === "d" ? 64 : z === "w" ? 22 : z === "m" ? 6 : Math.max(4, Math.min(90, vw / span)), W = Math.max(vw, span * dw), X = d => daysBetween(from, d) * dw;
+  const dw = z === "d" ? 104 : z === "w" ? 26 : z === "m" ? 7 : Math.max(4, Math.min(90, vw / span)), W = Math.max(vw, span * dw), X = d => daysBetween(from, d) * dw;
   // 目もり
   let ax = "", gl = ""; const step = dw >= 40 ? 1 : dw >= 12 ? 7 : 0;
   for (let i = 0, d = from; i < span; i++, d = addDays(d, 1)) { const dt = new Date(d + "T00:00:00"), mark = step === 1 || (step === 7 && dt.getDay() === 1) || (step === 0 && dt.getDate() === 1) || i === 0 && cur;
@@ -225,16 +239,16 @@ function viewChron(all){
       (() => { const cnt = {}, px = Math.max(1, w / 5); inside.forEach(x => { const k = Math.min(Math.floor(px) - 1, Math.max(0, Math.floor((daysBetween(b.from, x.day) + .5) / bs * px))); cnt[k] = (cnt[k] || 0) + 1; });
         return Object.entries(cnt).map(([k, n]) => '<s style="left:' + ((+k + .5) / px * 100).toFixed(1) + "%" + (n > 1 ? ";height:" + Math.min(22, 5 + n * 2) + "px;border-radius:3px" : "") + '"></s>').join(""); })();
     bh += '<button class="bd' + (b.to ? "" : " open") + '" data-ha="bopen" data-hv="' + b.id + '" style="left:' + x0 + "px;top:" + (y * LH + 6) + "px;width:" + w + "px;height:" + (h * LH - 8) + "px;background:" + c + '"><b>' + esc(b.n) + "</b><small>" + mdS(b.from) + "〜" + (b.to ? mdS(b.to) : "いま") + (ks.length ? "・中に帯 " + ks.length : "") + (inside.length ? "・印 " + inside.length : "") + "</small>" + mini + "</button>"; });
-  // 印(重ならないように段を分ける)
-  const lab = dw >= 12, rows = []; let ph = "";
-  const RH = lab ? 34 : 20, MAXR = lab ? 8 : 6, over = {}, bucket = d => dw >= 40 ? d : dw >= 12 ? monOf(d) : d.slice(0, 7) + "-01";
-  pins.slice().sort((p, q) => (tops[q.day] === q.id ? 1 : 0) - (tops[p.day] === p.id ? 1 : 0) || (p.day < q.day ? -1 : 1)).forEach(x => { const big = tops[x.day] === x.id, cx = X(x.day) + dw / 2, show = dw >= 40 || (lab && big), wd = show ? textW(nTitle(x, 12), big) + 18 : 0, l = cx - (big ? 15 : 8), r = cx + (big ? 15 : 8) + wd; let k = 0; while (k < MAXR && rows[k] != null && rows[k].some(([a, b2]) => a < r + 4 && b2 > l - 4)) k++;
-    if (k >= MAXR) { const g = bucket(x.day); over[g] = (over[g] || 0) + 1; return; } (rows[k] = rows[k] || []).push([l, r]);
-    ph += '<button class="pn k' + kindOf(x) + (big ? " big" : "") + '" data-ha="edit" data-hv="' + x.id + '" style="left:' + cx.toFixed(1) + "px;top:" + (k * RH + 8) + 'px"><i>' + (big ? emoOf(x) : "") + "</i>" + (show ? "<span>" + esc(nTitle(x, 12)) + "</span>" : "") + "</button>"; });
-  const rowsN = Math.max(1, rows.length), hasOver = Object.keys(over).length > 0;
-  Object.entries(over).forEach(([g, n]) => { const g2 = dw >= 40 ? g : dw >= 12 ? addDays(g, 6) : ymd(new Date(+g.slice(0, 4), +g.slice(5, 7), 0)), gx = (Math.max(0, X(g)) + Math.min(W, X(g2) + dw)) / 2;
-    ph += '<button class="pmore" data-ha="list" data-hv="' + g + "|" + g2 + "|" + (cur ? cur.id : "") + '" style="left:' + gx.toFixed(1) + "px;top:" + (rowsN * RH + 8) + 'px">ほか ' + n + "</button>"; });
-  const bandsH = lanes * LH + 8, pinsH = rowsN * RH + (hasOver ? 46 : 20), tdx = td >= from && td <= to ? X(td) + dw / 2 : -1;
+  // 記したもの(主役):日ごとに下から積む。日=字の入った札、週=絵の札、月=積み木
+  const mode = dw >= 80 ? "c" : dw >= 20 ? "t" : "b", TH = mode === "c" ? 62 : mode === "t" ? dw : 7, MAXS = mode === "c" ? 7 : mode === "t" ? 12 : 26, byDay = {}; let ph = "", maxS = 1;
+  pins.forEach(x => { (byDay[x.day] = byDay[x.day] || []).push(x); });
+  Object.entries(byDay).forEach(([d, xs]) => { const x0 = X(d), shown = xs.length > MAXS ? xs.slice(0, MAXS - 1) : xs, more = xs.length - shown.length; maxS = Math.max(maxS, shown.length + (more ? 1 : 0));
+    shown.forEach((x, k) => { const big = tops[d] === x.id, kc = kInfo(kindOf(x)).c, tip = esc(mdS(d) + " " + kInfo(kindOf(x)).n + ":" + cut(String(x.x || "").replace(/\n/g, " "), 70));
+      ph += mode === "c" ? '<button class="tc' + (big ? " big" : "") + '" data-ha="edit" data-hv="' + x.id + '" style="left:' + (x0 + 3) + "px;bottom:" + (k * TH + 6) + "px;width:" + (dw - 6) + "px;--c:" + kc + '"><i>' + emoOf(x) + "</i><span>" + esc(cut(String(x.x || "").replace(/\n/g, " "), 26)) + "</span></button>"
+        : mode === "t" ? '<button class="tt' + (big ? " big" : "") + '" data-ha="edit" data-hv="' + x.id + '" data-tip="' + tip + '" style="left:' + (x0 + 1) + "px;bottom:" + (k * TH + 6) + "px;width:" + (dw - 2) + "px;height:" + (dw - 2) + "px;--c:" + kc + '">' + emoOf(x) + "</button>"
+        : '<button class="tb' + (big ? " big" : "") + '" data-ha="list" data-hv="' + d.slice(0, 7) + "-01|" + ymd(new Date(+d.slice(0, 4), +d.slice(5, 7), 0)) + "|" + (cur ? cur.id : "") + '" data-tip="' + tip + '" style="left:' + (x0 + .5) + "px;bottom:" + (k * TH + 6) + "px;width:" + (dw - 1) + "px;--c:" + kc + '"></button>'; });
+    if (more) ph += '<button class="tmore' + (mode === "b" ? " b" : "") + '" data-ha="list" data-hv="' + d + "|" + d + "|" + (cur ? cur.id : "") + '" data-tip="' + esc(mdS(d) + " ほか " + more + " 件") + '" style="left:' + (x0 + 1) + "px;bottom:" + (shown.length * TH + 6) + "px;width:" + (dw - 2) + "px;height:" + (mode === "c" ? 22 : mode === "t" ? dw - 2 : 6) + 'px">' + (mode === "b" ? "" : "+" + more) + "</button>"; });
+  const bandsH = lanes * LH + 8, pinsH = maxS * TH + 26, tdx = td >= from && td <= to ? X(td) + dw / 2 : -1;
   const path = cur ? bPath(cur.id) : [];
   const head = '<div class="crumb"><button data-ha="bgo" data-hv=""' + (cur ? "" : ' class="on"') + ">全体</button>" + path.map((b, i) => "<i>›</i><button data-ha=\"bgo\" data-hv=\"" + b.id + '"' + (i === path.length - 1 ? ' class="on"' : "") + ">" + esc(cut(b.n, 12)) + "</button>").join("") + "</div>" +
     (cur ? '<div class="curb" style="--c:' + (cur.c || BCOL[0]) + '"><div><b>' + esc(cur.n) + "</b><span>" + md(cur.from) + " 〜 " + (cur.to ? md(cur.to) : "いまも続いている") + '</span></div><button data-ha="bedit" data-hv="' + cur.id + '">この帯を直す</button></div>' : "") +
@@ -242,9 +256,9 @@ function viewChron(all){
     (pk ? '<div class="npk"><b>' + (pk.from ? "終わりの日を押す" : "年表の上で、始まりの日を押す") + "</b><span>" + (pk.from ? '<button data-ha="bnow">いまも続く</button> ' : "") + '<button data-ha="bcancel">やめる</button></span></div>' : "");
   const body = '<div class="cht' + (pk ? " draw" : "") + '" id="sk-tl" data-td="' + tdx + '" data-z="' + z + (cur ? cur.id : "") + '"><div class="chin" style="width:' + W + "px;height:" + (30 + bandsH + pinsH) + 'px" data-from="' + from + '" data-dw="' + dw + '"><div class="chax">' + ax + '</div><div class="chgl">' + gl + "</div>" +
     (pk && pk.from ? '<div class="pkl" style="left:' + X(pk.from) + "px;width:" + dw + 'px"></div>' : "") +
-    '<div class="chb" style="top:30px;height:' + bandsH + 'px">' + bh + '</div><div class="chp' + (lab ? "" : " nolab") + '" style="top:' + (30 + bandsH) + "px;height:" + pinsH + 'px">' + ph + "</div>" + (tdx >= 0 ? '<div class="tdl" style="left:' + tdx + 'px"><em>今日</em></div>' : "") + "</div></div>";
+    '<div class="chp" style="top:30px;height:' + pinsH + 'px">' + ph + '</div><div class="chb" style="top:' + (30 + pinsH) + "px;height:" + bandsH + 'px">' + (bh || '<p class="bnone">ここに、あとからふり返って時代や取り組みの帯を引ける。</p>') + "</div>" + (tdx >= 0 ? '<div class="tdl" style="left:' + tdx + 'px"><em>今日</em></div>' : "") + "</div></div>";
   return head + body + '<div class="links" style="margin-top:.6rem"><button data-ha="bdraw">' + (cur ? "この中に帯を引く" : "帯を引く(時代・取り組み)") + "</button><span></span></div>" +
-    '<p class="note" style="margin:.6rem 2px 0">帯を押すと、その中の年表が開く。印を押すと、中身を読んで、入れる帯を選べる。</p>';
+    '<p class="note" style="margin:.6rem 2px 0">記したものは、その日の上に積まれていく。押すと読めて、入れる帯を選べる。帯は、あとから時代をふり返って引くもの。</p>';
 }
 function sheetBand(){ const b = D.bands[(U.arg || {}).id]; if (!b) return "";
   return sheetWrap("<h3>帯を直す</h3>" + '<input class="fi" data-hin="bn" data-hv="' + b.id + '" value="' + esc(b.n) + '" placeholder="名前">' +
@@ -290,6 +304,8 @@ function render(){
   else if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
   if (aid) { const n = document.getElementById(aid); if (n && n !== ae) { n.focus({ preventScroll: true }); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
 }
+document.addEventListener("mouseover", ev => { const t = ev.target.closest && ev.target.closest("[data-tip]"), tip = $("#tip"); if (!tip) return; if (!t) { tip.classList.remove("on"); return; }
+  tip.textContent = t.dataset.tip; tip.classList.add("on"); const r = t.getBoundingClientRect(), w = tip.offsetWidth; tip.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px"; tip.style.top = Math.max(8, r.top - tip.offsetHeight - 8) + "px"; });
 let toastT = null;
 function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1600); }
 
@@ -334,7 +350,7 @@ function bandMake(from, to){ const cur = U.band ? D.bands[U.band] : null; if (to
   const n = (prompt("この帯の名前(時代・取り組みの名前)") || "").trim(); U.draw = null; if (!n) { render(); return; }
   mut(() => { const id = rid(), par = cur ? cur.id : null, base = cur ? (cur.c || BCOL[0]) : BCOL[kidsOf(null).length % BCOL.length];
     D.bands[id] = { id, n, from, to, parent: par, c: cur ? tint(base, 0.28) : base, y: freeLane(par, from, to || today()), h: 1, u: now() }; }); toast("帯を引いた"); }
-document.addEventListener("click", ev => { if (!U.draw || U.tab !== "n") return; const inn = ev.target.closest(".chin"); if (!inn || ev.target.closest(".pn")) return;
+document.addEventListener("click", ev => { if (!U.draw || U.tab !== "n") return; const inn = ev.target.closest(".chin"); if (!inn || ev.target.closest(".tc,.tt,.tb,.tmore")) return;
   const r = inn.getBoundingClientRect(), d = addDays(inn.dataset.from, Math.max(0, Math.floor((ev.clientX - r.left) / +inn.dataset.dw))), day = d > today() ? today() : d;
   if (!U.draw.from) { U.draw.from = day; render(); } else bandMake(U.draw.from, day); });
 document.addEventListener("input", ev => { const t = ev.target, k = t.dataset && t.dataset.hin; if (!k) return;
