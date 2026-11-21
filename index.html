@@ -1130,6 +1130,33 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .nli b{flex:1;font-size:.84rem;line-height:1.6;font-weight:400;white-space:pre-wrap;overflow-wrap:anywhere}
 #hy .nli b.tp{font-weight:800}
 #hy .chip[data-ha=nel].on{background:var(--ink);border-color:var(--ink);color:#fff}
+#hy .nmh{align-items:center}
+#hy .nlead{font-size:.7rem;color:var(--sub);margin:.1rem 2px .4rem}
+#hy .nbar{display:flex;justify-content:space-between;align-items:center;margin:.2rem 0 .5rem}
+#hy .nhb{border:1.5px solid #8A5A9A;border-radius:9px;background:none;color:#8A5A9A;font-size:.72rem;font-weight:800;padding:.25rem .65rem;font-family:inherit;cursor:pointer}
+#hy .nhb.on{background:#8A5A9A;color:#fff}
+#hy .nst{display:flex;flex-direction:column;gap:.4rem;min-height:45vh;justify-content:flex-end;padding-bottom:.6rem}
+#hy .nsd{align-self:center;font-size:.64rem;background:rgba(34,32,28,.12);border-radius:999px;padding:.1rem .75rem;font-weight:700;margin:.4rem 0 .1rem}
+#hy .nsm{align-self:center;border:1.5px dashed var(--rule);background:none;border-radius:999px;padding:.3rem .9rem;font-size:.7rem;color:var(--sub);font-family:inherit;cursor:pointer}
+#hy .nsb{max-width:82%;border:0;text-align:left;font-family:inherit;padding:.45rem .7rem;border-radius:14px;font-size:.88rem;line-height:1.6;cursor:pointer;color:var(--ink)}
+#hy .nsb span{display:block;white-space:pre-wrap;overflow-wrap:anywhere}
+#hy .nsb small{display:block;font-size:.58rem;opacity:.7;margin-top:.1rem}
+#hy .nsb i{display:block;font-style:normal;font-size:.6rem;font-weight:800}
+#hy .nsb.kw{align-self:flex-start;background:#fff;border:1.5px solid #2F4F8A;border-bottom-left-radius:4px}
+#hy .nsb.kw i{color:#2F4F8A}
+#hy .nsb.ka{align-self:flex-end;background:#3F7A55;color:#fff;border-bottom-right-radius:4px}
+#hy .nsb.ka i{color:#fff;opacity:.85}
+#hy .nsb.kh{align-self:flex-end;background:#F3EAF6;border:1.5px dashed #8A5A9A;border-radius:16px;color:#3E2A49}
+#hy .ninp{position:sticky;bottom:var(--navh,0px);z-index:5;background:var(--paper);margin:0 -16px;padding:.5rem 16px .6rem;border-top:1px solid var(--rule)}
+#hy .ninp .r{display:flex;gap:.4rem}
+#hy .ninp textarea{flex:1;min-width:0;resize:none;border:1.5px solid var(--ink);border-radius:12px;padding:.5rem .7rem;font-size:.95rem;line-height:1.5;background:#fff;color:var(--ink);font-family:inherit}
+#hy .ninp .mic{flex:none;width:2.7rem;border:1.5px solid var(--rule);border-radius:12px;background:var(--sheet);font-size:.78rem;font-weight:800;color:var(--ink);font-family:inherit;cursor:pointer}
+#hy .ninp .mic.on{background:var(--ink);color:#fff}
+#hy .ninp .snd{display:flex;gap:.4rem;margin-top:.45rem}
+#hy .ninp .snd button{flex:1;border:0;border-radius:11px;padding:.6rem 0;font-size:.86rem;font-weight:900;color:#fff;background:var(--lc);font-family:inherit;cursor:pointer}
+#hy .ntl .nlane.kh .nch{border-style:dashed;border-radius:12px;background:#F3EAF6}
+#hy .nmh{position:sticky;top:0;z-index:6;background:var(--paper);padding:.35rem 0;margin-bottom:.2rem;display:flex;justify-content:space-between;flex-wrap:nowrap}
+#hy .nmh h2{margin:0}
 body.hy-full{padding-bottom:0!important}
 body.hy-full nav.tabs{display:none!important}
 body.hy-full>.wrap{max-width:none;padding:0}
@@ -1191,7 +1218,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r138";
+const APP_VERSION = "2026-11-20 r139";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5584,7 +5611,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h6.10";
+const APP_VERSION = "h6.20";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6329,25 +6356,24 @@ function newsFront(){
 }
 function nkBadge(k, sm){ const [s, n, c] = nkOf(k); return '<span class="nwb' + (sm ? " sm" : "") + '" style="--c:' + c + '" title="' + n + '">' + s + "</span>"; }
 /* ───────── 報道(歴史を記す) ───────── */
-const DEF_LANES = [{ id: "sei", n: "体制", c: "#2F4F8A" }, { id: "mana", n: "学び", c: "#3F7A55" }, { id: "kura", n: "暮らし", c: "#A9761C" }];
-const LANE_KW = { sei: ["評議会", "省", "憲法", "国力", "行軍表", "大計", "アプリ", "報道", "政府", "首脳", "通知", "栄典", "手順録", "体制", "同期", "実装", "指令", "作戦", "年表"],
-  mana: ["数学", "英語", "青チャート", "Anki", "単語", "文法", "授業", "鉄緑", "復習", "問題", "勉強", "模試", "試験", "読解", "和訳", "英作文", "リスニング", "古文", "漢文", "理科", "物理", "化学", "社会", "現代文", "暗記", "演習", "例題", "過去問"] };
+// 種類:出来事(まわりで起きた)・行動(自分がした)= 情勢。心の中 = 主観
+const NKIND = [{ id: "w", n: "出来事", c: "#2F4F8A" }, { id: "a", n: "行動", c: "#3F7A55" }, { id: "h", n: "心の中", c: "#8A5A9A" }];
 const EMO_KW = [["評議会", "🏛️"], ["憲法", "📜"], ["報道", "📰"], ["年表", "📰"], ["国力", "🧭"], ["大計", "🗺️"], ["行軍表", "🗺️"], ["通知", "🔔"], ["アプリ", "📱"], ["決め", "⚖️"],
   ["青チャート", "📐"], ["数学", "📐"], ["計算", "🧮"], ["リスニング", "🎧"], ["英作文", "✏️"], ["単語", "🔤"], ["英語", "📘"], ["Anki", "🗂"], ["授業", "🏫"], ["模試", "📝"], ["試験", "📝"],
   ["本屋", "📚"], ["映画", "🎬"], ["勝", "🏆"], ["雨", "☔"], ["散歩", "🚶"], ["バイト", "💼"], ["電車", "🚃"], ["風呂", "♨️"], ["寝", "🛌"], ["家族", "🏠"], ["買", "🛍"], ["旅", "🧳"], ["食", "🍚"], ["本", "📚"]];
-const EMO_DEF = { sei: ["🏛️", "⚖️", "🧭", "📜"], mana: ["📘", "✏️", "📐", "📝"], kura: ["🏠", "☕️", "🚶", "🌤️"] };
+const EMO_DEF = { w: ["🌤️", "📣", "🏠", "🗞️"], a: ["✏️", "🧭", "🔧", "📘"], h: ["💭", "🌙", "🌱", "⚡"] };
 const EMO_PICK = ["🏛️", "⚖️", "📜", "📰", "🧭", "🗺️", "🔔", "📱", "📐", "🧮", "📘", "✏️", "🎧", "🔤", "🗂", "🏫", "📝", "📚", "🎬", "🏆", "☔", "🚶", "💼", "🚃", "♨️", "🛌", "🏠", "🛍", "🧳", "🍚", "☕️", "🌤️", "🎉", "⚡", "🌱", "🔥"];
 const ERA_COL = ["#6B4C9A", "#3F7A55", "#B8432F", "#2F4F8A", "#A9761C", "#7D4A8C"];
-const nLanes = () => DEF_LANES;
-function laneGuess(text){ const t = String(text || ""); let best = "kura", sc = 0; Object.entries(LANE_KW).forEach(([id, ws]) => { const n = ws.filter(w => t.includes(w)).length; if (n > sc) { sc = n; best = id; } }); return best; }
-const laneOf = x => (x.l && nLanes().some(l => l.id === x.l)) ? x.l : laneGuess(x.x);
-const laneInfo = id => nLanes().find(l => l.id === id) || nLanes()[0];
-function emoGuess(x){ const t = String(x.x || ""), hit = EMO_KW.find(([w]) => t.includes(w)); if (hit) return hit[1]; const d = EMO_DEF[laneOf(x)] || EMO_DEF.kura; let h = 0; for (const c of String(x.id)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return d[h % d.length]; }
+const kindOf = x => NKIND.some(k => k.id === x.t) ? x.t : "a";
+const laneOf = kindOf;
+const laneInfo = id => NKIND.find(l => l.id === id) || NKIND[1];
+const nLanes = () => NKIND.filter(k => k.id !== "h" || U.nh);
+function emoGuess(x){ const t = String(x.x || ""), hit = EMO_KW.find(([w]) => t.includes(w)); if (hit) return hit[1]; const d = EMO_DEF[kindOf(x)]; let h = 0; for (const c of String(x.id)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return d[h % d.length]; }
 const emoOf = x => x.e || emoGuess(x);
 const nTitle = (x, n) => cut(String(x.x || "").split("\n")[0] || "(字なし)", n || 30);
 const eraList = () => Object.values(D.eras || {}).filter(e => !e.del).sort((a, b) => a.from < b.from ? -1 : 1);
 // その日の一面:自分で選んだもの、なければいちばん長く書いたもの
-function nTops(list){ const by = {}; list.forEach(x => { (by[x.day] = by[x.day] || []).push(x); }); const tops = {}; Object.entries(by).forEach(([d, xs]) => { const f = xs.filter(x => x.top).sort((a, b) => (b.u || 0) - (a.u || 0))[0]; tops[d] = (f || xs.slice().sort((a, b) => (a.auto ? 1 : 0) - (b.auto ? 1 : 0) || (b.x || "").length - (a.x || "").length)[0]).id; }); return tops; }
+function nTops(list){ const by = {}; list.filter(x => x.top || kindOf(x) !== "h").forEach(x => { (by[x.day] = by[x.day] || []).push(x); }); const tops = {}; Object.entries(by).forEach(([d, xs]) => { const f = xs.filter(x => x.top).sort((a, b) => (b.u || 0) - (a.u || 0))[0]; tops[d] = (f || xs.slice().sort((a, b) => (a.auto ? 1 : 0) - (b.auto ? 1 : 0) || (b.x || "").length - (a.x || "").length)[0]).id; }); return tops; }
 const monOf = d => { const dt = new Date(d + "T00:00:00"); return addDays(d, -((dt.getDay() + 6) % 7)); };
 const mdS = d => { const dt = new Date(d + "T00:00:00"); return (dt.getMonth() + 1) + "/" + dt.getDate(); };
 function nCols(list, z){ const td = today(), first = list.length ? list[0].day : td, cols = [];
@@ -6365,37 +6391,43 @@ function nCell(xs, z, tops, lane){
   const unit = Math.ceil(xs.length / 36), n = Math.ceil(xs.length / unit), colsN = 6, hs = Array.from({ length: colsN }, (_, i) => Math.floor(n / colsN) + (i < n % colsN ? 1 : 0));
   return '<div class="nflags">' + tp.slice(-3).map(x => "<em>" + emoOf(x) + "</em>").join("") + '</div><div class="nsky">' + hs.map((h, i) => '<div class="c">' + "<u></u>".repeat(hs[(i * 5 + 2) % colsN]) + "</div>").join("") + "</div>";
 }
+function nStream(list, which){
+  const lim = U.nlim || 80, xs = list.slice(-lim), more = list.length > lim; let h = "", day = "";
+  xs.forEach(x => { if (x.day !== day) { day = x.day; h += '<div class="nsd">' + md(day) + "</div>"; }
+    const k = kindOf(x); h += '<button class="nsb k' + k + '" data-ha="nedit" data-hv="' + x.id + '">' + (which === "j" ? '<i>' + laneInfo(k).n + "</i>" : "") + "<span>" + esc(x.x || "(字なし)") + "</span><small>" + (x.auto ? "自動・" : "") + hm(x.at) + "</small></button>"; });
+  return '<div class="nst">' + (more ? '<button class="nsm" data-ha="nmore">もっと前を見る(あと ' + (list.length - lim) + " 件)</button>" : "") + (h || '<p class="note" style="text-align:center;margin:2rem 0">' + (which === "j" ? "まわりで起きたこと・自分がしたことを、下から書く。" : "思ったこと・感じたことを、下から書く。") + "</p>") + "</div>";
+}
 function viewNews(){
-  const q = U.nq = U.nq || { x: "" }, all = newsList(), td = today(), tops = nTops(all), todays = all.filter(x => x.day === td);
+  const q = U.nq = U.nq || { x: "" }, all = newsList(), tab = U.ntab = U.ntab || "j";
+  const head = EMB.back + '<div class="mh nmh"><h2>報道</h2><div class="nzm">' + [["j", "情勢"], ["s", "主観"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="ntab" data-hv="' + k + '">' + n + "</button>").join("") + "</div></div>";
+  if (tab !== "n") {
+    const list = all.filter(x => (kindOf(x) === "h") === (tab === "s"));
+    const mic = window.SpeechRecognition || window.webkitSpeechRecognition ? '<button class="mic' + (U.nmic ? " on" : "") + '" data-ha="nmic" aria-label="声で入れる">' + (U.nmic ? "…" : "声") + "</button>" : "";
+    return head + '<p class="nlead">' + (tab === "j" ? "情勢:起きたことと、したこと。外から見えること。" : "主観:自分の心の中。情勢とは分けて残る。") + "</p>" + nStream(list, tab) +
+      '<div class="ninp"><div class="r"><textarea id="hy-nqx" data-hin="nqx" rows="2" placeholder="書く">' + esc(q.x || "") + "</textarea>" + mic + "</div>" +
+      '<div class="snd">' + NKIND.map(k => '<button style="--lc:' + k.c + '" data-ha="npost" data-hv="' + k.id + '">' + k.n + "</button>").join("") + "</div></div>";
+  }
   let z = U.nz; if (!z) { try { z = localStorage.getItem("hy-nz"); } catch (e) {} U.nz = z = ["d", "w", "m"].includes(z) ? z : "d"; }
-  const quick = '<div class="card" style="--pc:var(--ink)"><div class="ch"><b>記す</b><span>起きたことを、そのまま</span></div>' +
-    '<div class="nwx"><textarea id="hy-nqx" data-hin="nqx" rows="2" placeholder="起きたこと">' + esc(q.x || "") + "</textarea>" + (window.SpeechRecognition || window.webkitSpeechRecognition ? '<button data-ha="nmic" aria-label="声で入れる"' + (U.nmic ? ' class="on"' : "") + ">" + (U.nmic ? "…" : "声") + "</button>" : "") + "</div>" +
-    '<button class="bigbtn" style="--bc:var(--ink);margin:0 .8rem .8rem;width:calc(100% - 1.6rem)" data-ha="npost">記す</button></div>';
-  const top = todays.find(x => tops[td] === x.id), others = todays.filter(x => x !== top).reverse();
-  const body = top ? String(top.x || "").split("\n").slice(1).join("\n").trim() : "";
-  const paper = '<div class="nwp"><div class="mast"><b>日報</b><span>' + md(td) + "</span></div>" +
-    (top ? '<button class="nhero" style="--lc:' + laneInfo(laneOf(top)).c + '" data-ha="nedit" data-hv="' + top.id + '"><span>' + emoOf(top) + "</span></button><h3>" + esc(nTitle(top, 60)) + "</h3>" + (body ? '<div class="nbody">' + esc(body) + "</div>" : "") : '<div class="lead" style="margin-top:.6rem;border:0">今日はまだ何も記していない。</div>') +
-    (others.length ? '<div class="ntwo">' + others.map(x => '<button data-ha="nedit" data-hv="' + x.id + '" style="--lc:' + laneInfo(laneOf(x)).c + '"><span>' + emoOf(x) + "</span><b>" + esc(cut(x.x, 60)) + "</b>" + (x.auto ? "<small>自動</small>" : "") + "</button>").join("") + "</div>" : "") + "</div>";
-  // 年表
-  const cols = nCols(all, z), cw = z === "d" ? 104 : z === "w" ? 124 : 76, pk = U.nera;
-  const eras = eraList(); let band = "", run = null, k = 0;
+  if (U.nh == null) { try { U.nh = localStorage.getItem("hy-nh") === "1"; } catch (e) { U.nh = false; } }
+  const shown = all.filter(x => U.nh || kindOf(x) !== "h"), tops = nTops(all);
+  const cols = nCols(shown, z), cw = z === "d" ? 116 : z === "w" ? 124 : 76, pk = U.nera;
+  const eras = eraList(); let band = "", run = null;
   const flush = () => { if (!run) return; band += run.e ? '<button class="on" style="width:' + (run.n * cw) + "px;background:" + (run.e.c || ERA_COL[0]) + '" data-ha="neraopen" data-hv="' + run.e.id + '">' + esc(run.e.n) + "</button>" : '<span style="width:' + (run.n * cw) + 'px"></span>'; run = null; };
   cols.forEach(c => { const e = eras.find(e => e.from <= c.to && e.to >= c.from) || null; if (run && run.e === e) run.n++; else { flush(); run = { e, n: 1 }; } }); flush();
   const tl = '<div class="ntl z' + z + '" id="hy-ntl" data-z="' + z + '" style="--cw:' + cw + 'px"><div class="nin">' +
     '<div class="nera"><div class="nln"></div>' + band + "</div>" +
     '<div class="nhd"><div class="nln"></div>' + cols.map(c => '<button class="' + (c.now ? "t" : "") + (pk && pk.from === c.from ? " pk" : "") + '" data-ha="ncol" data-hv="' + c.from + "|" + c.to + '">' + c.lb + "<small>" + c.sb + "</small></button>").join("") + "</div>" +
-    nLanes().map(l => { const mine = all.filter(x => laneOf(x) === l.id); return '<div class="nlane" style="--lc:' + l.c + '"><div class="nln">' + esc(l.n) + "</div>" + cols.map(c => { const xs = mine.filter(x => x.day >= c.from && x.day <= c.to); return z === "d" ? '<div class="ncell">' + nCell(xs, z, tops, l) + "</div>" : '<button class="ncell" data-ha="nlist" data-hv="' + c.from + "|" + c.to + "|" + l.id + '"' + (xs.length ? "" : " disabled") + ">" + nCell(xs, z, tops, l) + "</button>"; }).join("") + "</div>"; }).join("") + "</div></div>";
-  const chron = '<div class="mh" style="margin-top:1.1rem"><h2 style="font-size:1.05rem">年表</h2><div class="nzm">' + [["d", "日"], ["w", "週"], ["m", "月"]].map(([k2, n]) => '<button class="' + (z === k2 ? "on" : "") + '" data-ha="nz" data-hv="' + k2 + '">' + n + "</button>").join("") + "</div></div>" +
+    nLanes().map(l => { const mine = shown.filter(x => kindOf(x) === l.id); return '<div class="nlane k' + l.id + '" style="--lc:' + l.c + '"><div class="nln">' + esc(l.n) + "</div>" + cols.map(c => { const xs = mine.filter(x => x.day >= c.from && x.day <= c.to); return z === "d" ? '<div class="ncell">' + nCell(xs, z, tops, l) + "</div>" : '<button class="ncell" data-ha="nlist" data-hv="' + c.from + "|" + c.to + "|" + l.id + '"' + (xs.length ? "" : " disabled") + ">" + nCell(xs, z, tops, l) + "</button>"; }).join("") + "</div>"; }).join("") + "</div></div>";
+  return head + '<div class="nbar"><div class="nzm">' + [["d", "日"], ["w", "週"], ["m", "月"]].map(([k2, n]) => '<button class="' + (z === k2 ? "on" : "") + '" data-ha="nz" data-hv="' + k2 + '">' + n + '</button>').join("") + '</div><button class="nhb' + (U.nh ? " on" : "") + '" data-ha="nh">' + (U.nh ? "主観を重ねている" : "主観も重ねる") + "</button></div>" +
     (pk ? '<div class="npk"><b>' + (pk.from ? "終わりの列の日付を押す" : "始まりの列の日付を押す") + '</b><button data-ha="neracancel">やめる</button></div>' : "") +
-    (all.length ? tl + '<div class="links" style="margin-top:.6rem"><button data-ha="nerastart">過去をふり返って、時代の名前を付ける</button><span></span></div>' : '<p class="note" style="margin:.3rem 2px 0">記すと、ここに年表ができていく。</p>');
-  return EMB.back + '<div class="mh"><h2>報道</h2></div>' + quick + paper + chron;
+    (shown.length ? tl + '<div class="links" style="margin-top:.6rem"><button data-ha="nerastart">過去をふり返って、時代の名前を付ける</button><span></span></div>' : '<p class="note" style="margin:.3rem 2px 0">記すと、ここに年表ができていく。</p>');
 }
 function sheetNewsEdit(){
-  const x = D.news[(U.arg || {}).id]; if (!x) return ""; const l = laneOf(x), isTop = nTops(newsList())[x.day] === x.id, cur = emoOf(x);
+  const x = D.news[(U.arg || {}).id]; if (!x) return ""; const l = kindOf(x), isTop = nTops(newsList())[x.day] === x.id, cur = emoOf(x);
   return sheetWrap('<h3>記したものを直す</h3>' +
     '<textarea class="fi" rows="4" data-hin="nex" data-hv="' + x.id + '" placeholder="起きたこと">' + esc(x.x || "") + "</textarea>" +
     '<div class="nwl" style="margin-left:0">日付</div><input class="fi" type="date" data-hin="neday" data-hv="' + x.id + '" value="' + x.day + '" max="' + today() + '">' +
-    '<div class="nwl" style="margin-left:0">分野(字から自動。違うときだけ押す)</div><div class="chips">' + nLanes().map(n => '<button class="chip' + (l === n.id ? " on" : "") + '" data-ha="nel" data-hv="' + n.id + '">' + esc(n.n) + "</button>").join("") + "</div>" +
+    '<div class="nwl" style="margin-left:0">種類(出来事・行動=情勢、心の中=主観)</div><div class="chips">' + NKIND.map(n => '<button class="chip' + (l === n.id ? " on" : "") + '" data-ha="nel" data-hv="' + n.id + '">' + esc(n.n) + "</button>").join("") + "</div>" +
     '<div class="nwl" style="margin-left:0">絵(自動。替えたいときだけ押す)</div><div class="nemo">' + Array.from(new Set([cur].concat(EMO_PICK))).map(e => '<button class="' + (e === cur ? "on" : "") + '" data-ha="nee" data-hv="' + e + '">' + e + "</button>").join("") + "</div>" +
     '<button class="bigbtn" style="--bc:' + (isTop ? "var(--sub)" : "var(--ink)") + ';margin-top:.8rem" data-ha="ntop" data-hv="' + x.id + '">' + (isTop ? "この日の一面になっている" : "この日の一面にする") + "<small>" + (isTop ? (x.top ? "もう一度押すと、自動の選び方に戻る" : "自動で選ばれた") : "年表で大きく残る") + "</small></button>" +
     '<div class="links" style="margin-top:.8rem"><button data-ha="ndel" data-hv="' + x.id + '">これを消す</button><span></span></div><button class="bigbtn" data-ha="sheetclose">これでいい</button>');
@@ -6413,7 +6445,7 @@ function sheetEra(){
     '<div class="links"><button data-ha="nerarename" data-hv="' + e.id + '">名前を変える</button><button data-ha="neradel" data-hv="' + e.id + '">この時代の区切りを消す</button></div><button class="bigbtn" data-ha="sheetclose">とじる</button>');
 }
 // 評議会で決めたこと・確かめたことは、出来事として自動で載る
-function newsFromCouncil(s, text){ newsAdd({ x: text, auto: true, sess: s.id, l: "sei" }); }
+function newsFromCouncil(s, text){ newsAdd({ x: text, auto: true, sess: s.id, t: "a" }); }
 
 /* ───────── 描画 ───────── */
 function render(){
@@ -6443,7 +6475,9 @@ function render(){
   }
   U.logStick = false;
   { const tl = $("#hy-ntl"); if (tl) { if (!tls || tls.z !== tl.dataset.z || tls.end || U.nstick) tl.scrollLeft = tl.scrollWidth; else tl.scrollLeft = tls.l; } U.nstick = false; }
-  if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+  if (EMB.news && (U.nbottom || !U.nseen)) { U.nseen = true; U.nbottom = false; if (U.ntab !== "n") window.scrollTo(0, document.documentElement.scrollHeight); }
+  else if (EMB.news && U.nkeep) { window.scrollTo(0, y + document.documentElement.scrollHeight - U.nkeep); U.nkeep = 0; }
+  else if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
   if (aid) { const n = document.getElementById(aid); if (n && n !== ae && document.activeElement !== n) { n.focus({ preventScroll: true }); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
   tick(true);
 }
@@ -7413,8 +7447,9 @@ function onClick(ev){
     case "nth": U.nq = U.nq || {}; U.nq.x = ($("#hy-nqx") || {}).value || ""; U.nq.th = U.nq.th === v ? null : v; render(); return;
     case "nk": U.nq = U.nq || {}; U.nq.x = ($("#hy-nqx") || {}).value || ""; U.nq.k = U.nq.k === v ? null : v; render(); return;
     case "nnew": { const n = (prompt("新しい話の名前(短く。例:昼寝・青チャート)") || "").trim(); if (!n) return; U.nq = U.nq || {}; U.nq.x = ($("#hy-nqx") || {}).value || ""; mut(() => { const t = thEnsure(n); touch(t); U.nq.th = t.id; }); return; }
-    case "npost": { const q = U.nq = U.nq || {}; q.x = (($("#hy-nqx") || {}).value || "").trim(); if (!q.x) { toast("起きたことを書く"); const el = $("#hy-nqx"); el && el.focus(); return; }
-      U.nstick = true; mut(() => { newsAdd({ x: q.x }); U.nq = { x: "" }; }); toast("記した"); return; }
+    case "npost": { const q = U.nq = U.nq || {}; q.x = (($("#hy-nqx") || {}).value || "").trim(); if (!q.x) { toast("字を書いてから押す"); const el = $("#hy-nqx"); el && el.focus(); return; }
+      const t = NKIND.some(k => k.id === v) ? v : "a", here = (t === "h") === (U.ntab === "s"); U.nbottom = true;
+      mut(() => { newsAdd({ x: q.x, t }); U.nq = { x: "" }; }); toast(here ? "記した" : (t === "h" ? "主観に記した" : "情勢に記した")); return; }
     case "nmic": { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR || U.nmic) return; const r = new SR(); r.lang = "ja-JP"; r.interimResults = false; U.nq = U.nq || {}; U.nq.x = ($("#hy-nqx") || {}).value || "";
       r.onresult = e => { U.nq.x = (U.nq.x ? U.nq.x + " " : "") + e.results[0][0].transcript; }; r.onend = () => { U.nmic = false; render(); }; r.onerror = () => { U.nmic = false; toast("声を聞き取れなかった"); render(); };
       U.nmic = true; render(); try { r.start(); } catch (e) { U.nmic = false; render(); } return; }
@@ -7432,7 +7467,10 @@ function onClick(ev){
     case "neraopen": U.sheet = "nera"; U.arg = { id: v }; render(); return;
     case "nerarename": { const e = D.eras[v], n = (prompt("時代の名前", e.n) || "").trim(); if (!n) return; mut(() => { e.n = n; touch(e); }); return; }
     case "neradel": if (!confirm("この時代の区切りを消しますか(記したものは消えない)。")) return; U.sheet = null; mut(() => { touch(Object.assign(D.eras[v], { del: true })); }); return;
-    case "nel": mut(() => { const x = D.news[U.arg.id]; x.l = v; touch(x); }); return;
+    case "nel": mut(() => { const x = D.news[U.arg.id]; x.t = v; touch(x); }); return;
+    case "ntab": U.ntab = v; U.nbottom = v !== "n"; U.nlim = 80; render(); return;
+    case "nmore": U.nlim = (U.nlim || 80) + 150; U.nkeep = document.documentElement.scrollHeight; render(); return;
+    case "nh": U.nh = !U.nh; try { localStorage.setItem("hy-nh", U.nh ? "1" : "0"); } catch (e) {} render(); return;
     case "nee": mut(() => { const x = D.news[U.arg.id]; if (x.e === v) delete x.e; else x.e = v; touch(x); }); return;
     case "ntop": mut(() => { const x = D.news[v]; if (x.top) { delete x.top; } else { newsList().filter(y => y.day === x.day && y.top).forEach(y => { delete y.top; touch(y); }); x.top = true; } touch(x); }); return;
     case "hfold": U.hfold = U.hfold || {}; U.hfold[v] = !U.hfold[v]; render(); return;
