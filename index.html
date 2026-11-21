@@ -1035,7 +1035,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .nwk button.on{background:var(--c);border-color:var(--c);color:#fff}
 #hy .nwk button.on small{color:#fff}
 #hy .nwx{display:flex;gap:.4rem;margin:.7rem .8rem .7rem}
-#hy .nwx input{flex:1;min-width:0;border:1.5px dashed var(--rule);border-radius:11px;padding:.55rem .7rem;font-size:.9rem;background:var(--white);color:var(--ink);font-family:inherit}
+#hy .nwx textarea{flex:1;min-width:0;resize:none;line-height:1.5;border:1.5px solid var(--ink);border-radius:11px;padding:.55rem .7rem;font-size:.9rem;background:var(--white);color:var(--ink);font-family:inherit}
 #hy .nwx button{flex:none;width:2.7rem;border:1.5px solid var(--rule);border-radius:11px;background:var(--sheet);font-size:.78rem;font-weight:800;color:var(--ink);cursor:pointer;font-family:inherit}
 #hy .nwx button.on{background:var(--ink);color:#fff}
 #hy .nwb{display:inline-flex;align-items:center;justify-content:center;width:1.5rem;height:1.5rem;border-radius:7px;background:var(--c);color:#fff;font-weight:900;font-size:.8rem;flex:none;font-family:system-ui,sans-serif}
@@ -1065,6 +1065,16 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .nwt .turn{margin:.15rem 0 .15rem 3.2rem;font-size:.66rem;font-weight:800;color:#2F4F8A;border-left:3px solid #2F4F8A;padding-left:.45rem}
 #hy .nws{margin:.7rem 0 .2rem;background:var(--sheet);border-radius:10px;padding:.5rem .65rem;font-size:.8rem;line-height:1.6}
 #hy .nws b{display:block;font-size:.66rem;color:var(--sub)}
+#hy .nwp .it .tg{font-style:normal;font-size:.62rem;font-weight:800;color:var(--sub);border:1px solid var(--rule);border-radius:999px;padding:0 .4rem;white-space:nowrap}
+#hy .nwp .it .nx{font-style:normal;color:var(--sub);font-size:.74rem}
+#hy .nwp .it>span{line-height:1.5;white-space:pre-wrap}
+#hy .nwp .dy{display:flex;gap:.5rem;align-items:flex-start;border-bottom:1px dashed var(--rule)}
+#hy .nwp .dy .nwdd{flex:0 0 3.6rem;font-size:.66rem;color:var(--sub);padding-top:.55rem}
+#hy .nwp .dy .nwdl{flex:1;min-width:0}
+#hy .nwp .dy .nwdl .it:last-child{border-bottom:0}
+#hy .nwp .dy.e{padding:.3rem 0}
+#hy .nwp .dy.e .nwdd{padding-top:0}
+#hy .nwp .dy .dn{font-size:.66rem;color:var(--faint)}
 body.hy-full{padding-bottom:0!important}
 body.hy-full nav.tabs{display:none!important}
 body.hy-full>.wrap{max-width:none;padding:0}
@@ -1126,7 +1136,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-20 r136";
+const APP_VERSION = "2026-11-20 r137";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5519,7 +5529,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h6.00";
+const APP_VERSION = "h6.01";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6256,27 +6266,31 @@ function thState(id){
 // 流れが変わったところ(▲と▼が入れかわった最初の速報の id)
 function thTurns(id){ const out = {}; let prev = null; thNews(id).forEach(x => { if (x.k !== "up" && x.k !== "dn") return; if (prev && prev !== x.k) out[x.id] = 1; prev = x.k; }); return out; }
 function newsFront(){
-  const td = today(), todays = newsList().filter(x => x.day === td), ths = thSorted().filter(t => thNews(t.id).length);
+  const td = today(), todays = newsList().filter(x => x.day === td), ths = thSorted().filter(t => thNews(t.id).length >= 2);
   const cand = ths.filter(t => todays.some(x => x.th === t.id)).map(t => { const st = thState(t.id), n = thNews(t.id); return { t, st, score: (st[2] >= 2 ? 10 + st[2] : 0) + (st[1] === "持ち直した" ? 9 : 0) + (n.length === 1 ? 6 : 0) + (st[0] === "dn" ? 1 : 0), last: n[n.length - 1] }; }).sort((a, b) => b.score - a.score);
   const hl = c => c.st[2] >= 2 ? c.t.n + "、" + c.st[2] + "日続けて" + (c.st[0] === "dn" ? "崩れる" : "前進") : c.st[1] === "持ち直した" ? c.t.n + "、持ち直す" : thNews(c.t.id).length === 1 ? "「" + c.t.n + "」が始まる" : (c.last.x ? c.t.n + ":" + c.last.x : c.t.n + "、" + nkOf(c.last.k)[1]);
   const up = todays.filter(x => x.k === "up").length, dn = todays.filter(x => x.k === "dn").length;
   return { todays, ths, head: cand.length ? hl(cand[0]) : "", rest: cand.slice(1, 3).map(c => c.t.n + "は" + c.st[1]), mood: !todays.length ? "" : up > dn ? "上向き" : dn > up ? "下向き" : "横ばい" };
 }
 function nkBadge(k, sm){ const [s, n, c] = nkOf(k); return '<span class="nwb' + (sm ? " sm" : "") + '" style="--c:' + c + '" title="' + n + '">' + s + "</span>"; }
+function nwRow(x, tm){ const t = D.threads[x.th]; return '<button class="it" data-ha="nedit" data-hv="' + x.id + '">' + nkBadge(x.k, 1) + "<span>" + (x.x ? esc(x.x) : '<i class="nx">' + nkOf(x.k)[1] + "</i>") + (t ? ' <em class="tg">' + esc(t.n) + "</em>" : "") + "</span><small>" + (x.auto ? "自動" : tm ? hm(x.at) : "") + "</small></button>"; }
 function viewNews(){
-  const q = U.nq = U.nq || { th: null, k: null, x: "" }, ths = thSorted(), f = newsFront(), td = today();
+  const q = U.nq = U.nq || { th: null, k: null, x: "" }, ths = thSorted(), f = newsFront(), td = today(), all = newsList();
   const days = [6, 5, 4, 3, 2, 1, 0].map(n => addDays(td, -n));
-  const quick = '<div class="card" style="--pc:var(--ink)"><div class="ch"><b>速報</b><span>押すだけ。字は打たなくていい</span></div>' +
-    '<div class="nwl">どの話か</div><div class="chips nwc">' + ths.map(t => '<button class="chip' + (q.th === t.id ? " on" : "") + '" data-ha="nth" data-hv="' + t.id + '">' + esc(t.n) + "</button>").join("") + '<button class="chip nwn" data-ha="nnew">＋ 新しい話</button></div>' +
-    '<div class="nwl">どうなった</div><div class="nwk">' + Object.entries(NK).map(([k, [s, n, c]]) => '<button class="' + (q.k === k ? "on" : "") + '" style="--c:' + c + '" data-ha="nk" data-hv="' + k + '">' + s + "<small>" + n + "</small></button>").join("") + "</div>" +
-    '<div class="nwx"><input id="hy-nqx" data-hin="nqx" value="' + esc(q.x) + '" placeholder="ひとこと(なくてもいい)" enterkeyhint="send">' + (window.SpeechRecognition || window.webkitSpeechRecognition ? '<button data-ha="nmic" aria-label="声で入れる"' + (U.nmic ? ' class="on"' : "") + ">" + (U.nmic ? "…" : "声") + "</button>" : "") + "</div>" +
-    '<button class="bigbtn" style="--bc:var(--ink);margin:.2rem .8rem .8rem;width:calc(100% - 1.6rem)" data-ha="npost">出す<small>' + (q.th || q.k || q.x ? esc((q.th && D.threads[q.th] ? D.threads[q.th].n : "話はおまかせ") + " " + (q.k ? nkOf(q.k)[0] : "●")) + "・ここで終わってよい" : "話か記号を1つ押すだけでも出せる") + "</small></button></div>";
+  const quick = '<div class="card" style="--pc:var(--ink)"><div class="ch"><b>記す</b><span>記したいときに、そのまま</span></div>' +
+    '<div class="nwx"><textarea id="hy-nqx" data-hin="nqx" rows="2" placeholder="起きたこと・気づいたこと">' + esc(q.x) + "</textarea>" + (window.SpeechRecognition || window.webkitSpeechRecognition ? '<button data-ha="nmic" aria-label="声で入れる"' + (U.nmic ? ' class="on"' : "") + ">" + (U.nmic ? "…" : "声") + "</button>" : "") + "</div>" +
+    '<div class="nwk">' + Object.entries(NK).map(([k, [s, n, c]]) => '<button class="' + (q.k === k ? "on" : "") + '" style="--c:' + c + '" data-ha="nk" data-hv="' + k + '">' + s + "<small>" + n + "</small></button>").join("") + "</div>" +
+    (ths.length ? '<div class="nwl">前に記した話の続きなら(押さなくていい)</div><div class="chips nwc">' + ths.slice(0, 8).map(t => '<button class="chip' + (q.th === t.id ? " on" : "") + '" data-ha="nth" data-hv="' + t.id + '">' + esc(t.n) + "</button>").join("") + "</div>" : "") +
+    '<button class="bigbtn" style="--bc:var(--ink);margin:.7rem .8rem .8rem;width:calc(100% - 1.6rem)" data-ha="npost">記す<small>字だけ・記号だけでも記せる</small></button></div>';
+  const lastTxt = f.todays.filter(x => x.x && !x.auto).slice(-1)[0];
+  const head = f.head || (lastTxt ? cut(lastTxt.x, 26) : "");
   const paper = '<div class="nwp"><div class="mast"><b>日報</b><span>' + md(td) + "</span></div>" +
-    (f.head ? "<h3>" + esc(f.head) + '</h3><div class="lead">' + esc(f.rest.join("。")) + (f.rest.length ? "。" : "") + "情勢は" + f.mood + "(記号から自動)。</div>" : '<div class="lead" style="margin-top:.6rem">今日はまだ速報がない。' + (f.ths.length ? "" : "上の「＋ 新しい話」から始める。") + "</div>") +
-    (f.ths.length ? '<div class="sec">続いている話(この7日)</div>' + f.ths.map(t => { const st = thState(t.id), ns = thNews(t.id), first = ns[0];
-      return '<button class="th" data-ha="nopen" data-hv="' + t.id + '"><span class="n">' + esc(t.n) + "<small>" + (daysBetween(first.day, td) + 1) + "日目" + (t.ag ? "・議題箱へ" : "") + '</small></span><span class="tr">' + days.map(d => { const x = ns.filter(y => y.day === d).slice(-1)[0]; return x ? '<i style="--c:' + nkOf(x.k)[2] + '">' + nkOf(x.k)[0] + "</i>" : '<i class="e"></i>'; }).join("") + '</span><span class="now" style="--c:' + (NK[st[0]] ? NK[st[0]][2] : "var(--sub)") + '">' + st[1] + "</span></button>"; }).join("") : "") +
-    (f.todays.length ? '<div class="sec">今日の速報</div>' + f.todays.slice().reverse().map(x => '<button class="it" data-ha="nedit" data-hv="' + x.id + '">' + nkBadge(x.k, 1) + "<span><b>" + esc((D.threads[x.th] || {}).n || "") + "</b>" + (x.x ? " " + esc(x.x) : "") + "</span><small>" + (x.auto ? "自動" : hm(x.at)) + "</small></button>").join("") : "") + "</div>";
-  return EMB.back + '<div class="mh"><h2>報道</h2></div>' + quick + paper + '<p class="note" style="margin:.6rem 2px 0">書かなかった日は空白のまま進む。あとから埋めなくていい。</p>';
+    (f.todays.length ? (head ? "<h3>" + esc(head) + "</h3>" : "") + '<div class="lead"' + (head ? "" : ' style="margin-top:.6rem"') + ">" + esc(f.rest.join("。")) + (f.rest.length ? "。" : "") + "今日は " + f.todays.length + " 件。情勢は" + f.mood + "(記号から自動)。</div>" : '<div class="lead" style="margin-top:.6rem">今日はまだ何も記していない。</div>') +
+    (f.todays.length ? '<div class="sec">今日</div>' + f.todays.slice().reverse().map(x => nwRow(x, 1)).join("") : "") +
+    (all.some(x => x.day !== td && x.day >= days[0]) ? '<div class="sec">ここまでの6日</div>' + days.slice(0, 6).reverse().map(d => { const ns = all.filter(x => x.day === d); return '<div class="dy' + (ns.length ? "" : " e") + '"><span class="nwdd">' + md(d) + "</span>" + (ns.length ? '<div class="nwdl">' + ns.map(x => nwRow(x)).join("") + "</div>" : '<span class="dn">記していない</span>') + "</div>"; }).join("") : "") +
+    (f.ths.length ? '<div class="sec">続いている話</div>' + f.ths.map(t => { const st = thState(t.id), ns = thNews(t.id), first = ns[0];
+      return '<button class="th" data-ha="nopen" data-hv="' + t.id + '"><span class="n">' + esc(t.n) + "<small>" + (daysBetween(first.day, td) + 1) + "日目" + (t.ag ? "・議題箱へ" : "") + '</small></span><span class="tr">' + days.map(d => { const x = ns.filter(y => y.day === d).slice(-1)[0]; return x ? '<i style="--c:' + nkOf(x.k)[2] + '">' + nkOf(x.k)[0] + "</i>" : '<i class="e"></i>'; }).join("") + '</span><span class="now" style="--c:' + (NK[st[0]] ? NK[st[0]][2] : "var(--sub)") + '">' + st[1] + "</span></button>"; }).join("") : "") + "</div>";
+  return EMB.back + '<div class="mh"><h2>報道</h2></div>' + quick + paper + '<p class="note" style="margin:.6rem 2px 0">記さなかった日は空白のまま進む。あとから埋めなくていい。</p>';
 }
 function sheetThread(){
   const t = D.threads[(U.arg || {}).id]; if (!t) return "";
@@ -6291,14 +6305,14 @@ function sheetThread(){
 }
 function sheetNewsEdit(){
   const x = D.news[(U.arg || {}).id]; if (!x) return "";
-  return sheetWrap('<h3>速報を直す</h3><p class="d">' + md(x.day) + " " + hm(x.at) + "</p>" +
-    '<div class="nwl" style="margin-left:0">どの話か</div><div class="chips">' + thList().filter(t => !t.done || t.id === x.th).map(t => '<button class="chip' + (x.th === t.id ? " on" : "") + '" data-ha="neth" data-hv="' + t.id + '">' + esc(t.n) + "</button>").join("") + "</div>" +
-    '<div class="nwl" style="margin-left:0">どうなった</div><div class="nwk" style="padding:0">' + Object.entries(NK).map(([k, [s, n, c]]) => '<button class="' + (x.k === k ? "on" : "") + '" style="--c:' + c + '" data-ha="nek" data-hv="' + k + '">' + s + "<small>" + n + "</small></button>").join("") + "</div>" +
-    '<input class="fi" style="margin-top:.7rem" data-hin="nex" data-hv="' + x.id + '" value="' + esc(x.x || "") + '" placeholder="ひとこと(なくてもいい)">' +
-    '<div class="links" style="margin-top:.8rem"><button data-ha="ndel" data-hv="' + x.id + '">この速報を消す</button><span></span></div><button class="bigbtn" data-ha="sheetclose">これでいい</button>');
+  return sheetWrap('<h3>記したものを直す</h3><p class="d">' + md(x.day) + " " + hm(x.at) + "</p>" +
+    '<textarea class="fi" rows="3" data-hin="nex" data-hv="' + x.id + '" placeholder="ひとこと(なくてもいい)">' + esc(x.x || "") + "</textarea>" +
+    '<div class="nwk" style="padding:0;margin-top:.6rem">' + Object.entries(NK).map(([k, [s, n, c]]) => '<button class="' + (x.k === k ? "on" : "") + '" style="--c:' + c + '" data-ha="nek" data-hv="' + k + '">' + s + "<small>" + n + "</small></button>").join("") + "</div>" +
+    '<div class="nwl" style="margin-left:0">続きものにするなら、話につなぐ(もう一度押すと外れる)</div><div class="chips">' + thList().filter(t => !t.done || t.id === x.th).map(t => '<button class="chip' + (x.th === t.id ? " on" : "") + '" data-ha="neth" data-hv="' + t.id + '">' + esc(t.n) + '</button>').join("") + '<button class="chip" style="border-style:dashed;color:var(--sub)" data-ha="nethnew">＋ 新しい話</button></div>' +
+    '<div class="links" style="margin-top:.8rem"><button data-ha="ndel" data-hv="' + x.id + '">これを消す</button><span></span></div><button class="bigbtn" data-ha="sheetclose">これでいい</button>');
 }
 // 評議会で決めたこと・確かめたことを、関係する話に自動で入れる
-function newsFromCouncil(s, text, hint){ const t = thFind(hint) || thFind(text) || thEnsure("評議会"); newsAdd({ th: t.id, k: "ev", x: text, auto: true, sess: s.id }); }
+function newsFromCouncil(s, text, hint){ const t = thFind(hint) || thFind(text); newsAdd({ th: t ? t.id : null, k: "ev", x: text, auto: true, sess: s.id }); }
 
 /* ───────── 描画 ───────── */
 function render(){
@@ -6699,7 +6713,7 @@ function activeCard(){
   if (!list.length) return "";
   return '<div class="card" style="--pc:var(--p6)"><div class="ch"><b>いま動いている決定</b><span>' + list.length + " 件・押すと勢力図が出る</span></div>" +
     list.map(d => { const left = d.checkAt ? daysBetween(today(), d.checkAt) : null, open = U.openDec && U.openDec[d.id];
-      return '<button class="dl" data-ha="decopen" data-hv="' + d.id + '"><b>' + esc(d.text) + "</b><span>第" + d.no + "回・確かめる日 " + (d.checkAt ? md(d.checkAt) : "—") + (left != null ? (left > 0 ? "・あと" + left + "日" : left === 0 ? "・今日" : "・" + (-left) + "日すぎた") : "") + (d.map ? (open ? " ▴" : " ▾") : "") + "</span></button>" +
+      return '<button class="nwdl" data-ha="decopen" data-hv="' + d.id + '"><b>' + esc(d.text) + "</b><span>第" + d.no + "回・確かめる日 " + (d.checkAt ? md(d.checkAt) : "—") + (left != null ? (left > 0 ? "・あと" + left + "日" : left === 0 ? "・今日" : "・" + (-left) + "日すぎた") : "") + (d.map ? (open ? " ▴" : " ▾") : "") + "</span></button>" +
         (open && d.map ? '<div class="map">' + mapSVG(d.map, { title: d.text }) + "</div>" : ""); }).join("") + "</div>";
 }
 /* ───────── 閉会した直後 ───────── */
@@ -7295,15 +7309,16 @@ function onClick(ev){
     case "nth": U.nq = U.nq || {}; U.nq.x = ($("#hy-nqx") || {}).value || ""; U.nq.th = U.nq.th === v ? null : v; render(); return;
     case "nk": U.nq = U.nq || {}; U.nq.x = ($("#hy-nqx") || {}).value || ""; U.nq.k = U.nq.k === v ? null : v; render(); return;
     case "nnew": { const n = (prompt("新しい話の名前(短く。例:昼寝・青チャート)") || "").trim(); if (!n) return; U.nq = U.nq || {}; U.nq.x = ($("#hy-nqx") || {}).value || ""; mut(() => { const t = thEnsure(n); touch(t); U.nq.th = t.id; }); return; }
-    case "npost": { const q = U.nq = U.nq || {}; q.x = (($("#hy-nqx") || {}).value || "").trim(); if (!q.th && !q.k && !q.x) { toast("話か記号を1つ押す"); return; }
-      let lbl = ""; mut(() => { const t = (q.th && D.threads[q.th]) || thFind(q.x) || thEnsure("その他"); touch(t); const n = newsAdd({ th: t.id, k: q.k || "ev", x: q.x }); lbl = t.n + " " + nkOf(n.k)[0]; U.nq = { th: null, k: null, x: "" }; });
-      toast("出した:" + lbl); return; }
+    case "npost": { const q = U.nq = U.nq || {}; q.x = (($("#hy-nqx") || {}).value || "").trim(); if (!q.k && !q.x) { toast(q.th ? "記号を1つ押すか、字を書く" : "字を書くか、記号を1つ押す"); return; }
+      mut(() => { const t = (q.th && D.threads[q.th]) || thFind(q.x); if (t) touch(t); newsAdd({ th: t ? t.id : null, k: q.k || "ev", x: q.x }); U.nq = { th: null, k: null, x: "" }; });
+      toast("記した"); return; }
     case "nmic": { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR || U.nmic) return; const r = new SR(); r.lang = "ja-JP"; r.interimResults = false; U.nq = U.nq || {}; U.nq.x = ($("#hy-nqx") || {}).value || "";
       r.onresult = e => { U.nq.x = (U.nq.x ? U.nq.x + " " : "") + e.results[0][0].transcript; }; r.onend = () => { U.nmic = false; render(); }; r.onerror = () => { U.nmic = false; toast("声を聞き取れなかった"); render(); };
       U.nmic = true; render(); try { r.start(); } catch (e) { U.nmic = false; render(); } return; }
     case "nopen": U.sheet = "thread"; U.arg = { id: v }; render(); return;
     case "nedit": U.sheet = "nedit"; U.arg = { id: v, back: U.sheet === "thread" ? (U.arg || {}).id : null }; render(); return;
-    case "neth": mut(() => { const x = D.news[U.arg.id]; x.th = v; touch(x); }); return;
+    case "neth": mut(() => { const x = D.news[U.arg.id]; x.th = x.th === v ? null : v; touch(x); }); return;
+    case "nethnew": { const n = (prompt("話の名前(短く)") || "").trim(); if (!n) return; mut(() => { const t = thEnsure(n); touch(t); const x = D.news[U.arg.id]; x.th = t.id; touch(x); }); return; }
     case "nek": mut(() => { const x = D.news[U.arg.id]; x.k = v; touch(x); }); return;
     case "ndel": if (!confirm("この速報を消しますか。")) return; U.sheet = null; mut(() => { touch(Object.assign(D.news[v], { del: true })); }); return;
     case "nagenda": { const t = D.threads[v]; if (t.ag && D.agendas[t.ag] && !D.agendas[t.ag].del) { toast("もう議題箱に入っている"); return; }
@@ -7504,7 +7519,6 @@ function onKey(ev){
   if (t.id === "hy-dtitle") { ev.preventDefault(); t.blur(); return; }
   if (t.id === "hy-ttx") { ev.preventDefault(); $("[data-ha=ttlsave]").click(); return; }
   if (t.id === "hy-nexttitle") { ev.preventDefault(); t.blur(); return; }
-  if (t.id === "hy-nqx") { ev.preventDefault(); const b = $("[data-ha=npost]"); b && b.click(); return; }
   if (t.id === "hy-critgoal") { ev.preventDefault(); const b = $("[data-ha=critgoaladd]"); b && b.click(); return; }
   if (t.id === "hy-basisnew") { ev.preventDefault(); const b = $("[data-ha=basisadd]"); b && b.click(); return; }
   if (t.id === "hy-subnew") { ev.preventDefault(); const b = $("[data-ha=subadd]"); b && b.click(); return; }
