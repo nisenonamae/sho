@@ -128,14 +128,52 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 @media (hover:none){#tip{display:none!important}}
 .bnone{margin:0;padding:1.1rem .8rem;font-size:.68rem;color:var(--faint);position:sticky;left:0;width:max-content}
 .chb{background:rgba(34,32,28,.035)}
+.qlist{display:flex;flex-direction:column;min-height:62vh;justify-content:flex-end;padding-bottom:.4rem}
+.qlist .nsm{margin:.4rem 0}
+.qd{font-size:.7rem;font-weight:800;color:var(--sub);margin:1.1rem 2px .1rem}
+.ql{display:flex;align-items:center;gap:.7rem;width:100%;border:0;border-bottom:1px solid #EAE3D5;background:none;padding:.62rem 2px;text-align:left;font-family:inherit;color:var(--ink);cursor:pointer}
+.ql .qt{flex:none;width:2.6rem;font-size:.74rem;color:#9a9284;font-variant-numeric:tabular-nums}
+.ql .qn{flex:1;min-width:0;font-size:.96rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qm{flex:none;display:grid;grid-template-columns:repeat(2,7px);gap:1.5px;padding:2px;border-radius:3px;align-content:start}
+.qm i{display:block;width:7px;height:5px;border-radius:1px}.qm i.w{grid-column:span 2;width:15.5px}
+#app:has(.qfab){padding-bottom:5.5rem}
+.qfab{position:fixed;right:max(16px,calc(50vw - 364px));bottom:calc(18px + env(safe-area-inset-bottom));width:3.5rem;height:3.5rem;border-radius:50%;border:0;background:var(--ink);color:#fff;font-size:2rem;line-height:1;box-shadow:0 4px 14px rgba(34,32,28,.3);cursor:pointer;z-index:8;font-family:inherit}
+.qunit{padding-bottom:10rem}
+.qh{position:sticky;top:0;z-index:6;background:var(--paper);display:flex;align-items:center;gap:.3rem;padding:.55rem 0 .45rem;margin-bottom:.2rem}
+.qh .qback{border:0;background:none;font-size:1.8rem;line-height:1;padding:0 .5rem 0 0;cursor:pointer;color:var(--ink);font-family:inherit}
+.qh b{font-size:1.12rem;font-weight:900;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qst{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem;font-size:.74rem;color:var(--sub)}
+.qst b{font-size:1.1rem;color:var(--ink);margin-right:.15rem;font-variant-numeric:tabular-nums}
+.qst button{border:1px solid var(--rule);background:var(--white);border-radius:7px;padding:.12rem .55rem;font-size:.74rem;font-family:inherit;color:var(--ink);cursor:pointer}
+.qte{display:flex;gap:.4rem;margin-top:.45rem}.qte .fi{padding:.35rem .5rem;font-size:.9rem}
+.qcat{display:flex;gap:.3rem;margin:.65rem 0 .7rem}.qcat button{border:1.5px solid var(--rule);background:var(--white);border-radius:8px;padding:.18rem .75rem;font-size:.8rem;font-weight:800;color:var(--sub);font-family:inherit;cursor:pointer}.qcat button.on{background:var(--c);border-color:var(--c);color:#fff}
+.qbase{border-radius:14px;padding:.6rem}
+.qg{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}
+.qb{border:0;border-radius:9px;background:var(--c);color:#fff;text-align:left;padding:.45rem .65rem .55rem;min-height:3.7rem;box-shadow:0 3px 0 rgba(0,0,0,.18);font-family:inherit;cursor:pointer;display:flex;flex-direction:column;min-width:0}
+.qb.w{grid-column:span 2}
+.qb small{font-size:.66rem;font-weight:700;opacity:.88}
+.qb span{font-size:.92rem;font-weight:800;line-height:1.45;margin-top:.1rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.qb em{font-style:normal;font-weight:500;opacity:.75;font-size:.8rem}
+.qb .qdots{display:block;font-style:normal;letter-spacing:.06em;font-size:.8rem}
+.qb.p{background:#FFFDF7;color:var(--ink);border:1.5px dashed #CFC5B0;box-shadow:none}.qb.p small{color:var(--sub)}.qb.p span{font-weight:500}
+.qempty{text-align:center;font-size:.8rem;color:var(--sub);margin:2.4rem 0}
+.qpal{position:fixed;left:0;right:0;bottom:0;z-index:8;background:#F1ECE1;border-top:1px solid var(--rule);padding:.5rem 16px calc(.55rem + env(safe-area-inset-bottom))}
+.qpal>div{max-width:728px;margin:0 auto}
+.qph{font-size:.66rem;color:var(--sub);margin:0 2px .35rem}
+.qpal button{border:0;border-radius:7px;background:var(--c);color:#fff;font-weight:800;font-size:.84rem;padding:.4rem .7rem;margin:0 .25rem .35rem 0;box-shadow:0 2px 0 rgba(0,0,0,.2);font-family:inherit;cursor:pointer}
+.qsh{display:flex;align-items:center;gap:.5rem}.qsh i{width:1rem;height:1rem;border-radius:4px;background:var(--c)}.qsh h3{margin:0}
+.qsc{display:flex;gap:.45rem}.qsc button{width:2.7rem;height:2.7rem;border-radius:50%;border:1.5px solid var(--rule);background:var(--white);font-weight:800;font-family:inherit;color:var(--ink);cursor:pointer}.qsc button.on{background:var(--c);border-color:var(--c);color:#fff}
+.qtime{width:auto;display:inline-block;padding:.28rem .6rem;max-width:8rem}
+.bs .chip.on{background:var(--c,var(--ink));border-color:var(--c,var(--ink))}
+.chip.add{border-style:dashed;color:var(--sub)}
 </style>
 </head>
 <body>
 <div id="app"></div><div id="sheet"></div><div id="tip"></div><div id="toast" role="status"></div>
 <script>
 "use strict";
-/* 史記 — 毎日の情勢(出来事・行動)と主観(心の中)を記し、年表で眺める */
-const VER = "s1.30";
+/* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、年表で眺める */
+const VER = "s2.00";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -166,9 +204,39 @@ const EMO_DEF = { w: ["🌤️", "📣", "🏠", "🗞️"], a: ["✏️", "🧭
 const EMO_PICK = ["🏛️", "⚖️", "📜", "📰", "🧭", "🗺️", "🔔", "📱", "📐", "🧮", "📘", "✏️", "🎧", "🔤", "🗂", "🏫", "📝", "📚", "🎬", "🏆", "☔", "🚶", "💼", "🚃", "♨️", "🛌", "🏠", "🛍", "🧳", "🍚", "☕️", "🌤️", "🎉", "⚡", "🌱", "🔥", "💭", "🌙"];
 const ERA_COL = ["#6B4C9A", "#3F7A55", "#B8432F", "#2F4F8A", "#A9761C", "#7D4A8C"];
 
-function normalize(d){ d = d && typeof d === "object" ? d : {}; ["news", "eras", "issues", "bands"].forEach(k => { if (!d[k] || typeof d[k] !== "object") d[k] = {}; }); d.settings = Object.assign({ u: 0, imp: false }, d.settings || {}); return d; }
+// 段:ユニットが主にどれか(土台の色)
+const CAT = [{ id: "o", n: "客観", c: "#2F4F8A", base: "#E1E7F0" }, { id: "s", n: "主観", c: "#8A5A9A", base: "#EDE2EC" }, { id: "j", n: "時代", c: "#3F7A55", base: "#E3EDE4" }, { id: "h", n: "歴史", c: "#B8432F", base: "#F2E1DC" }];
+const catOf = id => CAT.find(c => c.id === id) || CAT[0];
+// 選択肢のたまり場。同じ「場所」「なぜ」は、どのブロックから選んでも同じ並びになる
+const POOL = {
+  act: ["青チャート", "英単語", "Anki", "アプリづくり", "ごはん", "お風呂", "スマホ", "動画", "ゲーム", "散歩", "寝た"],
+  amt: ["ちょっと", "ふつう", "たっぷり"],
+  feel: ["うれしい", "たのしい", "ほっとした", "やる気", "不安", "イライラ", "逃げたい", "つかれた", "さみしい"],
+  place: ["自分の部屋", "リビング", "鉄緑", "外", "電車"],
+  why: ["わからなくて", "眠くて", "通知が来て", "つかれて", "なんとなく"],
+  who: ["ひとり", "家族", "友達", "先生"]
+};
+const FIXED = { amt: true };
+const FEEL_E = { "うれしい": "😊", "たのしい": "😆", "ほっとした": "😌", "やる気": "🔥", "不安": "😟", "イライラ": "😤", "逃げたい": "🫠", "つかれた": "😮‍💨", "さみしい": "🥲" };
+// ブロック(作るのは Claude。中身の形が決まっているので、年表での見せ方も決められる)
+const BK = {
+  deki: { n: "できごと", c: "#5B7DB1", w: 2, f: [{ k: "x", n: "なにが起きた", t: "text", ph: "起きたこと" }] },
+  kodo: { n: "行動", c: "#4F8A6B", w: 2, f: [{ k: "what", n: "なにを", t: "pick", p: "act" }, { k: "amt", n: "どれだけ", t: "pick", p: "amt" }, { k: "x", n: "ひとこと(書きたいときだけ)", t: "text", ph: "書かなくていい" }] },
+  kimo: { n: "気持ち", c: "#B0699A", w: 1, f: [{ k: "kind", n: "どんな", t: "pick", p: "feel" }, { k: "lv", n: "強さ", t: "scale" }] },
+  kikk: { n: "きっかけ", c: "#C97F2E", w: 2, f: [{ k: "when", n: "いつ", t: "time" }, { k: "where", n: "どこで", t: "pick", p: "place" }, { k: "doing", n: "何をしていて", t: "pick", p: "act" }, { k: "why", n: "なぜ", t: "pick", p: "why" }] },
+  riyu: { n: "理由", c: "#B8553F", w: 2, f: [{ k: "why", n: "なぜ", t: "pick", p: "why" }] },
+  jikn: { n: "時間", c: "#6F7A87", w: 1, f: [{ k: "min", n: "何分", t: "num", o: [5, 10, 15, 30, 45, 60, 90, 120] }] },
+  dare: { n: "だれと", c: "#A8841E", w: 1, f: [{ k: "who", n: "だれと", t: "multi", p: "who" }] },
+  bash: { n: "場所", c: "#4E8E8A", w: 1, f: [{ k: "where", n: "どこ", t: "pick", p: "place" }] },
+  hito: { n: "ひとこと", c: "#9C917C", w: 2, paper: true, f: [{ k: "x", n: "ひとこと", t: "text", ph: "自由に書く(まだブロックがないことも、ここに)" }] }
+};
+const BK_ORDER = ["deki", "kodo", "kimo", "kikk", "riyu", "jikn", "dare", "bash", "hito"];
+const bkOf = k => BK[k] || BK.hito;
+
+function normalize(d){ d = d && typeof d === "object" ? d : {}; ["news", "eras", "issues", "bands", "units", "opts"].forEach(k => { if (!d[k] || typeof d[k] !== "object") d[k] = {}; }); d.settings = Object.assign({ u: 0, imp: false }, d.settings || {}); return d; }
 let D = normalize(lsGet(K_DATA, null));
-const U = Object.assign({ tab: "j", z: "w", nh: false }, lsGet(K_UI, {}), { sheet: null, arg: null, nq: { x: "" }, lim: 80, bottom: true });
+const U = Object.assign({ tab: "r", z: "w", nh: false }, lsGet(K_UI, {}), { sheet: null, arg: null, lim: 120, bottom: true, unit: null, draft: null, tedit: false, listY: 0, toY: null });
+if (U.tab !== "n") U.tab = "r";
 const NET = { conn: null, sha: null, state: "", dirty: false, timer: null, busy: false };
 const touch = o => { if (o) o.u = now(); return o; };
 function saveLocal(){ lsSet(K_DATA, D); }
@@ -178,30 +246,96 @@ function quiet(fn){ fn(); saveLocal(); queuePush(); }
 // 省アプリの中の「報道」で記したものを、いちどだけ引きつぐ
 function takeOld(old){ if (!old) return 0; let n = 0; Object.values(old.news || {}).forEach(x => { if (!x || !x.id || !String(x.x || "").trim()) return; const y = D.news[x.id]; if (!y || (x.u || 0) > (y.u || 0)) { D.news[x.id] = { id: x.id, x: x.x, t: x.t, at: x.at, day: x.day, u: x.u || now(), e: x.e, top: x.top, auto: x.auto, del: x.del }; n++; } });
   Object.values(old.eras || {}).forEach(e => { if (e && e.id && !D.eras[e.id]) { D.eras[e.id] = e; n++; } }); return n; }
-if (!lsGet("shiki-impL", false)) { takeOld(lsGet("hyogikai-data", null)); lsSet("shiki-impL", true); saveLocal(); }
+// 前の形(字だけの記録)を、ブロック1つのユニットにする。いつ・どの端末でやっても同じ結果になる
+function migrate(){ let n = 0; Object.values(D.news).forEach(x => { if (!x || !x.id) return; const id = "n" + x.id, y = D.units[id]; if (y ? (y.u || 0) >= (x.u || 0) : x.del) return;
+  const t = new Date(x.at || 0), at = new Date((x.day || today()) + "T" + pad(t.getHours()) + ":" + pad(t.getMinutes()) + ":00").getTime(), k = x.t === "w" ? "deki" : x.t === "h" ? "hito" : "kodo";
+  D.units[id] = { id, at: isNaN(at) ? (x.at || now()) : at, day: x.day || today(), u: x.u || 1, cat: x.t === "h" ? "s" : "o", bl: [{ id: "b0", k, v: { x: x.x || "" } }], e: x.e, b: x.b, top: x.top, del: x.del }; n++; }); return n; }
+if (!lsGet("shiki-impL", false)) { takeOld(lsGet("hyogikai-data", null)); lsSet("shiki-impL", true); }
+if (migrate()) saveLocal();
+
+const unitList = () => Object.values(D.units).filter(x => x && !x.del && x.bl && x.bl.length).sort((a, b) => a.at - b.at);
+const uCat = u => u.cat || (u.bl.some(b => b.k === "deki" || b.k === "kodo") ? "o" : u.bl.some(b => b.k === "kimo") ? "s" : "o");
+function bSum(b){ const v = b.v || {}, t = s => String(s || "").trim();
+  switch (b.k) {
+    case "deki": case "hito": return t(v.x);
+    case "kodo": return [v.what, v.amt].filter(Boolean).join("・") + (t(v.x) ? (v.what || v.amt ? "\n" : "") + t(v.x) : "");
+    case "kimo": return v.kind || "";
+    case "kikk": return [v.when, v.where && v.where + "で", v.doing && v.doing + "をしていて", v.why].filter(Boolean).join(" ");
+    case "riyu": return v.why || "";
+    case "jikn": return v.min ? v.min + "分" : "";
+    case "dare": return (v.who || []).join("・");
+    case "bash": return v.where || "";
+  } return ""; }
+const NAME_ORDER = ["deki", "kodo", "kimo", "hito", "riyu", "kikk", "bash", "dare", "jikn"];
+function uName(u){ for (const k of NAME_ORDER) { const b = u.bl.find(x => x.k === k && bSum(x)); if (b) return cut(bSum(b).split("\n")[0], 30); } return u.bl.map(b => bkOf(b.k).n).join("・") || "新しい記録"; }
+function uEmo(u){ const f = u.bl.find(b => b.k === "kimo" && b.v && FEEL_E[b.v.kind]); const nm = uName(u), hit = EMO_KW.find(([w]) => nm.includes(w)); if (hit) return hit[1]; if (f) return FEEL_E[f.v.kind];
+  const d = EMO_DEF[uCat(u) === "s" ? "h" : uCat(u) === "o" ? "a" : "w"]; return d[hsh(u.id) % d.length]; }
+function uFull(u){ return [uName(u)].concat(u.bl.map(b => bSum(b).replace(/\n/g, " ")).filter(s => s && s !== uName(u))).join(" / "); }
+// 年表に載せる形
+function chronEntries(){ return unitList().map(u => { const c = catOf(uCat(u)); return { id: u.id, day: u.day, at: u.at, t: c.id === "s" ? "h" : "a", c: c.c, kn: c.n, x: uFull(u), e: u.e || uEmo(u), b: u.b, top: u.top }; }); }
+// 選択肢:よく使うものから並ぶ
+function poolOpts(p){ const base = (POOL[p] || []).concat(Object.values(D.opts).filter(o => o && !o.del && o.p === p).map(o => o.v)), uniq = Array.from(new Set(base)), cnt = {};
+  const fs = []; Object.entries(BK).forEach(([k, bk]) => bk.f.forEach(f => { if (f.p === p) fs.push([k, f.k]); }));
+  Object.values(D.units).forEach(u => { if (!u || u.del || !u.bl) return; u.bl.forEach(b => fs.forEach(([k, fk]) => { if (b.k !== k || !b.v) return; [].concat(b.v[fk] || []).forEach(v => { cnt[v] = (cnt[v] || 0) + 1; }); })); });
+  return FIXED[p] ? uniq : uniq.map((v, i) => [v, i]).sort((a, b) => (cnt[b[0]] || 0) - (cnt[a[0]] || 0) || a[1] - b[1]).map(a => a[0]); }
+
+/* ───────── 1日のユニット(LINE のように下へ積む) ───────── */
+function mini(u){ const c = catOf(uCat(u)); return '<span class="qm" style="background:' + c.base + '">' + u.bl.slice(0, 8).map(b => '<i' + (bkOf(b.k).w === 2 ? ' class="w"' : "") + ' style="background:' + bkOf(b.k).c + '"></i>').join("") + "</span>"; }
+function viewList(){
+  const xs = unitList(), lim = U.lim, show = xs.slice(-lim); let h = "", day = "";
+  show.forEach(u => { if (u.day !== day) { day = u.day; h += '<div class="qd">' + ymdJ(day) + "</div>"; }
+    h += '<button class="ql" data-ha="uopen" data-hv="' + u.id + '"><span class="qt">' + hm(u.at) + "</span>" + mini(u) + '<span class="qn">' + esc(uName(u)) + "</span></button>"; });
+  return '<div class="qlist">' + (xs.length > lim ? '<button class="nsm" data-ha="more">もっと前を見る(あと ' + (xs.length - lim) + " 件)</button>" : "") +
+    (h || '<p class="note" style="text-align:center;margin:3rem 0">右下の＋から記す。<br>ブロックを積んで、1つの記録(ユニット)にする。</p>') + "</div>" +
+    '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" + '<button class="qfab" data-ha="unew" aria-label="新しく記す">＋</button>';
+}
+
+/* ───────── ユニットの中身 = 積み木 ───────── */
+const curUnit = () => U.draft || (U.unit && D.units[U.unit] && !D.units[U.unit].del ? D.units[U.unit] : null);
+function blockHTML(b){ const bk = bkOf(b.k), s = bSum(b), lv = b.k === "kimo" && b.v && b.v.lv ? '<i class="qdots">' + "●".repeat(b.v.lv) + "○".repeat(5 - b.v.lv) + "</i>" : "";
+  return '<button class="qb' + (bk.w === 2 ? " w" : "") + (bk.paper ? " p" : "") + '" style="--c:' + bk.c + '" data-ha="kopen" data-hv="' + b.id + '"><small>' + bk.n + "</small><span>" + (s ? esc(s) : lv ? "" : "<em>押して入れる</em>") + lv + "</span></button>"; }
+function viewUnit(u){
+  const c = uCat(u), saved = !U.draft;
+  const bs = saved ? bandList().filter(b => b.from <= u.day && bEnd(b) >= u.day).sort((a, b) => bDepth(a.id) - bDepth(b.id)) : [];
+  return '<div class="qunit"><div class="qh"><button class="qback" data-ha="uback" aria-label="もどる">‹</button><b>' + esc(u.bl.length ? uName(u) : "新しい記録") + "</b></div>" +
+    '<div class="qst"><span>記録を始めた時刻</span><b>' + hm(u.at) + "</b>" + (u.day !== today() ? "<span>" + md(u.day) + "</span>" : "") +
+    '<button data-ha="ut" data-hv="-5">−5分</button><button data-ha="ut" data-hv="5">＋5分</button><button data-ha="utx">' + (U.tedit ? "とじる" : "変える") + "</button></div>" +
+    (U.tedit ? '<div class="qte"><input class="fi" type="date" data-hin="ud" value="' + u.day + '" max="' + today() + '"><input class="fi" type="time" data-hin="utm" value="' + hm(u.at) + '"></div>' : "") +
+    '<div class="qcat">' + CAT.map(k => '<button class="' + (c === k.id ? "on" : "") + '" style="--c:' + k.c + '" data-ha="ucat" data-hv="' + k.id + '">' + k.n + "</button>").join("") + "</div>" +
+    '<div class="qbase" style="background:' + catOf(c).base + '">' + (u.bl.length ? '<div class="qg">' + u.bl.map(blockHTML).join("") + "</div>" : '<p class="qempty">下のブロックを押すと、ここに積まれる</p>') + "</div>" +
+    (bs.length ? '<div class="nwl">入れる帯(この日にかかっている帯)</div><div class="chips">' + bs.map(b => '<button class="chip' + (u.b === b.id ? " on" : "") + '" data-ha="ub" data-hv="' + (u.b === b.id ? "" : b.id) + '">' + esc(bPath(b.id).map(p => cut(p.n, 8)).join(" › ")) + "</button>").join("") + "</div>" : "") +
+    (saved ? '<div class="links" style="margin-top:1.2rem"><button data-ha="udel">この記録を消す</button><span></span></div>' : "") + "</div>" +
+    '<div class="qpal"><div><div class="qph">ブロックを足す(押すと下に積まれる)</div>' + BK_ORDER.map(k => '<button style="--c:' + BK[k].c + '" data-ha="kadd" data-hv="' + k + '">' + BK[k].n + "</button>").join("") + "</div></div>";
+}
+function openUnit(id){ U.unit = id; U.draft = null; U.tedit = false; U.sheet = null; U.listY = window.scrollY; U.toY = 0; try { history.pushState({ q: 1 }, ""); } catch (e) {} render(); }
+function closeUnit(){ const u = curUnit(); if (u && !U.draft && !u.bl.length) quiet(() => touch(Object.assign(u, { del: true })));
+  U.unit = null; U.draft = null; U.tedit = false; U.sheet = null; U.toY = U.listY; render(); }
+window.addEventListener("popstate", () => { if (U.unit || U.draft) closeUnit(); });
+function setAt(u, at){ u.at = at; u.day = ymd(new Date(at)); touch(u); }
+// 下書きは、ブロックを1つ積んだときに初めて記録になる
+function ensureSaved(){ if (!U.draft) return D.units[U.unit]; const u = U.draft; D.units[u.id] = u; U.unit = u.id; U.draft = null; return u; }
+
+/* ───────── ブロックの中身 ───────── */
+function fieldHTML(f, val){
+  if (f.t === "text") return '<textarea class="fi" id="sk-ft" rows="3" data-hin="ft" data-hv="' + f.k + '" placeholder="' + esc(f.ph || "書く") + '">' + esc(val || "") + "</textarea>";
+  if (f.t === "time") return '<div class="chips"><button class="chip' + (val ? "" : " on") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="">始めた時刻と同じ</button><input class="fi qtime" type="time" data-hin="ftm" data-hv="' + f.k + '" value="' + esc(val || "") + '"></div>';
+  if (f.t === "scale") return '<div class="qsc">' + [1, 2, 3, 4, 5].map(n => '<button class="' + ((val || 0) >= n ? "on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + n + '">' + n + "</button>").join("") + "</div>";
+  if (f.t === "num") return '<div class="chips">' + f.o.map(n => '<button class="chip' + (+val === n ? " on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + n + '">' + n + "</button>").join("") + '<input class="fi qtime" type="number" min="1" inputmode="numeric" data-hin="fnum" data-hv="' + f.k + '" value="' + (val && !f.o.includes(+val) ? val : "") + '" placeholder="ほか"></div>';
+  const vs = [].concat(val || []), opts = poolOpts(f.p); vs.forEach(v => { if (!opts.includes(v)) opts.push(v); });
+  return '<div class="chips">' + opts.map(o => '<button class="chip' + (vs.includes(o) ? " on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + esc(o) + '">' + esc(o) + "</button>").join("") +
+    (FIXED[f.p] ? "" : '<button class="chip add" data-ha="kopt" data-hv="' + f.k + '">＋</button>') + "</div>";
+}
+const curBlock = () => { const u = curUnit(); return u && u.bl.find(x => x.id === (U.arg || {}).bid); };
+function sheetBlk(){ const b = curBlock(); if (!b) return ""; const bk = bkOf(b.k); b.v = b.v || {};
+  return sheetWrap('<div class="qsh" style="--c:' + bk.c + '"><i></i><h3>' + bk.n + "</h3></div>" + bk.f.map(f => '<div class="nwl">' + f.n + "</div>" + fieldHTML(f, b.v[f.k])).join("") +
+    '<div class="chips" style="margin-top:1rem"><button class="chip" data-ha="kmv" data-hv="-1">↑ 前へ</button><button class="chip" data-ha="kmv" data-hv="1">↓ 後へ</button></div>' +
+    '<div class="links" style="margin-top:.9rem"><button data-ha="krm">このブロックを外す</button><span></span></div><button class="bigbtn" data-ha="close">閉じる</button>').replace('class="bs"', 'class="bs" style="--c:' + bk.c + '"');
+}
 
 const kindOf = x => NKIND.some(k => k.id === x.t) ? x.t : "a";
-const kInfo = id => NKIND.find(l => l.id === id) || NKIND[1];
-const newsList = () => Object.values(D.news).filter(x => !x.del).sort((a, b) => a.day < b.day ? -1 : a.day > b.day ? 1 : a.at - b.at);
 function emoGuess(x){ const t = String(x.x || ""), hit = EMO_KW.find(([w]) => t.includes(w)); if (hit) return hit[1]; const d = EMO_DEF[kindOf(x)]; return d[hsh(x.id) % d.length]; }
 const emoOf = x => x.e || emoGuess(x);
-const nTitle = (x, n) => cut(String(x.x || "").split("\n")[0] || "(字なし)", n || 30);
-function newsAdd(o){ const n = Object.assign({ id: rid(), x: "", t: "a", at: now(), day: today(), u: now() }, o); D.news[n.id] = n; return n; }
-// その日の一面:自分で選んだもの、なければ情勢の中でいちばん長く書いたもの
 function nTops(list){ const by = {}; list.filter(x => x.top || kindOf(x) !== "h").forEach(x => { (by[x.day] = by[x.day] || []).push(x); }); const tops = {}; Object.entries(by).forEach(([d, xs]) => { const f = xs.filter(x => x.top).sort((a, b) => (b.u || 0) - (a.u || 0))[0]; tops[d] = (f || xs.slice().sort((a, b) => (a.auto ? 1 : 0) - (b.auto ? 1 : 0) || (b.x || "").length - (a.x || "").length)[0]).id; }); return tops; }
-
-/* ───────── 流れ ───────── */
-function viewStream(all){
-  const tab = U.tab, list = all.filter(x => (kindOf(x) === "h") === (tab === "s")), lim = U.lim, xs = list.slice(-lim); let h = "", day = "";
-  xs.forEach(x => { if (x.day !== day) { day = x.day; h += '<div class="nsd">' + md(day) + "</div>"; } const k = kindOf(x);
-    h += '<button class="nsb k' + k + '" data-ha="edit" data-hv="' + x.id + '">' + (tab === "j" ? "<i>" + kInfo(k).n + "</i>" : "") + "<span>" + esc(x.x || "(字なし)") + "</span><small>" + (x.auto ? "自動・" : "") + hm(x.at) + "</small></button>"; });
-  const mic = window.SpeechRecognition || window.webkitSpeechRecognition ? '<button class="mic' + (U.mic ? " on" : "") + '" data-ha="mic" aria-label="声で入れる">' + (U.mic ? "…" : "声") + "</button>" : "";
-  return '<p class="nlead">' + (tab === "j" ? "情勢:起きたことと、したこと。外から見えること。" : "主観:自分の心の中。情勢とは分けて残る。") + '</p><div class="nst">' +
-    (list.length > lim ? '<button class="nsm" data-ha="more">もっと前を見る(あと ' + (list.length - lim) + " 件)</button>" : "") +
-    (h || '<p class="note" style="text-align:center;margin:2rem 0">' + (tab === "j" ? "まわりで起きたこと・自分がしたことを、下から書く。" : "思ったこと・感じたことを、下から書く。") + "</p>") + "</div>" +
-    '<div class="ninp"><div class="r"><textarea id="sk-in" data-hin="in" rows="2" placeholder="書く">' + esc(U.nq.x || "") + "</textarea>" + mic + "</div>" +
-    '<div class="snd">' + NKIND.map(k => '<button style="--lc:' + k.c + '" data-ha="post" data-hv="' + k.id + '">' + k.n + "</button>").join("") + "</div></div>";
-}
 
 /* ───────── 年表(横が時間。帯を自分で引く。帯を押すと、その中の年表が開く) ───────── */
 const BCOL = ["#6B4C9A", "#B8432F", "#3F7A55", "#2F4F8A", "#A9761C", "#22808A", "#9A3B5A", "#5B6B2E"];
@@ -243,7 +377,7 @@ function viewChron(all){
   const mode = dw >= 80 ? "c" : dw >= 20 ? "t" : "b", TH = mode === "c" ? 62 : mode === "t" ? dw : 7, MAXS = mode === "c" ? 7 : mode === "t" ? 12 : 26, byDay = {}; let ph = "", maxS = 1;
   pins.forEach(x => { (byDay[x.day] = byDay[x.day] || []).push(x); });
   Object.entries(byDay).forEach(([d, xs]) => { const x0 = X(d), shown = xs.length > MAXS ? xs.slice(0, MAXS - 1) : xs, more = xs.length - shown.length; maxS = Math.max(maxS, shown.length + (more ? 1 : 0));
-    shown.forEach((x, k) => { const big = tops[d] === x.id, kc = kInfo(kindOf(x)).c, tip = esc(mdS(d) + " " + kInfo(kindOf(x)).n + ":" + cut(String(x.x || "").replace(/\n/g, " "), 70));
+    shown.forEach((x, k) => { const big = tops[d] === x.id, kc = x.c, tip = esc(mdS(d) + " " + hm(x.at) + " " + x.kn + ":" + cut(String(x.x || "").replace(/\n/g, " "), 70));
       ph += mode === "c" ? '<button class="tc' + (big ? " big" : "") + '" data-ha="edit" data-hv="' + x.id + '" style="left:' + (x0 + 3) + "px;bottom:" + (k * TH + 6) + "px;width:" + (dw - 6) + "px;--c:" + kc + '"><i>' + emoOf(x) + "</i><span>" + esc(cut(String(x.x || "").replace(/\n/g, " "), 26)) + "</span></button>"
         : mode === "t" ? '<button class="tt' + (big ? " big" : "") + '" data-ha="edit" data-hv="' + x.id + '" data-tip="' + tip + '" style="left:' + (x0 + 1) + "px;bottom:" + (k * TH + 6) + "px;width:" + (dw - 2) + "px;height:" + (dw - 2) + "px;--c:" + kc + '">' + emoOf(x) + "</button>"
         : '<button class="tb' + (big ? " big" : "") + '" data-ha="list" data-hv="' + d.slice(0, 7) + "-01|" + ymd(new Date(+d.slice(0, 4), +d.slice(5, 7), 0)) + "|" + (cur ? cur.id : "") + '" data-tip="' + tip + '" style="left:' + (x0 + .5) + "px;bottom:" + (k * TH + 6) + "px;width:" + (dw - 1) + "px;--c:" + kc + '"></button>'; });
@@ -268,38 +402,31 @@ function sheetBand(){ const b = D.bands[(U.arg || {}).id]; if (!b) return "";
     '<div class="links" style="margin-top:.9rem"><button data-ha="bdel" data-hv="' + b.id + '">この帯を消す(中の帯と印は1つ外へ出る)</button><span></span></div><button class="bigbtn" data-ha="close">これでいい</button>');
 }
 
+
 /* ───────── 下から出る紙 ───────── */
 const sheetWrap = inner => '<div class="dim" data-ha="close"></div><div class="bs" role="dialog" aria-modal="true"><div class="grab"></div>' + inner + "</div>";
-function sheetEdit(){
-  const x = D.news[(U.arg || {}).id]; if (!x) return ""; const l = kindOf(x), isTop = nTops(newsList())[x.day] === x.id, cur = emoOf(x);
-  return sheetWrap('<h3>記したものを直す</h3><textarea class="fi" rows="4" data-hin="ex" data-hv="' + x.id + '" placeholder="書く">' + esc(x.x || "") + "</textarea>" +
-    '<div class="nwl">種類(出来事・行動=情勢、心の中=主観)</div><div class="chips">' + NKIND.map(n => '<button class="chip' + (l === n.id ? " on" : "") + '" data-ha="ek" data-hv="' + n.id + '">' + n.n + "</button>").join("") + "</div>" +
-    (() => { const bs = bandList().filter(b => b.from <= x.day && bEnd(b) >= x.day).sort((a, b) => bDepth(a.id) - bDepth(b.id)); return bs.length ? '<div class="nwl">入れる帯(この日にかかっている帯)</div><div class="chips">' + bs.map(b => '<button class="chip' + (pinBand(x) === b.id ? " on" : "") + '" data-ha="eb" data-hv="' + (pinBand(x) === b.id ? "" : b.id) + '">' + esc(bPath(b.id).map(p => cut(p.n, 8)).join(" › ")) + "</button>").join("") + "</div>" : ""; })() +
-    '<div class="nwl">日付</div><input class="fi" type="date" data-hin="eday" data-hv="' + x.id + '" value="' + x.day + '" max="' + today() + '">' +
-    '<div class="nwl">絵(自動。替えたいときだけ押す)</div><div class="nemo">' + Array.from(new Set([cur].concat(EMO_PICK))).map(e => '<button class="' + (e === cur ? "on" : "") + '" data-ha="ee" data-hv="' + e + '">' + e + "</button>").join("") + "</div>" +
-    '<button class="bigbtn" style="--bc:' + (isTop ? "var(--sub)" : "var(--ink)") + ';margin-top:.8rem" data-ha="top" data-hv="' + x.id + '">' + (isTop ? "この日の一面になっている" : "この日の一面にする") + "<small>" + (isTop ? (x.top ? "もう一度押すと、自動の選び方に戻る" : "自動で選ばれた") : "年表で、絵つきの大きい印になる") + "</small></button>" +
-    '<div class="links" style="margin-top:.8rem"><button data-ha="del" data-hv="' + x.id + '">これを消す</button><span></span></div><button class="bigbtn" data-ha="close">これでいい</button>');
-}
 function sheetList(){
-  const a = U.arg || {}, all = newsList(), tops = nTops(all), xs = all.filter(x => x.day >= a.from && x.day <= a.to && pinBand(x) === (a.b || null) && (U.nh || kindOf(x) !== "h")), days = Array.from(new Set(xs.map(x => x.day)));
+  const a = U.arg || {}, all = chronEntries(), tops = nTops(all), xs = all.filter(x => x.day >= a.from && x.day <= a.to && pinBand(x) === (a.b || null) && (U.nh || kindOf(x) !== "h")), days = Array.from(new Set(xs.map(x => x.day)));
   return sheetWrap("<h3>" + (a.from === a.to ? md(a.from) : mdS(a.from) + "〜" + mdS(a.to)) + '</h3><p class="d">' + xs.length + " 件</p>" +
-    days.map(d => '<div class="nld">' + md(d) + "</div>" + xs.filter(x => x.day === d).map(x => '<button class="nli" style="--lc:' + kInfo(kindOf(x)).c + '" data-ha="edit" data-hv="' + x.id + '"><span>' + emoOf(x) + "</span><b" + (tops[d] === x.id ? ' class="tp"' : "") + ">" + esc(x.x || "(字なし)") + "</b></button>").join("")).join("") + '<button class="bigbtn" data-ha="close">とじる</button>');
+    days.map(d => '<div class="nld">' + md(d) + "</div>" + xs.filter(x => x.day === d).map(x => '<button class="nli" style="--lc:' + x.c + '" data-ha="edit" data-hv="' + x.id + '"><span>' + x.e + "</span><b" + (tops[d] === x.id ? ' class="tp"' : "") + ">" + esc(x.x) + "</b></button>").join("")).join("") + '<button class="bigbtn" data-ha="close">とじる</button>');
 }
 
 /* ───────── 描画 ───────── */
 function savedLabel(){ if (!NET.conn) return '<span class="saved">✓ 手元に保存済み(省アプリでつなぐと、ほかの端末にも出る)</span>'; return '<span class="saved' + (NET.state === "err" ? " err" : "") + '">' + (NET.state === "err" ? "！ つながらない(手元には保存済み)" : NET.busy || NET.dirty ? "… 保存中" : "✓ 保存済み") + "</span>"; }
 function updSaved(){ const el = $(".saved"); if (el) el.outerHTML = savedLabel(); }
 function render(){
-  const app = $("#app"), y = window.scrollY, ae = document.activeElement, aid = ae && ae.id, all = newsList();
-  const tl0 = $("#sk-tl"), tls = tl0 ? { l: tl0.scrollLeft, z: tl0.dataset.z, end: tl0.scrollWidth - tl0.scrollLeft - tl0.clientWidth < 30 } : null;
+  const app = $("#app"), y = window.scrollY, ae = document.activeElement, aid = ae && ae.id;
+  const tl0 = $("#sk-tl"), tls = tl0 ? { l: tl0.scrollLeft, z: tl0.dataset.z } : null;
   let sel = null; try { if (aid && ae.selectionStart != null) sel = [ae.selectionStart, ae.selectionEnd]; } catch (e) {}
-  if (!["j", "s", "n"].includes(U.tab)) U.tab = "j"; const tab = U.tab;
-  app.innerHTML = '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["j", "情勢"], ["s", "主観"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + "</nav></header>" +
-    (tab === "n" ? viewChron(all) : viewStream(all)) + (tab === "n" ? '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" : "");
-  $("#sheet").innerHTML = U.sheet === "edit" ? sheetEdit() : U.sheet === "list" ? sheetList() : U.sheet === "band" ? sheetBand() : "";
+  const tab = U.tab === "n" ? "n" : "r", u = curUnit(); if (!u) { U.unit = null; U.draft = null; }
+  app.innerHTML = u ? viewUnit(u) : '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["r", "記す"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + "</nav></header>" +
+    (tab === "n" ? viewChron(chronEntries()) + '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" : viewList());
+  $("#sheet").innerHTML = U.sheet === "blk" ? sheetBlk() : U.sheet === "list" ? sheetList() : U.sheet === "band" ? sheetBand() : "";
+  if (U.sheet && !$("#sheet").innerHTML) U.sheet = null;
   document.body.classList.toggle("lock", !!U.sheet);
   { const tl = $("#sk-tl"); if (tl) { if (!tls || tls.z !== tl.dataset.z) tl.scrollLeft = +tl.dataset.td >= 0 ? Math.max(0, +tl.dataset.td - tl.clientWidth * 0.78) : 0; else tl.scrollLeft = tls.l; } }
-  if (U.bottom) { U.bottom = false; window.scrollTo(0, (tab === "j" || tab === "s") ? document.documentElement.scrollHeight : 0); }
+  if (U.toY != null) { window.scrollTo(0, U.toY); U.toY = null; }
+  else if (U.bottom) { U.bottom = false; window.scrollTo(0, !u && tab === "r" ? document.documentElement.scrollHeight : 0); }
   else if (U.keep) { window.scrollTo(0, y + document.documentElement.scrollHeight - U.keep); U.keep = 0; }
   else if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
   if (aid) { const n = document.getElementById(aid); if (n && n !== ae) { n.focus({ preventScroll: true }); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
@@ -310,23 +437,38 @@ let toastT = null;
 function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1600); }
 
 /* ───────── 操作 ───────── */
+// ブロックの欄を変える(下書きならまず記録にする)
+function setField(fk, fn){ mut(() => { const u = ensureSaved(), b = u.bl.find(x => x.id === U.arg.bid); if (!b) return; b.v = b.v || {}; fn(b.v, fk); touch(u); }); }
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-ha]"); if (!b || b.disabled) return; const a = b.dataset.ha, v = b.dataset.hv;
   switch (a) {
-    case "tab": U.tab = v; U.bottom = true; U.lim = 80; U.draw = null; saveUI(); render(); return;
-    case "post": { const x = (($("#sk-in") || {}).value || "").trim(); if (!x) { toast("字を書いてから押す"); const el = $("#sk-in"); el && el.focus(); return; }
-      const t = NKIND.some(k => k.id === v) ? v : "a", here = (t === "h") === (U.tab === "s"); U.bottom = true;
-      mut(() => { newsAdd({ x, t }); U.nq = { x: "" }; }); toast(here ? "記した" : (t === "h" ? "主観に記した" : "情勢に記した")); return; }
-    case "mic": { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR || U.mic) return; const r = new SR(); r.lang = "ja-JP"; r.interimResults = false; U.nq.x = ($("#sk-in") || {}).value || "";
-      r.onresult = e => { U.nq.x = (U.nq.x ? U.nq.x + " " : "") + e.results[0][0].transcript; }; r.onend = () => { U.mic = false; render(); }; r.onerror = () => { U.mic = false; toast("声を聞き取れなかった"); render(); };
-      U.mic = true; render(); try { r.start(); } catch (e) { U.mic = false; render(); } return; }
-    case "more": U.lim += 150; U.keep = document.documentElement.scrollHeight; render(); return;
-    case "edit": U.sheet = "edit"; U.arg = { id: v }; render(); return;
+    case "tab": U.tab = v; U.bottom = true; U.lim = 120; U.draw = null; saveUI(); render(); return;
+    case "more": U.lim += 200; U.keep = document.documentElement.scrollHeight; render(); return;
     case "close": U.sheet = null; render(); return;
-    case "del": if (!confirm("これを消しますか。")) return; U.sheet = null; mut(() => { touch(Object.assign(D.news[v], { del: true })); }); return;
-    case "ek": mut(() => { const x = D.news[U.arg.id]; x.t = v; touch(x); }); return;
-    case "ee": mut(() => { const x = D.news[U.arg.id]; if (x.e === v) delete x.e; else x.e = v; touch(x); }); return;
-    case "top": mut(() => { const x = D.news[v]; if (x.top) delete x.top; else { newsList().filter(y => y.day === x.day && y.top).forEach(y => { delete y.top; touch(y); }); x.top = true; } touch(x); }); return;
+    // ユニット
+    case "unew": U.draft = { id: rid(), at: now(), day: today(), u: now(), bl: [] }; U.unit = null; U.tedit = false; U.listY = window.scrollY; U.toY = 0; try { history.pushState({ q: 1 }, ""); } catch (e) {} render(); return;
+    case "uopen": case "edit": U.sheet = null; openUnit(v); return;
+    case "uback": if (history.state && history.state.q) history.back(); else closeUnit(); return;
+    case "ut": { const u = curUnit(); if (!u) return; if (U.draft) { setAt(u, u.at + (+v) * 60000); render(); } else mut(() => setAt(u, u.at + (+v) * 60000)); return; }
+    case "utx": U.tedit = !U.tedit; render(); return;
+    case "ucat": { const u = curUnit(); if (!u) return; if (U.draft) { u.cat = v; render(); } else mut(() => { u.cat = v; touch(u); }); return; }
+    case "ub": mut(() => { const u = curUnit(); u.b = v || null; touch(u); }); return;
+    case "udel": { if (!confirm("この記録を消しますか。")) return; const u = curUnit(); quiet(() => touch(Object.assign(u, { del: true }))); if (history.state && history.state.q) history.back(); else closeUnit(); toast("消した"); return; }
+    // ブロック
+    case "kadd": { const bid = rid(); mut(() => { const u = ensureSaved(); u.bl.push({ id: bid, k: v, v: {} }); touch(u); }); U.sheet = "blk"; U.arg = { bid }; render();
+      if (BK[v] && BK[v].f[0].t === "text") { const t = $("#sk-ft"); t && t.focus(); } return; }
+    case "kopen": U.sheet = "blk"; U.arg = { bid: v }; render(); return;
+    case "kv": { const x = b.dataset.hx, f = (bkOf((curBlock() || {}).k).f.find(ff => ff.k === v) || {});
+      setField(v, (o, k) => { if (f.t === "multi") { const arr = [].concat(o[k] || []); o[k] = arr.includes(x) ? arr.filter(y => y !== x) : arr.concat(x); if (!o[k].length) delete o[k]; }
+        else if (f.t === "scale" || f.t === "num") { if (+o[k] === +x) delete o[k]; else o[k] = +x; }
+        else if (f.t === "time") delete o[k];
+        else { if (o[k] === x) delete o[k]; else o[k] = x; } }); return; }
+    case "kopt": { const bl = curBlock(); if (!bl) return; const f = bkOf(bl.k).f.find(ff => ff.k === v); if (!f || !f.p) return; const t = (prompt("新しい選択肢") || "").trim(); if (!t) return;
+      if (!poolOpts(f.p).includes(t)) { const id = rid(); D.opts[id] = { id, p: f.p, v: t, u: now() }; }
+      setField(v, (o, k) => { if (f.t === "multi") { const arr = [].concat(o[k] || []); if (!arr.includes(t)) arr.push(t); o[k] = arr; } else o[k] = t; }); return; }
+    case "kmv": mut(() => { const u = curUnit(), i = u.bl.findIndex(x => x.id === U.arg.bid), j = i + (+v); if (i < 0 || j < 0 || j >= u.bl.length) return; const t = u.bl[i]; u.bl[i] = u.bl[j]; u.bl[j] = t; touch(u); }); return;
+    case "krm": U.sheet = null; mut(() => { const u = curUnit(); u.bl = u.bl.filter(x => x.id !== U.arg.bid); touch(u); }); return;
+    // 年表
     case "nh": U.nh = !U.nh; saveUI(); render(); return;
     case "z": U.z = v; saveUI(); render(); return;
     case "list": { const [f, t, bb] = v.split("|"); U.sheet = "list"; U.arg = { from: f, to: t, b: bb || null }; render(); return; }
@@ -341,8 +483,7 @@ document.addEventListener("click", ev => {
     case "bmove": mut(() => { const x = D.bands[U.arg.id]; x.y = Math.max(0, (x.y || 0) + (+v)); touch(x); }); return;
     case "bhei": mut(() => { const x = D.bands[U.arg.id]; x.h = Math.max(1, Math.min(5, (x.h || 1) + (+v))); touch(x); }); return;
     case "bdel": { if (!confirm("この帯を消しますか(記したものは消えない)。")) return; const x = D.bands[v], par = x.parent || null; U.sheet = null; if (U.band === v) U.band = par;
-      mut(() => { kidsOf(v).forEach(k => { k.parent = par; touch(k); }); Object.values(D.news).forEach(n => { if (n.b === v) { n.b = par; touch(n); } }); touch(Object.assign(x, { del: true })); }); return; }
-    case "eb": mut(() => { const x = D.news[U.arg.id]; x.b = v || null; touch(x); }); return;
+      mut(() => { kidsOf(v).forEach(k => { k.parent = par; touch(k); }); Object.values(D.units).forEach(n => { if (n.b === v) { n.b = par; touch(n); } }); touch(Object.assign(x, { del: true })); }); return; }
   }
 });
 function bandMake(from, to){ const cur = U.band ? D.bands[U.band] : null; if (to && to < from) { const t = from; from = to; to = t; }
@@ -350,19 +491,26 @@ function bandMake(from, to){ const cur = U.band ? D.bands[U.band] : null; if (to
   const n = (prompt("この帯の名前(時代・取り組みの名前)") || "").trim(); U.draw = null; if (!n) { render(); return; }
   mut(() => { const id = rid(), par = cur ? cur.id : null, base = cur ? (cur.c || BCOL[0]) : BCOL[kidsOf(null).length % BCOL.length];
     D.bands[id] = { id, n, from, to, parent: par, c: cur ? tint(base, 0.28) : base, y: freeLane(par, from, to || today()), h: 1, u: now() }; }); toast("帯を引いた"); }
-document.addEventListener("click", ev => { if (!U.draw || U.tab !== "n") return; const inn = ev.target.closest(".chin"); if (!inn || ev.target.closest(".tc,.tt,.tb,.tmore")) return;
+document.addEventListener("click", ev => { if (!U.draw || U.tab !== "n" || curUnit()) return; const inn = ev.target.closest(".chin"); if (!inn || ev.target.closest(".tc,.tt,.tb,.tmore")) return;
   const r = inn.getBoundingClientRect(), d = addDays(inn.dataset.from, Math.max(0, Math.floor((ev.clientX - r.left) / +inn.dataset.dw))), day = d > today() ? today() : d;
   if (!U.draw.from) { U.draw.from = day; render(); } else bandMake(U.draw.from, day); });
 document.addEventListener("input", ev => { const t = ev.target, k = t.dataset && t.dataset.hin; if (!k) return;
-  if (k === "in") { U.nq.x = t.value; return; }
   if (k === "bn") { quiet(() => { const x = D.bands[t.dataset.hv]; if (x && t.value.trim()) { x.n = t.value.trim(); touch(x); } }); return; }
   if (k === "bf" || k === "bt") { if (/^\d{4}-\d\d-\d\d$/.test(t.value) && t.value <= today()) quiet(() => { const x = D.bands[t.dataset.hv]; if (!x) return; if (k === "bf" && t.value <= bEnd(x)) x.from = t.value; if (k === "bt" && t.value >= x.from) x.to = t.value; touch(x); }); return; }
-  if (k === "ex") { quiet(() => { const x = D.news[t.dataset.hv]; if (x) { x.x = t.value; touch(x); } }); return; }
-  if (k === "eday") { if (/^\d{4}-\d\d-\d\d$/.test(t.value) && t.value <= today()) quiet(() => { const x = D.news[t.dataset.hv]; if (x) { x.day = t.value; touch(x); } }); return; }
+  if (k === "ft") { const bl = curBlock(); if (!bl) return; const u = ensureSaved(); quiet(() => { bl.v = bl.v || {}; bl.v[t.dataset.hv] = t.value; touch(u); }); return; }
+  if (k === "ftm" || k === "fnum") { const bl = curBlock(); if (!bl) return; const val = k === "fnum" ? (+t.value > 0 ? +t.value : null) : (/^\d\d:\d\d$/.test(t.value) ? t.value : null); const u = ensureSaved();
+    quiet(() => { bl.v = bl.v || {}; if (val == null) delete bl.v[t.dataset.hv]; else bl.v[t.dataset.hv] = val; touch(u); }); return; }
+  if (k === "ud" || k === "utm") { const u = curUnit(); if (!u) return; const day = k === "ud" ? t.value : u.day, tm = k === "utm" ? t.value : hm(u.at);
+    if (!/^\d{4}-\d\d-\d\d$/.test(day) || !/^\d\d:\d\d$/.test(tm)) return; const at = new Date(day + "T" + tm + ":00").getTime(); if (isNaN(at)) return;
+    if (U.draft) setAt(u, at); else quiet(() => setAt(u, at)); return; }
 });
+// 入力欄を離れたら、名前などを描き直す
+document.addEventListener("change", ev => { const k = ev.target.dataset && ev.target.dataset.hin; if (k === "ud" || k === "utm" || k === "fnum" || k === "ftm") render(); });
+
 
 /* ───────── 同期(省アプリのトークンを借りる。新しいトークンは作らない) ───────── */
-function merge(a, b){ if (!b) return a; const out = normalize(JSON.parse(JSON.stringify(a))); ["news", "eras", "issues", "bands"].forEach(k => { Object.entries(b[k] || {}).forEach(([id, x]) => { const y = out[k][id]; if (!y || (x.u || 0) > (y.u || 0)) out[k][id] = x; }); }); if ((b.settings && b.settings.u || 0) > (out.settings.u || 0)) out.settings = Object.assign({ u: 0, imp: false }, b.settings); return out; }
+/* ───────── 同期(省アプリのトークンを借りる。新しいトークンは作らない) ───────── */
+function merge(a, b){ if (!b) return a; const out = normalize(JSON.parse(JSON.stringify(a))); ["news", "eras", "issues", "bands", "units", "opts"].forEach(k => { Object.entries(b[k] || {}).forEach(([id, x]) => { const y = out[k][id]; if (!y || (x.u || 0) > (y.u || 0)) out[k][id] = x; }); }); if ((b.settings && b.settings.u || 0) > (out.settings.u || 0)) out.settings = Object.assign({ u: 0, imp: false }, b.settings); return out; }
 const b64e = s => btoa(unescape(encodeURIComponent(s)));
 const b64d = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ""))));
 const api = p => "https://api.github.com/repos/" + encodeURIComponent(NET.conn.owner) + "/" + encodeURIComponent(NET.conn.repo) + "/contents/" + p;
@@ -379,8 +527,9 @@ async function pull(){
   if (!NET.conn || !NET.conn.token) return; NET.busy = true; updSaved();
   try { const remote = await fetchRemote(DATA_PATH), before = JSON.stringify(D); D = merge(D, remote);
     if (!D.settings.imp) { try { takeOld(await fetchRemote(OLD_PATH)); } catch (e) {} D.settings.imp = true; touch(D.settings); }
+    migrate();
     saveLocal(); NET.state = ""; const changed = JSON.stringify(D) !== before; if (!remote || JSON.stringify(remote) !== JSON.stringify(D)) NET.dirty = true; NET.busy = false;
-    if (changed && !U.sheet && document.activeElement !== $("#sk-in")) render(); else updSaved(); if (NET.dirty) queuePush(300);
+    if (changed && !U.sheet && !(document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName))) render(); else updSaved(); if (NET.dirty) queuePush(300);
   } catch (e) { NET.busy = false; NET.state = "err"; updSaved(); console.warn(e); }
 }
 function queuePush(ms){ NET.dirty = true; updSaved(); clearTimeout(NET.timer); NET.timer = setTimeout(push, ms == null ? 1500 : ms); }
@@ -398,11 +547,12 @@ function findConn(){
   for (const k of keys) { const c = lsGet(k, null); if (c && typeof c === "object" && c.token && c.owner) return { owner: c.owner, repo: (k === "sho-conn" && c.repo) || "notion-daily", branch: c.branch || "main", token: c.token }; }
   return null;
 }
+
 NET.conn = findConn();
 render();
 if (NET.conn) pull();
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { if (!NET.conn) NET.conn = findConn(); if (NET.conn) pull(); } else if (NET.dirty) push(); });
-window.SK = { get D(){ return D; }, U, render, newsList };
+window.SK = { get D(){ return D; }, U, render, unitList, chronEntries, migrate };
 </script>
 </body>
 </html>
