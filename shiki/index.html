@@ -32,14 +32,6 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .bs{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--paper);border-radius:20px 20px 0 0;padding:.5rem 16px calc(1rem + env(safe-area-inset-bottom));max-height:88vh;overflow-y:auto;max-width:760px;margin:0 auto}
 .bs .grab{width:2.6rem;height:.28rem;border-radius:999px;background:var(--rule);margin:.2rem auto .7rem}.bs h3{margin:0 0 .4rem;font-size:1.1rem}.bs .d{margin:0 0 .5rem;font-size:.78rem;color:var(--sub)}
 #toast{position:fixed;left:50%;top:4.2rem;transform:translate(-50%,-400%);background:var(--ink);color:#fff;border-radius:999px;padding:.5rem 1.1rem;font-size:.84rem;z-index:40;transition:transform .2s;white-space:nowrap}#toast.on{transform:translate(-50%,0)}
-.mapb{background:#CFE0E6;border:1px solid var(--rule);border-radius:14px;overflow:hidden}
-#sk-map svg{display:block;width:100%;height:auto;max-height:68vh}
-#sk-map text{font-family:inherit;pointer-events:none}#sk-map g[data-ha]{cursor:pointer}
-#sk-map .new{animation:pop .9s ease-out 2}@keyframes pop{0%{opacity:0}40%{opacity:1}70%{opacity:.35}100%{opacity:1}}
-@media (prefers-reduced-motion:reduce){#sk-map .new{animation:none}#toast{transition:none}}
-.mlab{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;background:var(--white);padding:.45rem .8rem 0;font-size:.74rem;color:var(--sub)}.mlab b{color:var(--ink);font-size:.86rem}
-.msl{display:flex;align-items:center;gap:.6rem;background:var(--white);padding:.4rem .8rem .65rem}.msl input{flex:1;min-width:0;accent-color:#22201C}
-.msl button{flex:none;border:1.5px solid var(--ink);border-radius:9px;background:var(--ink);color:#fff;font-size:.72rem;font-weight:800;padding:.3rem .65rem;cursor:pointer}.msl button[data-ha=mnow]{background:none;color:var(--ink)}.msl button:disabled{opacity:.35}
 .nzm{display:inline-flex;border:1.5px solid var(--ink);border-radius:9px;overflow:hidden}.nzm button{border:0;background:none;padding:.25rem .8rem;font-size:.76rem;font-weight:800;font-family:inherit;color:var(--ink);cursor:pointer}.nzm button.on{background:var(--ink);color:#fff}
 .npk{display:flex;justify-content:space-between;align-items:center;background:var(--ink);color:#fff;border-radius:10px;padding:.45rem .7rem;font-size:.8rem;margin-bottom:.4rem}.npk button{border:1px solid rgba(255,255,255,.5);background:none;color:#fff;border-radius:7px;padding:.15rem .6rem;font-size:.72rem;font-family:inherit}
 .ntl{overflow-x:auto;background:#FBF9F3;border:1px solid var(--rule);border-radius:10px;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
@@ -96,8 +88,8 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 <div id="app"></div><div id="sheet"></div><div id="toast" role="status"></div>
 <script>
 "use strict";
-/* 史記 — 毎日の情勢(出来事・行動)と主観(心の中)を記し、国の地図と年表で眺める */
-const VER = "s1.00";
+/* 史記 — 毎日の情勢(出来事・行動)と主観(心の中)を記し、年表で眺める */
+const VER = "s1.01";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -167,53 +159,6 @@ function viewStream(all){
     '<div class="snd">' + NKIND.map(k => '<button style="--lc:' + k.c + '" data-ha="post" data-hv="' + k.id + '">' + k.n + "</button>").join("") + "</div></div>";
 }
 
-/* ───────── 国(地図) ───────── */
-const SP = 10.5;   // 建物どうしの間
-function mapModel(all){
-  const td = today(), first = all.length ? all[0].day : td, ks = lanes(), by = {};
-  ks.forEach(k => { by[k.id] = all.filter(x => kindOf(x) === k.id); });
-  const R = n => Math.max(30, SP * Math.sqrt(n + 1) + 16), full = {}; ks.forEach(k => { full[k.id] = R(by[k.id].length); });
-  const g = 26, cen = {}; cen.w = { x: -(full.w + g / 2), y: 0 }; cen.a = { x: full.a + g / 2, y: 0 };
-  if (full.h) cen.h = { x: (cen.w.x + cen.a.x) / 2 + (full.a - full.w) / 2, y: Math.max(full.w, full.a) * 0.72 + full.h + g };
-  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; ks.forEach(k => { const c = cen[k.id], r = full[k.id] + 14; x0 = Math.min(x0, c.x - r); x1 = Math.max(x1, c.x + r); y0 = Math.min(y0, c.y - r * 0.86); y1 = Math.max(y1, c.y + r * 0.86); });
-  const tp = Math.max(10, (x1 - x0) / 34) * 1.9; y0 -= tp;
-  return { td, first, ks, by, R, cen, vb: [x0, y0, x1 - x0, y1 - y0], n: daysBetween(first, td) };
-}
-const HOUSE = ["M-3,3V-1L0,-4.2L3,-1V3Z", "M-2.2,3V-5.5H2.2V3Z", "M-3.6,3V.2H3.6V3ZM-4.3,.2L0,-3L4.3,.2Z", "M-2.8,3V-2.2H2.8V3ZM-2.8,-2.2L-1,-4.6L1,-2.2Z"];
-function mapSvg(m, all, cutDay){
-  // 名所(丸い絵):自分で一面にしたものは必ず。自動の一面は、建物が増えるほど間引く(日ごと→週ごと→月ごと)
-  const tops = nTops(all), nAll = all.length, grp = d => nAll <= 80 ? d : nAll <= 600 ? monOf(d) : d.slice(0, 7), best = {};
-  all.forEach(x => { if (tops[x.day] !== x.id || kindOf(x) === "h") return; const g = grp(x.day), b = best[g]; if (!b || (x.x || "").length > (b.x || "").length) best[g] = x; });
-  const isLm = x => x.top || best[grp(x.day)] === x;
-  let land = "", road = "", hs = "", lms = "", lab = ""; const fs = Math.max(10, m.vb[2] / 34);
-  const cw = m.cen.w, ca = m.cen.a;
-  road += '<path d="M' + cw.x + "," + cw.y + " Q" + ((cw.x + ca.x) / 2) + "," + (cw.y - 26) + " " + ca.x + "," + ca.y + '" stroke="#C9B98E" stroke-width="5" fill="none" stroke-linecap="round"/>';
-  if (m.cen.h) road += '<path d="M' + ca.x + "," + ca.y + " L" + m.cen.h.x + "," + m.cen.h.y + '" stroke="#C9B98E" stroke-width="3" fill="none" stroke-dasharray="2 7" stroke-linecap="round"/>';
-  m.ks.forEach(k => { const c = m.cen[k.id], xs = m.by[k.id]; let vis = 0;
-    xs.forEach((x, i) => { if (x.day > cutDay) return; vis++; const r = SP * Math.sqrt(i + 0.55), th = i * 2.399963, px = c.x + r * Math.cos(th), py = c.y + r * Math.sin(th) * 0.8;
-      if (isLm(x)) lms += '<g class="lm' + (x.id === U.fresh ? " new" : "") + '" transform="translate(' + px.toFixed(1) + "," + py.toFixed(1) + ')" data-ha="edit" data-hv="' + x.id + '"><circle r="8.5" fill="#FFFDF8" stroke="' + k.c + '" stroke-width="2"/><text y="3.6" font-size="9.5" text-anchor="middle">' + emoOf(x) + "</text></g>";
-      else hs += '<g class="hs' + (x.id === U.fresh ? " new" : "") + '" transform="translate(' + px.toFixed(1) + "," + py.toFixed(1) + ')" data-ha="edit" data-hv="' + x.id + '"><circle r="5" fill="transparent"/><path d="' + HOUSE[hsh(x.id) % HOUSE.length] + '" fill="' + k.c + '" stroke="#FFFDF8" stroke-width=".7" stroke-linejoin="round"/></g>'; });
-    const R = m.R(vis);
-    land = '<ellipse cx="' + c.x + '" cy="' + c.y + '" rx="' + (R + 9) + '" ry="' + ((R + 9) * 0.84) + '" fill="#DCEAEE"/><ellipse cx="' + c.x + '" cy="' + c.y + '" rx="' + R + '" ry="' + (R * 0.84) + '" fill="' + k.land + '" stroke="#C9B98E" stroke-width="1.5"/>' + land;
-    const fy = c.y - R * 0.84 - fs * 0.6;
-    lab += '<text x="' + c.x + '" y="' + fy.toFixed(1) + '" font-size="' + fs.toFixed(1) + '" font-weight="900" text-anchor="middle" fill="' + k.c + '" stroke="#CFE0E6" stroke-width="' + (fs * 0.3).toFixed(1) + '" paint-order="stroke">' + k.place + '<tspan font-size="' + (fs * 0.72).toFixed(1) + '" font-weight="700" dx="' + (fs * 0.4).toFixed(1) + '">' + k.n + " " + vis + "</tspan></text>"; });
-  return '<svg viewBox="' + m.vb.map(v => v.toFixed(1)).join(" ") + '" role="img" aria-label="国の地図"><rect x="' + m.vb[0] + '" y="' + m.vb[1] + '" width="' + m.vb[2] + '" height="' + m.vb[3] + '" fill="#CFE0E6"/>' + road + land + hs + lms + lab + "</svg>";
-}
-function mapLabel(m, all, cutDay){ const era = eraList().find(e => e.from <= cutDay && e.to >= cutDay), n = all.filter(x => x.day <= cutDay && (U.nh || kindOf(x) !== "h")).length;
-  return "<b>" + ymdJ(cutDay) + (cutDay === m.td ? "・今日" : "") + "</b><span>" + (era ? "「" + esc(era.n) + "」・" : "") + "建物 " + n + "</span>"; }
-function viewMap(all){
-  if (!all.length) return '<p class="note" style="margin:1rem 2px">記すたびに、ここに建物が1つ建つ。まず「情勢」で1つ書く。</p>';
-  const m = mapModel(all), idx = U.mcut == null ? m.n : Math.min(U.mcut, m.n), cutDay = addDays(m.first, idx);
-  return '<div class="nbar"><span class="note" style="margin:0">記すたびに建物が1つ建つ。丸い絵は、その日の一面。</span><button class="nhb' + (U.nh ? " on" : "") + '" data-ha="nh">' + (U.nh ? "心の島を出している" : "心の島も出す") + "</button></div>" +
-    '<div class="mapb"><div id="sk-map">' + mapSvg(m, all, cutDay) + '</div><div class="mlab" id="sk-mlab">' + mapLabel(m, all, cutDay) + "</div>" +
-    (m.n > 0 ? '<div class="msl"><button data-ha="play">' + (U.playing ? "■ 止める" : "▶ はじめから") + '</button><input type="range" min="0" max="' + m.n + '" value="' + idx + '" data-hin="mcut" aria-label="日をさかのぼる"><button data-ha="mnow"' + (idx >= m.n ? " disabled" : "") + ">今日</button></div>" : "") + "</div>";
-}
-function mapUpd(){ const all = newsList(), m = mapModel(all), idx = U.mcut == null ? m.n : Math.min(U.mcut, m.n), d = addDays(m.first, idx); const a = $("#sk-map"), b = $("#sk-mlab"); if (a) a.innerHTML = mapSvg(m, all, d); if (b) b.innerHTML = mapLabel(m, all, d); const r = $("[data-hin=mcut]"); if (r && +r.value !== idx) r.value = idx; }
-let playT = null;
-function playStop(){ clearInterval(playT); playT = null; U.playing = false; }
-function playStart(){ const m = mapModel(newsList()); if (m.n < 1) return; U.playing = true; U.mcut = 0; render(); const step = Math.max(1, Math.round(m.n / 150));
-  playT = setInterval(() => { if (!$("#sk-map")) { playStop(); return; } U.mcut = Math.min(m.n, (U.mcut || 0) + step); mapUpd(); if (U.mcut >= m.n) { playStop(); U.mcut = null; render(); } }, 70); }
-
 /* ───────── 年表 ───────── */
 const monOf = d => { const dt = new Date(d + "T00:00:00"); return addDays(d, -((dt.getDay() + 6) % 7)); };
 function nCols(list, z){ const td = today(), first = list.length ? list[0].day : td, cols = [];
@@ -252,7 +197,7 @@ function sheetEdit(){
     '<div class="nwl">種類(出来事・行動=情勢、心の中=主観)</div><div class="chips">' + NKIND.map(n => '<button class="chip' + (l === n.id ? " on" : "") + '" data-ha="ek" data-hv="' + n.id + '">' + n.n + "</button>").join("") + "</div>" +
     '<div class="nwl">日付</div><input class="fi" type="date" data-hin="eday" data-hv="' + x.id + '" value="' + x.day + '" max="' + today() + '">' +
     '<div class="nwl">絵(自動。替えたいときだけ押す)</div><div class="nemo">' + Array.from(new Set([cur].concat(EMO_PICK))).map(e => '<button class="' + (e === cur ? "on" : "") + '" data-ha="ee" data-hv="' + e + '">' + e + "</button>").join("") + "</div>" +
-    '<button class="bigbtn" style="--bc:' + (isTop ? "var(--sub)" : "var(--ink)") + ';margin-top:.8rem" data-ha="top" data-hv="' + x.id + '">' + (isTop ? "この日の一面になっている" : "この日の一面にする") + "<small>" + (isTop ? (x.top ? "もう一度押すと、自動の選び方に戻る" : "自動で選ばれた") : "地図と年表で大きく残る") + "</small></button>" +
+    '<button class="bigbtn" style="--bc:' + (isTop ? "var(--sub)" : "var(--ink)") + ';margin-top:.8rem" data-ha="top" data-hv="' + x.id + '">' + (isTop ? "この日の一面になっている" : "この日の一面にする") + "<small>" + (isTop ? (x.top ? "もう一度押すと、自動の選び方に戻る" : "自動で選ばれた") : "年表で大きく残る") + "</small></button>" +
     '<div class="links" style="margin-top:.8rem"><button data-ha="del" data-hv="' + x.id + '">これを消す</button><span></span></div><button class="bigbtn" data-ha="close">これでいい</button>');
 }
 function sheetList(){
@@ -269,9 +214,9 @@ function render(){
   const app = $("#app"), y = window.scrollY, ae = document.activeElement, aid = ae && ae.id, all = newsList();
   const tl0 = $("#sk-tl"), tls = tl0 ? { l: tl0.scrollLeft, z: tl0.dataset.z, end: tl0.scrollWidth - tl0.scrollLeft - tl0.clientWidth < 30 } : null;
   let sel = null; try { if (aid && ae.selectionStart != null) sel = [ae.selectionStart, ae.selectionEnd]; } catch (e) {}
-  const tab = U.tab;
-  app.innerHTML = '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["j", "情勢"], ["s", "主観"], ["m", "国"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + "</nav></header>" +
-    (tab === "m" ? viewMap(all) : tab === "n" ? viewChron(all) : viewStream(all)) + (tab === "m" || tab === "n" ? '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" : "");
+  if (!["j", "s", "n"].includes(U.tab)) U.tab = "j"; const tab = U.tab;
+  app.innerHTML = '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["j", "情勢"], ["s", "主観"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + "</nav></header>" +
+    (tab === "n" ? viewChron(all) : viewStream(all)) + (tab === "n" ? '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" : "");
   $("#sheet").innerHTML = U.sheet === "edit" ? sheetEdit() : U.sheet === "list" ? sheetList() : U.sheet === "era" ? sheetEra() : "";
   document.body.classList.toggle("lock", !!U.sheet);
   const tl = $("#sk-tl"); if (tl) { if (!tls || tls.z !== tl.dataset.z || tls.end) tl.scrollLeft = tl.scrollWidth; else tl.scrollLeft = tls.l; }
@@ -287,15 +232,15 @@ function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-ha]"); if (!b || b.disabled) return; const a = b.dataset.ha, v = b.dataset.hv;
   switch (a) {
-    case "tab": playStop(); U.tab = v; U.bottom = true; U.lim = 80; U.mcut = null; U.era = null; saveUI(); render(); return;
+    case "tab": U.tab = v; U.bottom = true; U.lim = 80; U.era = null; saveUI(); render(); return;
     case "post": { const x = (($("#sk-in") || {}).value || "").trim(); if (!x) { toast("字を書いてから押す"); const el = $("#sk-in"); el && el.focus(); return; }
       const t = NKIND.some(k => k.id === v) ? v : "a", here = (t === "h") === (U.tab === "s"); U.bottom = true;
-      mut(() => { const n = newsAdd({ x, t }); U.fresh = n.id; U.nq = { x: "" }; }); toast(here ? "記した。建物が1つ建った" : (t === "h" ? "主観に記した" : "情勢に記した")); return; }
+      mut(() => { const n = newsAdd({ x, t }); U.fresh = n.id; U.nq = { x: "" }; }); toast(here ? "記した" : (t === "h" ? "主観に記した" : "情勢に記した")); return; }
     case "mic": { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR || U.mic) return; const r = new SR(); r.lang = "ja-JP"; r.interimResults = false; U.nq.x = ($("#sk-in") || {}).value || "";
       r.onresult = e => { U.nq.x = (U.nq.x ? U.nq.x + " " : "") + e.results[0][0].transcript; }; r.onend = () => { U.mic = false; render(); }; r.onerror = () => { U.mic = false; toast("声を聞き取れなかった"); render(); };
       U.mic = true; render(); try { r.start(); } catch (e) { U.mic = false; render(); } return; }
     case "more": U.lim += 150; U.keep = document.documentElement.scrollHeight; render(); return;
-    case "edit": playStop(); U.sheet = "edit"; U.arg = { id: v }; render(); return;
+    case "edit": U.sheet = "edit"; U.arg = { id: v }; render(); return;
     case "close": U.sheet = null; render(); return;
     case "del": if (!confirm("これを消しますか。")) return; U.sheet = null; mut(() => { touch(Object.assign(D.news[v], { del: true })); }); return;
     case "ek": mut(() => { const x = D.news[U.arg.id]; x.t = v; touch(x); }); return;
@@ -314,15 +259,12 @@ document.addEventListener("click", ev => {
     case "eraopen": U.sheet = "era"; U.arg = { id: v }; render(); return;
     case "erarename": { const e = D.eras[v], n = (prompt("時代の名前", e.n) || "").trim(); if (!n) return; mut(() => { e.n = n; touch(e); }); return; }
     case "eradel": if (!confirm("この時代の区切りを消しますか(記したものは消えない)。")) return; U.sheet = null; mut(() => { touch(Object.assign(D.eras[v], { del: true })); }); return;
-    case "play": if (U.playing) { playStop(); U.mcut = null; render(); } else playStart(); return;
-    case "mnow": playStop(); U.mcut = null; render(); return;
   }
 });
 document.addEventListener("input", ev => { const t = ev.target, k = t.dataset && t.dataset.hin; if (!k) return;
   if (k === "in") { U.nq.x = t.value; return; }
   if (k === "ex") { quiet(() => { const x = D.news[t.dataset.hv]; if (x) { x.x = t.value; touch(x); } }); return; }
   if (k === "eday") { if (/^\d{4}-\d\d-\d\d$/.test(t.value) && t.value <= today()) quiet(() => { const x = D.news[t.dataset.hv]; if (x) { x.day = t.value; touch(x); } }); return; }
-  if (k === "mcut") { playStop(); U.mcut = +t.value; mapUpd(); const b = $("[data-ha=mnow]"); if (b) b.disabled = +t.value >= +t.max; return; }
 });
 
 /* ───────── 同期(省アプリのトークンを借りる。新しいトークンは作らない) ───────── */
