@@ -2,7 +2,7 @@
   "id": "/sho/shiki/",
   "name": "史記",
   "short_name": "史記",
-  "description": "毎日の情勢と主観を記し、自分で紙面を組んで発行する",
+  "description": "毎日の情勢と主観を記し、自分で帯を引いた年表で眺める",
   "start_url": "/sho/shiki/",
   "scope": "/sho/shiki/",
   "display": "standalone",
