@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=Shippori+Mincho+B1:wght@500;800&display=swap" rel="stylesheet">
 <style>
 :root{--ink:#22201C;--paper:#F6F3EC;--white:#FFFDF8;--sheet:#F1EDE4;--rule:#DDD6C8;--sub:#7A7266;--faint:#ADA597}
 *{box-sizing:border-box}html,body{margin:0;padding:0}
@@ -82,14 +82,59 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .nmh{position:sticky;top:0;z-index:6;background:var(--paper);padding:.35rem 0;margin-bottom:.2rem;display:flex;justify-content:space-between;flex-wrap:nowrap}.nmh h2{margin:0}
 .ninp{bottom:0;padding-bottom:calc(.6rem + env(safe-area-inset-bottom))}
 .nbar{gap:.6rem}.nhb{flex:none}
+.pp{background:#FBF8EF;border:1px solid #D6CDB8;padding:.8rem .8rem .6rem;font-family:"Shippori Mincho B1","Noto Serif JP","Noto Serif CJK JP","Hiragino Mincho ProN",serif;color:#22201C;width:20rem;max-width:100%;margin:0 auto;text-align:left}
+.pm{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px double #22201C;padding-bottom:.25rem}
+.pm b{font-size:1.55rem;font-weight:800;letter-spacing:.3em;line-height:1.1}.pm span{font-size:.6rem;text-align:right;line-height:1.5;font-family:"Zen Kaku Gothic New",sans-serif}
+.pl{display:flex;flex-direction:row-reverse;gap:.7rem;height:15rem;margin-top:.6rem}
+.phd{writing-mode:vertical-rl;font-weight:800;line-height:1.22;letter-spacing:.03em;border-left:1px solid #22201C;padding-left:.55rem;max-height:100%;overflow:hidden;flex:none;max-width:62%}
+.pbd{writing-mode:vertical-rl;font-size:.8rem;line-height:1.85;flex:1;min-width:0;overflow:hidden;white-space:pre-wrap}
+.pe{flex:none;width:5rem;height:6.4rem;align-self:flex-end;display:flex;align-items:center;justify-content:center;font-size:2.4rem;background:linear-gradient(160deg,var(--lc),#22201C)}
+.pl2{margin-top:.6rem}.phd2{background:#22201C;color:#FBF8EF;font-weight:800;line-height:1.3;padding:.45rem .6rem;letter-spacing:.03em}
+.pl2 .row{display:flex;gap:.6rem;margin-top:.5rem}.pl2 .pe{width:6rem;height:6rem;align-self:flex-start}.pbd2{flex:1;font-size:.82rem;line-height:1.75;white-space:pre-wrap;max-height:8.6rem;overflow:hidden}
+.pmd{display:grid;grid-template-columns:1fr 1fr;gap:.2rem .7rem;border-top:1px solid #22201C;margin-top:.6rem;padding-top:.45rem}
+.pmd>div{border-bottom:1px dotted #B9AE96;padding-bottom:.35rem}.pmd b{display:block;font-size:.9rem;line-height:1.4;font-weight:800}.pmd p{margin:.15rem 0 0;font-size:.7rem;line-height:1.6}
+.psm{list-style:none;margin:.55rem 0 0;padding:.4rem 0 0;border-top:1px solid #22201C;font-size:.74rem;line-height:1.6}.psm li{padding-left:.9em;text-indent:-.9em}.psm li:before{content:"▪ "}
+.pf{display:flex;justify-content:space-between;border-top:1px solid #22201C;margin-top:.55rem;padding-top:.3rem;font-size:.6rem;font-family:"Zen Kaku Gothic New",sans-serif;color:#5d564a}
+.pwrap{margin:.5rem 0}
+.th{display:block;border:0;padding:0;background:none;cursor:pointer;overflow:hidden;flex:none;box-shadow:0 1px 4px rgba(0,0,0,.18);position:relative}
+.th .thi{width:20rem;transform-origin:0 0;pointer-events:none}.th .thi .pp{margin:0;border:0;min-height:26rem}
+.th.sm{width:2.5rem;height:3.3rem}.th.sm .thi{transform:scale(.125)}
+.th.md{width:5rem;height:6.5rem}.th.md .thi{transform:scale(.25)}
+.tdy{display:flex;justify-content:space-between;align-items:center;gap:.8rem;background:var(--white);border:1px solid var(--rule);border-radius:14px;padding:.7rem .9rem;margin:.3rem 0 .4rem}
+.tdy b{display:block;font-size:.95rem}.tdy span{font-size:.72rem;color:var(--sub)}
+.mk{flex:none;border:0;border-radius:11px;background:var(--ink);color:#fff;font-weight:800;font-size:.8rem;padding:.55rem .9rem;cursor:pointer}
+.mo{border-top:2px solid var(--ink);margin-top:.9rem;padding-top:.5rem}.moh{display:flex;justify-content:space-between;align-items:flex-start;gap:.6rem;margin-bottom:.4rem}.moh h2{margin:0;font-size:1.05rem}
+.wk{display:flex;gap:.4rem;align-items:flex-end;padding:.4rem 0;border-top:1px dashed var(--rule)}
+.wl{flex:none;width:2.9rem;font-size:.62rem;color:var(--sub);font-weight:800;line-height:1.3}.wl small{font-weight:400}.wl .th,.wl .slot{margin-top:.2rem}
+.dys{display:flex;gap:.2rem;flex:1;min-width:0;justify-content:space-between;overflow-x:auto}
+.slot{width:2.5rem;height:3.3rem;border:1.5px dashed var(--rule);border-radius:3px;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.62rem;color:var(--faint);padding:0;flex:none}
+.slot b{font-weight:700}.slot.todo{border-color:var(--ink);border-style:solid;color:var(--ink);cursor:pointer;background:var(--white)}
+.slot.todo i{font-style:normal;font-size:.56rem;background:var(--ink);color:#fff;border-radius:999px;padding:0 .35rem;margin-top:.15rem}
+.slot.wide i{background:none;color:var(--ink);font-weight:800;line-height:1.2;text-align:center;padding:0}
+.cmph{display:flex;align-items:baseline;gap:.6rem;margin:.2rem 0}.cmph button{border:0;background:none;color:var(--sub);font-size:.8rem;padding:0;cursor:pointer}.cmph b{font-size:1rem}.cmph span{font-size:.72rem;color:var(--sub);margin-left:auto}
+.cml{display:flex;flex-direction:column;gap:.3rem}
+.cmi{display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;border:1.5px solid var(--rule);border-left:5px solid var(--lc);border-radius:10px;background:var(--white);padding:.4rem .6rem;cursor:pointer;opacity:.6}
+.cmi span{flex:1;min-width:0;font-size:.82rem;line-height:1.45}.cmi small{display:block;font-size:.6rem;color:var(--sub)}
+.cmi em{flex:none;font-style:normal;font-size:.66rem;font-weight:800;border-radius:7px;padding:.15rem .5rem;background:var(--sheet);color:var(--sub)}
+.cmi.sS,.cmi.sM,.cmi.sL{opacity:1}.cmi.sM em{background:#7A7266;color:#fff}.cmi.sL{border-color:var(--ink);border-left-color:var(--lc)}.cmi.sL em{background:var(--ink);color:#fff}
+.cpub{position:sticky;bottom:0;background:var(--paper);padding:.1rem 0 calc(.6rem + env(safe-area-inset-bottom))}.bigbtn:disabled{opacity:.4}
+.kids{display:flex;gap:.4rem;flex-wrap:wrap}
+#extra{display:none}#extra.on{display:block}
+.exd{position:fixed;inset:0;background:rgba(34,32,28,.5);z-index:30}
+.exp{position:fixed;z-index:31;left:50%;top:16%;width:17rem;margin-left:-8.5rem;background:#FBF8EF;border:1px solid #D6CDB8;box-shadow:0 14px 40px rgba(0,0,0,.4);padding:.8rem;font-family:"Shippori Mincho B1","Noto Serif JP","Noto Serif CJK JP",serif;transform:rotate(-1.6deg);animation:exin .32s cubic-bezier(.2,1.3,.4,1)}
+.exp.v1{transform:rotate(1.4deg)}.exp.v2{transform:rotate(-.6deg)}
+.exp em{position:absolute;left:-.6rem;top:-1.1rem;background:#B8432F;color:#fff;font-style:normal;font-weight:900;font-size:1.05rem;padding:.1rem .7rem;letter-spacing:.2em;transform:rotate(-7deg);font-family:"Zen Kaku Gothic New",sans-serif}
+.exb{display:flex;flex-direction:row-reverse;gap:.6rem;height:13rem;margin-top:.6rem}.exb .phd{max-width:none;flex:1;border-left:0;padding-left:0}
+@keyframes exin{from{opacity:0;transform:translateY(-40px) rotate(-8deg) scale(.8)}}
+@media (prefers-reduced-motion:reduce){.exp{animation:none}}
 </style>
 </head>
 <body>
-<div id="app"></div><div id="sheet"></div><div id="toast" role="status"></div>
+<div id="app"></div><div id="sheet"></div><div id="extra"></div><div id="toast" role="status"></div>
 <script>
 "use strict";
 /* 史記 — 毎日の情勢(出来事・行動)と主観(心の中)を記し、年表で眺める */
-const VER = "s1.01";
+const VER = "s1.10";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -120,7 +165,7 @@ const EMO_DEF = { w: ["🌤️", "📣", "🏠", "🗞️"], a: ["✏️", "🧭
 const EMO_PICK = ["🏛️", "⚖️", "📜", "📰", "🧭", "🗺️", "🔔", "📱", "📐", "🧮", "📘", "✏️", "🎧", "🔤", "🗂", "🏫", "📝", "📚", "🎬", "🏆", "☔", "🚶", "💼", "🚃", "♨️", "🛌", "🏠", "🛍", "🧳", "🍚", "☕️", "🌤️", "🎉", "⚡", "🌱", "🔥", "💭", "🌙"];
 const ERA_COL = ["#6B4C9A", "#3F7A55", "#B8432F", "#2F4F8A", "#A9761C", "#7D4A8C"];
 
-function normalize(d){ d = d && typeof d === "object" ? d : {}; ["news", "eras"].forEach(k => { if (!d[k] || typeof d[k] !== "object") d[k] = {}; }); d.settings = Object.assign({ u: 0, imp: false }, d.settings || {}); return d; }
+function normalize(d){ d = d && typeof d === "object" ? d : {}; ["news", "eras", "issues"].forEach(k => { if (!d[k] || typeof d[k] !== "object") d[k] = {}; }); d.settings = Object.assign({ u: 0, imp: false }, d.settings || {}); return d; }
 let D = normalize(lsGet(K_DATA, null));
 const U = Object.assign({ tab: "j", z: "d", nh: false }, lsGet(K_UI, {}), { sheet: null, arg: null, nq: { x: "" }, lim: 80, bottom: true });
 const NET = { conn: null, sha: null, state: "", dirty: false, timer: null, busy: false };
@@ -137,14 +182,12 @@ if (!lsGet("shiki-impL", false)) { takeOld(lsGet("hyogikai-data", null)); lsSet(
 const kindOf = x => NKIND.some(k => k.id === x.t) ? x.t : "a";
 const kInfo = id => NKIND.find(l => l.id === id) || NKIND[1];
 const newsList = () => Object.values(D.news).filter(x => !x.del).sort((a, b) => a.day < b.day ? -1 : a.day > b.day ? 1 : a.at - b.at);
-const eraList = () => Object.values(D.eras).filter(e => !e.del).sort((a, b) => a.from < b.from ? -1 : 1);
 function emoGuess(x){ const t = String(x.x || ""), hit = EMO_KW.find(([w]) => t.includes(w)); if (hit) return hit[1]; const d = EMO_DEF[kindOf(x)]; return d[hsh(x.id) % d.length]; }
 const emoOf = x => x.e || emoGuess(x);
 const nTitle = (x, n) => cut(String(x.x || "").split("\n")[0] || "(字なし)", n || 30);
 function newsAdd(o){ const n = Object.assign({ id: rid(), x: "", t: "a", at: now(), day: today(), u: now() }, o); D.news[n.id] = n; return n; }
 // その日の一面:自分で選んだもの、なければ情勢の中でいちばん長く書いたもの
 function nTops(list){ const by = {}; list.filter(x => x.top || kindOf(x) !== "h").forEach(x => { (by[x.day] = by[x.day] || []).push(x); }); const tops = {}; Object.entries(by).forEach(([d, xs]) => { const f = xs.filter(x => x.top).sort((a, b) => (b.u || 0) - (a.u || 0))[0]; tops[d] = (f || xs.slice().sort((a, b) => (a.auto ? 1 : 0) - (b.auto ? 1 : 0) || (b.x || "").length - (a.x || "").length)[0]).id; }); return tops; }
-const lanes = () => NKIND.filter(k => k.id !== "h" || U.nh);
 
 /* ───────── 流れ ───────── */
 function viewStream(all){
@@ -159,35 +202,80 @@ function viewStream(all){
     '<div class="snd">' + NKIND.map(k => '<button style="--lc:' + k.c + '" data-ha="post" data-hv="' + k.id + '">' + k.n + "</button>").join("") + "</div></div>";
 }
 
-/* ───────── 年表 ───────── */
+/* ───────── 号(紙面を組んで発行する。発行した号は変わらない) ───────── */
 const monOf = d => { const dt = new Date(d + "T00:00:00"); return addDays(d, -((dt.getDay() + 6) % 7)); };
-function nCols(list, z){ const td = today(), first = list.length ? list[0].day : td, cols = [];
-  if (z === "d") { Array.from(new Set(list.map(x => x.day).concat([td]))).sort().forEach(d => cols.push({ from: d, to: d, lb: mdS(d), sb: WD[new Date(d + "T00:00:00").getDay()], now: d === td })); }
-  else if (z === "w") { for (let w = monOf(first), end = monOf(td), i = 0; w <= end && i < 800; w = addDays(w, 7), i++) cols.push({ from: w, to: addDays(w, 6), lb: mdS(w), sb: "の週", now: w === end }); }
-  else { let y = +first.slice(0, 4), mo = +first.slice(5, 7); const ey = +td.slice(0, 4), em = +td.slice(5, 7); for (let i = 0; (y < ey || (y === ey && mo <= em)) && i < 800; i++) { cols.push({ from: y + "-" + pad(mo) + "-01", to: ymd(new Date(y, mo, 0)), lb: mo + "月", sb: (mo === 1 || !i) ? String(y) : "", now: y === ey && mo === em }); if (++mo > 12) { mo = 1; y++; } } }
-  return cols; }
-function nCell(xs, z, tops){
-  if (!xs.length) return "";
-  const tp = xs.filter(x => tops[x.day] === x.id), rest = xs.filter(x => tops[x.day] !== x.id);
-  if (z === "d") return tp.map(x => '<button class="nbig" data-ha="edit" data-hv="' + x.id + '"><span>' + emoOf(x) + "</span><b>" + esc(nTitle(x, 24)) + "</b></button>").join("") +
-    rest.slice(0, 5).map(x => '<button class="nch" data-ha="edit" data-hv="' + x.id + '">' + esc(nTitle(x, 22)) + "</button>").join("") + (rest.length > 5 ? '<div class="nmo">ほか ' + (rest.length - 5) + "</div>" : "");
-  if (z === "w") { const hd = tp.slice().sort((a, b) => (b.top ? 1 : 0) - (a.top ? 1 : 0) || (b.x || "").length - (a.x || "").length)[0], others = xs.filter(x => x !== hd);
-    return (hd ? '<div class="nbig"><span>' + emoOf(hd) + "</span><b>" + esc(nTitle(hd, 14)) + "</b></div>" : "") + '<div class="ntiles">' + others.slice(0, 15).map(x => "<i>" + emoOf(x) + "</i>").join("") + "</div>" + (others.length > 15 ? '<div class="nmo">ほか ' + (others.length - 15) + "</div>" : ""); }
-  const unit = Math.ceil(xs.length / 36), n = Math.ceil(xs.length / unit), cn = 6, hs = Array.from({ length: cn }, (_, i) => Math.floor(n / cn) + (i < n % cn ? 1 : 0));
-  return '<div class="nflags">' + tp.slice(-3).map(x => "<em>" + emoOf(x) + "</em>").join("") + '</div><div class="nsky">' + hs.map((h, i) => '<div class="c">' + "<u></u>".repeat(hs[(i * 5 + 2) % cn]) + "</div>").join("") + "</div>";
+const LV = { d: "日刊", w: "週刊", m: "月刊" };
+const issueList = () => Object.values(D.issues).filter(i => !i.del).sort((a, b) => a.at - b.at);
+const issueOf = (lv, key) => issueList().find(i => i.lv === lv && i.key === key) || null;
+function span(lv, key){ if (lv === "d") return [key, key]; if (lv === "w") return [key, addDays(key, 6)]; const y = +key.slice(0, 4), m = +key.slice(5, 7); return [key, ymd(new Date(y, m, 0))]; }
+function spanLabel(lv, key){ const [f, t] = span(lv, key); return lv === "d" ? ymdJ(key) : lv === "w" ? mdS(f) + "〜" + mdS(t) + " の週" : key.slice(0, 4) + "年" + (+key.slice(5, 7)) + "月"; }
+const inSpan = (lv, key, all) => { const [f, t] = span(lv, key); return all.filter(x => x.day >= f && x.day <= t); };
+const SZ = ["", "S", "M", "L"], SZN = { "": "載せない", S: "小さく", M: "中くらい", L: "大見出し" };
+// 何も選ばなくても発行できるよう、はじめの組み方を用意する
+function preset(lv, key, all){ const xs = inSpan(lv, key, all).filter(x => kindOf(x) !== "h"), it = {}; if (!xs.length) return it;
+  if (lv === "d") { const top = xs.find(x => x.top) || xs.slice().sort((a, b) => (b.x || "").length - (a.x || "").length)[0]; xs.forEach(x => { it[x.id] = x === top ? "L" : "S"; }); return it; }
+  const child = lv === "w" ? "d" : "w", heads = []; issueList().filter(i => i.lv === child && i.key >= span(lv, key)[0] && i.key <= span(lv, key)[1]).forEach(i => { const l = i.items.find(z => z.s === "L"); if (l && D.news[l.nid] && !D.news[l.nid].del) heads.push(D.news[l.nid]); });
+  const pool = heads.length ? heads : nTopsList(xs); if (!pool.length) return it; const top = pool.slice().sort((a, b) => (b.top ? 1 : 0) - (a.top ? 1 : 0) || (b.x || "").length - (a.x || "").length)[0];
+  pool.forEach(x => { it[x.id] = x === top ? "L" : "M"; }); return it; }
+function nTopsList(xs){ const tops = nTops(xs); return xs.filter(x => tops[x.day] === x.id); }
+function headSize(t){ const n = t.length; return n <= 8 ? 2.5 : n <= 14 ? 2.05 : n <= 22 ? 1.6 : n <= 34 ? 1.3 : 1.08; }
+function paperHtml(is){
+  const L = is.items.find(z => z.s === "L"), M = is.items.filter(z => z.s === "M"), S = is.items.filter(z => z.s === "S"), v = hsh(is.id) % 2;
+  const split = z => { const ls = String(z.x || "").split("\n"); return [ls[0] || "", ls.slice(1).join("\n").trim()]; };
+  let big = ""; if (L) { const [h0, body] = split(L), h = is.hl || h0, c = kInfo(L.t).c;
+    big = v === 0 ? '<div class="pl"><div class="phd" style="font-size:' + headSize(h) + 'rem">' + esc(h) + '</div><div class="pbd">' + esc(body || (is.hl ? h0 : "")) + '</div><div class="pe" style="--lc:' + c + '">' + (L.e || "📰") + "</div></div>"
+      : '<div class="pl2"><div class="phd2" style="font-size:' + Math.min(1.9, headSize(h)) + 'rem">' + esc(h) + '</div><div class="row"><div class="pe" style="--lc:' + c + '">' + (L.e || "📰") + '</div><div class="pbd2">' + esc(body || (is.hl ? h0 : "")) + "</div></div></div>"; }
+  return '<div class="pp"><div class="pm"><b>史記</b><span>' + LV[is.lv] + "・第" + is.no + "号<br>" + spanLabel(is.lv, is.key) + "</span></div>" + big +
+    (M.length ? '<div class="pmd">' + M.map(z => { const [h, body] = split(z); return "<div><b>" + esc(h) + "</b>" + (body ? "<p>" + esc(cut(body, 80)) + "</p>" : "") + "</div>"; }).join("") + "</div>" : "") +
+    (S.length ? '<ul class="psm">' + S.map(z => "<li>" + esc(cut(String(z.x || "").replace(/\n/g, " "), 60)) + "</li>").join("") + "</ul>" : "") +
+    '<div class="pf"><span>' + is.items.length + " 本</span><span>" + (is.at ? mdS(ymd(new Date(is.at))) + " 発行" : "発行前の見本") + "</span></div></div>";
 }
-function viewChron(all){
-  const z = U.z, shown = all.filter(x => U.nh || kindOf(x) !== "h"), tops = nTops(all), cols = nCols(shown, z), cw = z === "d" ? 116 : z === "w" ? 124 : 76, pk = U.era;
-  const eras = eraList(); let band = "", run = null;
-  const flush = () => { if (!run) return; band += run.e ? '<button class="on" style="width:' + (run.n * cw) + "px;background:" + (run.e.c || ERA_COL[0]) + '" data-ha="eraopen" data-hv="' + run.e.id + '">' + esc(run.e.n) + "</button>" : '<span style="width:' + (run.n * cw) + 'px"></span>'; run = null; };
-  cols.forEach(c => { const e = eras.find(e => e.from <= c.to && e.to >= c.from) || null; if (run && run.e === e) run.n++; else { flush(); run = { e, n: 1 }; } }); flush();
-  const tl = '<div class="ntl z' + z + '" id="sk-tl" data-z="' + z + '" style="--cw:' + cw + 'px"><div class="nin"><div class="nera"><div class="nln"></div>' + band + '</div><div class="nhd"><div class="nln"></div>' +
-    cols.map(c => '<button class="' + (c.now ? "t" : "") + (pk && pk.from === c.from ? " pk" : "") + '" data-ha="col" data-hv="' + c.from + "|" + c.to + '">' + c.lb + "<small>" + c.sb + "</small></button>").join("") + "</div>" +
-    lanes().map(l => { const mine = shown.filter(x => kindOf(x) === l.id); return '<div class="nlane k' + l.id + '" style="--lc:' + l.c + '"><div class="nln">' + l.n + "</div>" + cols.map(c => { const xs = mine.filter(x => x.day >= c.from && x.day <= c.to); return z === "d" ? '<div class="ncell">' + nCell(xs, z, tops) + "</div>" : '<button class="ncell" data-ha="list" data-hv="' + c.from + "|" + c.to + "|" + l.id + '"' + (xs.length ? "" : " disabled") + ">" + nCell(xs, z, tops) + "</button>"; }).join("") + "</div>"; }).join("") + "</div></div>";
-  return '<div class="nbar"><div class="nzm">' + [["d", "日"], ["w", "週"], ["m", "月"]].map(([k, n]) => '<button class="' + (z === k ? "on" : "") + '" data-ha="z" data-hv="' + k + '">' + n + '</button>').join("") + '</div><button class="nhb' + (U.nh ? " on" : "") + '" data-ha="nh">' + (U.nh ? "主観を重ねている" : "主観も重ねる") + "</button></div>" +
-    (pk ? '<div class="npk"><b>' + (pk.from ? "終わりの列の日付を押す" : "始まりの列の日付を押す") + '</b><button data-ha="eracancel">やめる</button></div>' : "") +
-    (shown.length ? tl + '<div class="links" style="margin-top:.6rem"><button data-ha="erastart">過去をふり返って、時代の名前を付ける</button><span></span></div>' : '<p class="note" style="margin:.3rem 2px 0">記すと、ここに年表ができていく。</p>');
+const thumb = (is, cls) => '<button class="th ' + (cls || "") + '" data-ha="iopen" data-hv="' + is.id + '" aria-label="' + LV[is.lv] + " 第" + is.no + '号"><div class="thi">' + paperHtml(is) + "</div></button>";
+function draftIssue(){ const c = U.cmp, all = newsList(), items = inSpan(c.lv, c.key, all).filter(x => c.items[x.id]).map(x => ({ nid: x.id, s: c.items[x.id], x: x.x, t: kindOf(x), e: emoOf(x), day: x.day }));
+  const ord = { L: 0, M: 1, S: 2 }; items.sort((a, b) => ord[a.s] - ord[b.s]); return { id: "draft" + c.lv + c.key, lv: c.lv, key: c.key, no: issueList().filter(i => i.lv === c.lv).length + 1, items, hl: (c.hl || "").trim(), at: 0 }; }
+function viewCompose(all){
+  const c = U.cmp, xs = inSpan(c.lv, c.key, all), dr = draftIssue();
+  return '<div class="cmph"><button data-ha="ccancel">‹ もどる</button><b>' + LV[c.lv] + "を組む</b><span>" + spanLabel(c.lv, c.key) + "</span></div>" +
+    '<div class="pwrap">' + (dr.items.length ? paperHtml(dr) : '<p class="note" style="text-align:center;margin:2rem 0">下から、載せるものを選ぶ。</p>') + "</div>" +
+    (dr.items.some(z => z.s === "L") ? '<div class="nwl">大見出し(書きかえたいときだけ)</div><input class="fi" data-hin="chl" value="' + esc(c.hl || "") + '" placeholder="空なら、書いた1行目がそのまま見出しになる">' : "") +
+    '<div class="nwl">材料(押すたびに 載せない → 小さく → 中くらい → 大見出し)</div><div class="cml">' + xs.map(x => { const z = c.items[x.id] || ""; return '<button class="cmi s' + z + '" style="--lc:' + kInfo(kindOf(x)).c + '" data-ha="csz" data-hv="' + x.id + '"><span>' + esc(cut(String(x.x || "").replace(/\n/g, " "), 44)) + "<small>" + (c.lv === "d" ? hm(x.at) : mdS(x.day)) + "・" + kInfo(kindOf(x)).n + "</small></span><em>" + SZN[z] + "</em></button>"; }).join("") + "</div>" +
+    '<div class="cpub"><button class="bigbtn" data-ha="cpub"' + (dr.items.length ? "" : " disabled") + ">発行する<small>発行した号は、あとから変わらない</small></button></div>";
 }
+function viewShelf(all){
+  if (U.cmp) return viewCompose(all);
+  const td = today(), iss = issueList(), byK = {}; iss.forEach(i => { byK[i.lv + i.key] = i; });
+  if (!all.length && !iss.length) return '<p class="note" style="margin:1rem 2px">記したものを材料に、自分で紙面を組んで発行する。発行した号がここに並んでいく。まず「情勢」で1つ書く。</p>';
+  const cnt = {}; all.forEach(x => { if (kindOf(x) !== "h") cnt[x.day] = (cnt[x.day] || 0) + 1; });
+  const tdIs = byK["d" + td], tdN = cnt[td] || 0;
+  let h = '<div class="tdy">' + (tdIs ? "<div><b>今日の号は発行済み</b><span>第" + tdIs.no + "号</span></div>" + thumb(tdIs, "md") : "<div><b>今日の号</b><span>" + (tdN ? "材料 " + tdN + " 件。組んで発行できる" : "まだ材料がない") + "</span></div>" + (tdN ? '<button class="mk" data-ha="cmp" data-hv="d|' + td + '">紙面を組む</button>' : "")) + "</div>";
+  const firstDay = [all.length ? all[0].day : td].concat(iss.map(i => i.key)).sort()[0];
+  let y = +td.slice(0, 4), m = +td.slice(5, 7); const fy = +firstDay.slice(0, 4), fm = +firstDay.slice(5, 7);
+  for (let g = 0; (y > fy || (y === fy && m >= fm)) && g < 400; g++) {
+    const mk = y + "-" + pad(m) + "-01", mEnd = ymd(new Date(y, m, 0)), mIs = byK["m" + mk], mHas = Object.keys(cnt).some(d => d >= mk && d <= mEnd);
+    let weeks = ""; for (let w = monOf(mEnd); w.slice(0, 7) === mk.slice(0, 7); w = addDays(w, -7)) {
+      if (w > td) continue; const wIs = byK["w" + w]; let days = "", any = false;
+      for (let i = 0; i < 7; i++) { const d = addDays(w, i), di = byK["d" + d], n = cnt[d] || 0; if (di || n) any = true;
+        days += di ? thumb(di, "sm") : n && d <= td ? '<button class="slot todo" data-ha="cmp" data-hv="d|' + d + '"><b>' + (+d.slice(8)) + "</b><i>" + n + "</i></button>" : '<div class="slot"><b>' + (d > td ? "" : +d.slice(8)) + "</b></div>"; }
+      if (!any && !wIs) continue;
+      weeks += '<div class="wk"><div class="wl">' + mdS(w) + "<small>の週</small>" + (wIs ? thumb(wIs, "sm") : '<button class="slot todo wide" data-ha="cmp" data-hv="w|' + w + '"><i>週刊を組む</i></button>') + '</div><div class="dys">' + days + "</div></div>"; }
+    if (weeks || mIs || mHas) h += '<section class="mo"><div class="moh"><h2>' + y + "年" + m + "月</h2>" + (mIs ? thumb(mIs, "md") : mHas ? '<button class="mk" data-ha="cmp" data-hv="m|' + mk + '">月刊を組む</button>' : "") + "</div>" + weeks + "</section>";
+    if (--m < 1) { m = 12; y--; }
+  }
+  return h + '<p class="note" style="margin:.8rem 2px 0">数字の枠は、まだ発行していない日(材料の件数)。押すと紙面を組める。発行しなくても、記したものは残る。</p>';
+}
+function sheetIssue(){ const is = D.issues[(U.arg || {}).id]; if (!is) return ""; const [f, t] = span(is.lv, is.key), child = is.lv === "m" ? "w" : is.lv === "w" ? "d" : null;
+  const kids = !child ? [] : issueList().filter(i => i.lv === child && (child === "w" ? i.key.slice(0, 7) === f.slice(0, 7) : i.key >= f && i.key <= t));
+  const par = is.lv === "d" ? issueOf("w", monOf(is.key)) : is.lv === "w" ? issueOf("m", is.key.slice(0, 7) + "-01") : null;
+  return sheetWrap('<div class="pwrap">' + paperHtml(is) + "</div>" +
+    (kids.length ? '<div class="nwl">この号の中の' + LV[child] + "(" + kids.length + ')</div><div class="kids">' + kids.map(k => thumb(k, "sm")).join("") + "</div>" : "") +
+    (par ? '<div class="nwl">この号が入っている' + LV[par.lv] + '</div><div class="kids">' + thumb(par, "sm") + "</div>" : "") +
+    (now() - is.at < 6e5 ? '<div class="links" style="margin-top:.8rem"><button data-ha="iundo" data-hv="' + is.id + '">発行を取り消す(発行から10分だけ)</button><span></span></div>' : "") + '<button class="bigbtn" data-ha="close">とじる</button>');
+}
+// 記したときの号外(入力のご褒美)
+function extra(x){ const el = $("#extra"), h = String(x.x || "").split("\n")[0], n = newsList().filter(y => y.day === x.day && kindOf(y) !== "h").length;
+  const days = new Set(newsList().map(y => y.day)); let streak = 0; for (let d = today(); days.has(d); d = addDays(d, -1)) streak++;
+  el.innerHTML = '<div class="exd" data-ha="exclose"></div><div class="exp v' + (hsh(x.id) % 3) + '" data-ha="exclose"><em>号外</em><div class="pm"><b>史記</b><span>本日 第' + n + "報<br>" + md(x.day) + " " + hm(x.at) + '</span></div><div class="exb"><div class="phd" style="font-size:' + headSize(h) + 'rem">' + esc(h) + '</div><div class="pe" style="--lc:' + kInfo(kindOf(x)).c + '">' + emoOf(x) + '</div></div><div class="pf"><span>' + kInfo(kindOf(x)).n + "</span><span>" + (streak > 1 ? "連続 " + streak + " 日・" : "") + "通算 " + newsList().length + " 件</span></div></div>";
+  el.classList.add("on"); clearTimeout(extra.t); extra.t = setTimeout(() => { el.classList.remove("on"); el.innerHTML = ""; }, 2300); }
 
 /* ───────── 下から出る紙 ───────── */
 const sheetWrap = inner => '<div class="dim" data-ha="close"></div><div class="bs" role="dialog" aria-modal="true"><div class="grab"></div>' + inner + "</div>";
@@ -197,29 +285,26 @@ function sheetEdit(){
     '<div class="nwl">種類(出来事・行動=情勢、心の中=主観)</div><div class="chips">' + NKIND.map(n => '<button class="chip' + (l === n.id ? " on" : "") + '" data-ha="ek" data-hv="' + n.id + '">' + n.n + "</button>").join("") + "</div>" +
     '<div class="nwl">日付</div><input class="fi" type="date" data-hin="eday" data-hv="' + x.id + '" value="' + x.day + '" max="' + today() + '">' +
     '<div class="nwl">絵(自動。替えたいときだけ押す)</div><div class="nemo">' + Array.from(new Set([cur].concat(EMO_PICK))).map(e => '<button class="' + (e === cur ? "on" : "") + '" data-ha="ee" data-hv="' + e + '">' + e + "</button>").join("") + "</div>" +
-    '<button class="bigbtn" style="--bc:' + (isTop ? "var(--sub)" : "var(--ink)") + ';margin-top:.8rem" data-ha="top" data-hv="' + x.id + '">' + (isTop ? "この日の一面になっている" : "この日の一面にする") + "<small>" + (isTop ? (x.top ? "もう一度押すと、自動の選び方に戻る" : "自動で選ばれた") : "年表で大きく残る") + "</small></button>" +
+    '<button class="bigbtn" style="--bc:' + (isTop ? "var(--sub)" : "var(--ink)") + ';margin-top:.8rem" data-ha="top" data-hv="' + x.id + '">' + (isTop ? "この日の一面になっている" : "この日の一面にする") + "<small>" + (isTop ? (x.top ? "もう一度押すと、自動の選び方に戻る" : "自動で選ばれた") : "日刊を組むとき、はじめから大見出しになる") + "</small></button>" +
     '<div class="links" style="margin-top:.8rem"><button data-ha="del" data-hv="' + x.id + '">これを消す</button><span></span></div><button class="bigbtn" data-ha="close">これでいい</button>');
 }
 function sheetList(){
-  const a = U.arg || {}, all = newsList(), tops = nTops(all), xs = all.filter(x => x.day >= a.from && x.day <= a.to && (a.l ? kindOf(x) === a.l : (U.nh || kindOf(x) !== "h"))), days = Array.from(new Set(xs.map(x => x.day)));
+  const a = U.arg || {}, all = newsList(), tops = nTops(all), xs = all.filter(x => x.day >= a.from && x.day <= a.to && (a.l ? kindOf(x) === a.l : kindOf(x) !== "h")), days = Array.from(new Set(xs.map(x => x.day)));
   return sheetWrap("<h3>" + (a.from === a.to ? md(a.from) : mdS(a.from) + "〜" + mdS(a.to)) + (a.l ? "・" + kInfo(a.l).n : "") + '</h3><p class="d">' + xs.length + " 件</p>" +
     (xs.length ? days.map(d => '<div class="nld">' + md(d) + "</div>" + xs.filter(x => x.day === d).map(x => '<button class="nli" style="--lc:' + kInfo(kindOf(x)).c + '" data-ha="edit" data-hv="' + x.id + '"><span>' + emoOf(x) + "</span><b" + (tops[d] === x.id ? ' class="tp"' : "") + ">" + esc(x.x || "(字なし)") + "</b></button>").join("")).join("") : '<p class="note">この間は何も記していない。</p>') + '<button class="bigbtn" data-ha="close">とじる</button>');
 }
-function sheetEra(){ const e = D.eras[(U.arg || {}).id]; if (!e) return ""; return sheetWrap("<h3>" + esc(e.n) + '</h3><p class="d">' + md(e.from) + " 〜 " + md(e.to) + '</p><div class="links"><button data-ha="erarename" data-hv="' + e.id + '">名前を変える</button><button data-ha="eradel" data-hv="' + e.id + '">この時代の区切りを消す</button></div><button class="bigbtn" data-ha="close">とじる</button>'); }
 
 /* ───────── 描画 ───────── */
 function savedLabel(){ if (!NET.conn) return '<span class="saved">✓ 手元に保存済み(省アプリでつなぐと、ほかの端末にも出る)</span>'; return '<span class="saved' + (NET.state === "err" ? " err" : "") + '">' + (NET.state === "err" ? "！ つながらない(手元には保存済み)" : NET.busy || NET.dirty ? "… 保存中" : "✓ 保存済み") + "</span>"; }
 function updSaved(){ const el = $(".saved"); if (el) el.outerHTML = savedLabel(); }
 function render(){
   const app = $("#app"), y = window.scrollY, ae = document.activeElement, aid = ae && ae.id, all = newsList();
-  const tl0 = $("#sk-tl"), tls = tl0 ? { l: tl0.scrollLeft, z: tl0.dataset.z, end: tl0.scrollWidth - tl0.scrollLeft - tl0.clientWidth < 30 } : null;
   let sel = null; try { if (aid && ae.selectionStart != null) sel = [ae.selectionStart, ae.selectionEnd]; } catch (e) {}
   if (!["j", "s", "n"].includes(U.tab)) U.tab = "j"; const tab = U.tab;
-  app.innerHTML = '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["j", "情勢"], ["s", "主観"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + "</nav></header>" +
-    (tab === "n" ? viewChron(all) : viewStream(all)) + (tab === "n" ? '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" : "");
-  $("#sheet").innerHTML = U.sheet === "edit" ? sheetEdit() : U.sheet === "list" ? sheetList() : U.sheet === "era" ? sheetEra() : "";
+  app.innerHTML = '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["j", "情勢"], ["s", "主観"], ["n", "紙面"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + "</nav></header>" +
+    (tab === "n" ? viewShelf(all) : viewStream(all)) + (tab === "n" ? '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" : "");
+  $("#sheet").innerHTML = U.sheet === "edit" ? sheetEdit() : U.sheet === "list" ? sheetList() : U.sheet === "issue" ? sheetIssue() : "";
   document.body.classList.toggle("lock", !!U.sheet);
-  const tl = $("#sk-tl"); if (tl) { if (!tls || tls.z !== tl.dataset.z || tls.end) tl.scrollLeft = tl.scrollWidth; else tl.scrollLeft = tls.l; }
   if (U.bottom) { U.bottom = false; window.scrollTo(0, (tab === "j" || tab === "s") ? document.documentElement.scrollHeight : 0); }
   else if (U.keep) { window.scrollTo(0, y + document.documentElement.scrollHeight - U.keep); U.keep = 0; }
   else if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
@@ -232,10 +317,10 @@ function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-ha]"); if (!b || b.disabled) return; const a = b.dataset.ha, v = b.dataset.hv;
   switch (a) {
-    case "tab": U.tab = v; U.bottom = true; U.lim = 80; U.era = null; saveUI(); render(); return;
+    case "tab": U.tab = v; U.bottom = true; U.lim = 80; U.cmp = null; saveUI(); render(); return;
     case "post": { const x = (($("#sk-in") || {}).value || "").trim(); if (!x) { toast("字を書いてから押す"); const el = $("#sk-in"); el && el.focus(); return; }
       const t = NKIND.some(k => k.id === v) ? v : "a", here = (t === "h") === (U.tab === "s"); U.bottom = true;
-      mut(() => { const n = newsAdd({ x, t }); U.fresh = n.id; U.nq = { x: "" }; }); toast(here ? "記した" : (t === "h" ? "主観に記した" : "情勢に記した")); return; }
+      let nn = null; mut(() => { nn = newsAdd({ x, t }); U.nq = { x: "" }; }); if (t === "h") toast(here ? "記した" : "主観に記した"); else extra(nn); return; }
     case "mic": { const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR || U.mic) return; const r = new SR(); r.lang = "ja-JP"; r.interimResults = false; U.nq.x = ($("#sk-in") || {}).value || "";
       r.onresult = e => { U.nq.x = (U.nq.x ? U.nq.x + " " : "") + e.results[0][0].transcript; }; r.onend = () => { U.mic = false; render(); }; r.onerror = () => { U.mic = false; toast("声を聞き取れなかった"); render(); };
       U.mic = true; render(); try { r.start(); } catch (e) { U.mic = false; render(); } return; }
@@ -247,28 +332,25 @@ document.addEventListener("click", ev => {
     case "ee": mut(() => { const x = D.news[U.arg.id]; if (x.e === v) delete x.e; else x.e = v; touch(x); }); return;
     case "top": mut(() => { const x = D.news[v]; if (x.top) delete x.top; else { newsList().filter(y => y.day === x.day && y.top).forEach(y => { delete y.top; touch(y); }); x.top = true; } touch(x); }); return;
     case "nh": U.nh = !U.nh; saveUI(); render(); return;
-    case "z": U.z = v; saveUI(); render(); return;
-    case "list": { const [f, t, l] = v.split("|"); U.sheet = "list"; U.arg = { from: f, to: t, l: l || null }; render(); return; }
-    case "col": { const [f, t] = v.split("|"), pk = U.era;
-      if (!pk) { U.sheet = "list"; U.arg = { from: f, to: t, l: null }; render(); return; }
-      if (!pk.from) { pk.from = f; pk.to0 = t; render(); return; }
-      const from = pk.from < f ? pk.from : f, to = pk.to0 > t ? pk.to0 : t, n = (prompt("この時代の名前") || "").trim(); U.era = null; if (!n) { render(); return; }
-      mut(() => { const id = rid(); D.eras[id] = { id, n, from, to, c: ERA_COL[eraList().length % ERA_COL.length], u: now() }; }); toast("時代を付けた"); return; }
-    case "erastart": U.era = {}; render(); return;
-    case "eracancel": U.era = null; render(); return;
-    case "eraopen": U.sheet = "era"; U.arg = { id: v }; render(); return;
-    case "erarename": { const e = D.eras[v], n = (prompt("時代の名前", e.n) || "").trim(); if (!n) return; mut(() => { e.n = n; touch(e); }); return; }
-    case "eradel": if (!confirm("この時代の区切りを消しますか(記したものは消えない)。")) return; U.sheet = null; mut(() => { touch(Object.assign(D.eras[v], { del: true })); }); return;
+    case "exclose": { const el = $("#extra"); el.classList.remove("on"); el.innerHTML = ""; return; }
+    case "cmp": { const [lv, key] = v.split("|"); U.cmp = { lv, key, items: preset(lv, key, newsList()), hl: "" }; U.bottom = true; render(); return; }
+    case "ccancel": U.cmp = null; render(); return;
+    case "csz": { const c = U.cmp, nx = SZ[(SZ.indexOf(c.items[v] || "") + 1) % SZ.length]; if (nx === "L") Object.keys(c.items).forEach(k => { if (c.items[k] === "L") c.items[k] = "M"; }); if (nx) c.items[v] = nx; else delete c.items[v]; render(); return; }
+    case "cpub": { const dr = draftIssue(); if (!dr.items.length) return; if (issueOf(dr.lv, dr.key)) { toast("この号はもう発行されている"); U.cmp = null; render(); return; }
+      const id = rid(); mut(() => { D.issues[id] = Object.assign(dr, { id, at: now(), u: now() }); U.cmp = null; U.sheet = "issue"; U.arg = { id }; }); toast(LV[dr.lv] + " 第" + dr.no + "号を発行した"); return; }
+    case "iopen": U.sheet = "issue"; U.arg = { id: v }; render(); return;
+    case "iundo": if (!confirm("この号の発行を取り消しますか。")) return; U.sheet = null; mut(() => { touch(Object.assign(D.issues[v], { del: true })); }); return;
   }
 });
 document.addEventListener("input", ev => { const t = ev.target, k = t.dataset && t.dataset.hin; if (!k) return;
   if (k === "in") { U.nq.x = t.value; return; }
+  if (k === "chl") { U.cmp.hl = t.value; const w = $(".pwrap"); if (w) w.innerHTML = paperHtml(draftIssue()); return; }
   if (k === "ex") { quiet(() => { const x = D.news[t.dataset.hv]; if (x) { x.x = t.value; touch(x); } }); return; }
   if (k === "eday") { if (/^\d{4}-\d\d-\d\d$/.test(t.value) && t.value <= today()) quiet(() => { const x = D.news[t.dataset.hv]; if (x) { x.day = t.value; touch(x); } }); return; }
 });
 
 /* ───────── 同期(省アプリのトークンを借りる。新しいトークンは作らない) ───────── */
-function merge(a, b){ if (!b) return a; const out = normalize(JSON.parse(JSON.stringify(a))); ["news", "eras"].forEach(k => { Object.entries(b[k] || {}).forEach(([id, x]) => { const y = out[k][id]; if (!y || (x.u || 0) > (y.u || 0)) out[k][id] = x; }); }); if ((b.settings && b.settings.u || 0) > (out.settings.u || 0)) out.settings = Object.assign({ u: 0, imp: false }, b.settings); return out; }
+function merge(a, b){ if (!b) return a; const out = normalize(JSON.parse(JSON.stringify(a))); ["news", "eras", "issues"].forEach(k => { Object.entries(b[k] || {}).forEach(([id, x]) => { const y = out[k][id]; if (!y || (x.u || 0) > (y.u || 0)) out[k][id] = x; }); }); if ((b.settings && b.settings.u || 0) > (out.settings.u || 0)) out.settings = Object.assign({ u: 0, imp: false }, b.settings); return out; }
 const b64e = s => btoa(unescape(encodeURIComponent(s)));
 const b64d = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ""))));
 const api = p => "https://api.github.com/repos/" + encodeURIComponent(NET.conn.owner) + "/" + encodeURIComponent(NET.conn.repo) + "/contents/" + p;
