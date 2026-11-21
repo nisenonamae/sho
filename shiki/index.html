@@ -121,7 +121,7 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 <script>
 "use strict";
 /* 史記 — 毎日の情勢(出来事・行動)と主観(心の中)を記し、年表で眺める */
-const VER = "s1.22";
+const VER = "s1.23";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -192,7 +192,9 @@ function viewStream(all){
 /* ───────── 年表(横が時間。帯を自分で引く。帯を押すと、その中の年表が開く) ───────── */
 const BCOL = ["#6B4C9A", "#B8432F", "#3F7A55", "#2F4F8A", "#A9761C", "#22808A", "#9A3B5A", "#5B6B2E"];
 const monOf = d => { const dt = new Date(d + "T00:00:00"); return addDays(d, -((dt.getDay() + 6) % 7)); };
-const LH = 58;   // 帯の1段の高さ
+const LH = 58;
+// 札の字の幅を実際に測る(見積もりだと、長い字で隣と重なるため)
+let _mc = null; function textW(t, bold){ try { _mc = _mc || document.createElement("canvas").getContext("2d"); _mc.font = (bold ? "800 " : "500 ") + (0.66 * parseFloat(getComputedStyle(document.documentElement).fontSize)) + "px " + getComputedStyle(document.body).fontFamily; return _mc.measureText(t).width; } catch (e) { return t.length * 11.5; } }   // 帯の1段の高さ
 const bandList = () => Object.values(D.bands).filter(b => !b.del);
 const kidsOf = id => bandList().filter(b => (b.parent || null) === (id || null)).sort((a, b) => a.from < b.from ? -1 : 1);
 const bEnd = b => b.to || today();
@@ -226,9 +228,9 @@ function viewChron(all){
   // 印(重ならないように段を分ける)
   const lab = dw >= 12, rows = []; let ph = "";
   const RH = lab ? 34 : 20, MAXR = lab ? 8 : 6, over = {}, bucket = d => dw >= 40 ? d : dw >= 12 ? monOf(d) : d.slice(0, 7) + "-01";
-  pins.slice().sort((p, q) => (tops[q.day] === q.id ? 1 : 0) - (tops[p.day] === p.id ? 1 : 0) || (p.day < q.day ? -1 : 1)).forEach(x => { const big = tops[x.day] === x.id, cx = X(x.day) + dw / 2, wd = lab ? Math.min(170, nTitle(x, 12).length * 11.5 + 14) : 0, l = cx - (big ? 15 : 8), r = cx + (big ? 15 : 8) + wd; let k = 0; while (k < MAXR && rows[k] != null && rows[k].some(([a, b2]) => a < r + 4 && b2 > l - 4)) k++;
+  pins.slice().sort((p, q) => (tops[q.day] === q.id ? 1 : 0) - (tops[p.day] === p.id ? 1 : 0) || (p.day < q.day ? -1 : 1)).forEach(x => { const big = tops[x.day] === x.id, cx = X(x.day) + dw / 2, show = dw >= 40 || (lab && big), wd = show ? textW(nTitle(x, 12), big) + 18 : 0, l = cx - (big ? 15 : 8), r = cx + (big ? 15 : 8) + wd; let k = 0; while (k < MAXR && rows[k] != null && rows[k].some(([a, b2]) => a < r + 4 && b2 > l - 4)) k++;
     if (k >= MAXR) { const g = bucket(x.day); over[g] = (over[g] || 0) + 1; return; } (rows[k] = rows[k] || []).push([l, r]);
-    ph += '<button class="pn k' + kindOf(x) + (big ? " big" : "") + '" data-ha="edit" data-hv="' + x.id + '" style="left:' + cx.toFixed(1) + "px;top:" + (k * RH + 8) + 'px"><i>' + (big ? emoOf(x) : "") + "</i>" + (lab ? "<span>" + esc(nTitle(x, 12)) + "</span>" : "") + "</button>"; });
+    ph += '<button class="pn k' + kindOf(x) + (big ? " big" : "") + '" data-ha="edit" data-hv="' + x.id + '" style="left:' + cx.toFixed(1) + "px;top:" + (k * RH + 8) + 'px"><i>' + (big ? emoOf(x) : "") + "</i>" + (show ? "<span>" + esc(nTitle(x, 12)) + "</span>" : "") + "</button>"; });
   const rowsN = Math.max(1, rows.length), hasOver = Object.keys(over).length > 0;
   Object.entries(over).forEach(([g, n]) => { const g2 = dw >= 40 ? g : dw >= 12 ? addDays(g, 6) : ymd(new Date(+g.slice(0, 4), +g.slice(5, 7), 0)), gx = (Math.max(0, X(g)) + Math.min(W, X(g2) + dw)) / 2;
     ph += '<button class="pmore" data-ha="list" data-hv="' + g + "|" + g2 + "|" + (cur ? cur.id : "") + '" style="left:' + gx.toFixed(1) + "px;top:" + (rowsN * RH + 8) + 'px">ほか ' + n + "</button>"; });
