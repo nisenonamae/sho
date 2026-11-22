@@ -166,14 +166,30 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .qtime{width:auto;display:inline-block;padding:.28rem .6rem;max-width:8rem}
 .bs .chip.on{background:var(--c,var(--ink));border-color:var(--c,var(--ink))}
 .chip.add{border-style:dashed;color:var(--sub)}
+.qsub{font-size:.62rem;color:var(--faint);margin:.35rem 0 .25rem}
+.qgs{display:flex;flex-wrap:wrap;gap:.3rem}.qgs button{border:0;border-radius:9px;background:var(--sheet);padding:.35rem .65rem;font-size:.8rem;font-weight:800;font-family:inherit;color:var(--ink);cursor:pointer;border-left:4px solid var(--g)}.qgs button.on{background:var(--ink);color:#fff}
+.qcr{font-size:.72rem;font-weight:800;color:var(--sub);margin:.55rem 0 .3rem}
+.vtabs{display:flex;gap:.35rem;overflow-x:auto;padding:.1rem 0 .5rem;scrollbar-width:none}.vtabs::-webkit-scrollbar{display:none}
+.vtabs button{flex:none;border:1.5px solid var(--ink);border-radius:999px;background:var(--white);padding:.3rem .85rem;font-size:.8rem;font-weight:800;font-family:inherit;color:var(--ink);cursor:pointer}.vtabs button.on{background:var(--ink);color:#fff}.vtabs button.off{border-color:var(--rule);color:var(--faint)}
+.vr{margin-right:auto}
+.vbox{background:#FBF8F1;border:1px solid var(--rule);border-radius:14px;padding:.7rem 0 .6rem;overflow:hidden}
+.vbox>*{margin-left:auto;margin-right:auto}
+.vsvg{display:block;overflow:visible}.vsvg path,.vsvg rect[data-tip]{cursor:pointer}
+.vsvg.flow text{font-size:10.5px;fill:var(--ink);font-family:inherit;font-weight:700}
+.vax{position:relative;height:1.3rem;font-size:.62rem;color:var(--sub)}.vax span{position:absolute;top:.25rem;transform:translateX(-50%);white-space:nowrap}.vax span:first-child{transform:none}.vax span:last-child{transform:translateX(-100%)}.vax span:only-child{transform:translateX(-50%)}
+.vlg{display:flex;flex-wrap:wrap;gap:.3rem .7rem;padding:.3rem .9rem 0;font-size:.72rem;color:var(--sub)}
+.vlg button{border:1px solid var(--rule);background:var(--white);border-radius:8px;padding:.15rem .55rem;font-size:.74rem;font-weight:700;font-family:inherit;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:.3rem}.vlg button small{color:var(--faint);font-size:.62rem}
+.vlg i{display:inline-block;width:.65rem;height:.65rem;border-radius:3px;margin-right:.25rem;vertical-align:-1px}.vlg button i{margin:0}
+.vwait{padding:2.4rem 1.2rem;text-align:center;font-size:.84rem;color:var(--sub);line-height:1.8}.vwait b{color:var(--ink)}
+.vsel{margin-top:.45rem;background:var(--ink);color:#fff;border-radius:10px;padding:.4rem .75rem;font-size:.8rem}
 </style>
 </head>
 <body>
 <div id="app"></div><div id="sheet"></div><div id="tip"></div><div id="toast" role="status"></div>
 <script>
 "use strict";
-/* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、年表で眺める */
-const VER = "s2.00";
+/* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
+const VER = "s2.10";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -207,17 +223,27 @@ const ERA_COL = ["#6B4C9A", "#3F7A55", "#B8432F", "#2F4F8A", "#A9761C", "#7D4A8C
 // 段:ユニットが主にどれか(土台の色)
 const CAT = [{ id: "o", n: "客観", c: "#2F4F8A", base: "#E1E7F0" }, { id: "s", n: "主観", c: "#8A5A9A", base: "#EDE2EC" }, { id: "j", n: "時代", c: "#3F7A55", base: "#E3EDE4" }, { id: "h", n: "歴史", c: "#B8432F", base: "#F2E1DC" }];
 const catOf = id => CAT.find(c => c.id === id) || CAT[0];
-// 選択肢のたまり場。同じ「場所」「なぜ」は、どのブロックから選んでも同じ並びになる
-const POOL = {
-  act: ["青チャート", "英単語", "Anki", "アプリづくり", "ごはん", "お風呂", "スマホ", "動画", "ゲーム", "散歩", "寝た"],
-  amt: ["ちょっと", "ふつう", "たっぷり"],
-  feel: ["うれしい", "たのしい", "ほっとした", "やる気", "不安", "イライラ", "逃げたい", "つかれた", "さみしい"],
-  place: ["自分の部屋", "リビング", "鉄緑", "外", "電車"],
-  why: ["わからなくて", "眠くて", "通知が来て", "つかれて", "なんとなく"],
-  who: ["ひとり", "家族", "友達", "先生"]
+// 選択肢は2段。上の段=種類(Claude が決める。ほぼ増えない)、下の段=中身(自分で無限に足せる)
+// 観点はふだん種類で描き、中身は細い層として同じ絵に入る(押すと種類の中だけに分かれる)
+const GRP = {
+  act: [["study", "勉強", "📚", "#3F6FB0", ["青チャート", "英単語", "Anki", "鉄緑の授業"]], ["make", "つくる", "🛠", "#C97F2E", ["アプリづくり", "動画づくり"]], ["move", "体を動かす", "🏃", "#4F8A6B", ["散歩", "筋トレ"]],
+    ["rest", "休む", "🛌", "#8A7FB8", ["寝た", "ぼーっと"]], ["life", "生活", "🍚", "#A8841E", ["ごはん", "お風呂", "家事"]], ["screen", "スマホ・画面", "📱", "#B8553F", ["スマホ", "動画", "ゲーム"]], ["ppl", "人と", "👥", "#4E8E8A", ["話した", "出かけた"]]],
+  place: [["home", "家", "🏠", "#A8841E", ["自分の部屋", "リビング"]], ["school", "学校・塾", "🏫", "#3F6FB0", ["鉄緑"]], ["out", "外", "🌳", "#4F8A6B", ["本屋", "公園", "カフェ"]], ["trans", "移動中", "🚃", "#6F7A87", ["電車", "歩き"]]],
+  why: [["body", "体", "🛌", "#6F7A87", ["眠くて", "つかれて", "お腹がすいて"]], ["mind", "気持ち", "💭", "#B0699A", ["不安で", "飽きて"]], ["task", "やること", "📐", "#3F6FB0", ["わからなくて", "多すぎて", "つまらなくて"]],
+    ["env", "まわり", "📱", "#C97F2E", ["通知が来て", "話しかけられて"]], ["vague", "なんとなく", "🌀", "#9C917C", ["なんとなく"]]],
+  feel: [["bright", "明るい", "☀️", "#E2B23C", ["うれしい", "たのしい", "やる気"]], ["calm", "おだやか", "🌿", "#6FAF8E", ["ほっとした", "落ち着いた"]], ["heavy", "重い", "🌧", "#6F86B0", ["不安", "さみしい", "つかれた"]], ["rough", "荒れ", "⚡", "#C9584A", ["イライラ", "逃げたい"]]],
+  who: [["self", "ひとり", "🧍", "#9C917C", ["ひとり"]], ["fam", "家族", "🏠", "#A8841E", ["家族"]], ["fr", "友達", "🙌", "#4F8A6B", ["友達"]], ["tch", "先生", "🏫", "#3F6FB0", ["先生"]]]
 };
+const ETC = ["etc", "ほか", "・", "#9C917C", []];
+const POOL = { amt: ["ちょっと", "ふつう", "たっぷり"] };
+Object.entries(GRP).forEach(([p, gs]) => { POOL[p] = [].concat(...gs.map(g => g[4])); });
 const FIXED = { amt: true };
-const FEEL_E = { "うれしい": "😊", "たのしい": "😆", "ほっとした": "😌", "やる気": "🔥", "不安": "😟", "イライラ": "😤", "逃げたい": "🫠", "つかれた": "😮‍💨", "さみしい": "🥲" };
+const grpList = p => (GRP[p] || []).concat(Object.values(D.opts).some(o => o && !o.del && o.p === p && (!o.g || o.g === "etc")) || usedEtc(p) ? [ETC] : []);
+// その中身がどの種類か(自分で足したものは足したときの種類。わからないものは「ほか」)
+function gOf(p, v){ for (const g of GRP[p] || []) if (g[4].includes(v)) return g; const o = Object.values(D.opts).find(o => o && !o.del && o.p === p && o.v === v); return (o && (GRP[p] || []).find(g => g[0] === o.g)) || ETC; }
+function usedEtc(p){ return false; }
+function grpItems(p, gid){ const g = (GRP[p] || []).find(x => x[0] === gid); return Array.from(new Set((g ? g[4] : []).concat(Object.values(D.opts).filter(o => o && !o.del && o.p === p && (o.g || "etc") === gid).map(o => o.v)))); }
+const FEEL_E = { "うれしい": "😊", "たのしい": "😆", "ほっとした": "😌", "落ち着いた": "🍵", "やる気": "🔥", "不安": "😟", "イライラ": "😤", "逃げたい": "🫠", "つかれた": "😮‍💨", "さみしい": "🥲" };
 // ブロック(作るのは Claude。中身の形が決まっているので、年表での見せ方も決められる)
 const BK = {
   deki: { n: "できごと", c: "#5B7DB1", w: 2, f: [{ k: "x", n: "なにが起きた", t: "text", ph: "起きたこと" }] },
@@ -236,11 +262,11 @@ const bkOf = k => BK[k] || BK.hito;
 function normalize(d){ d = d && typeof d === "object" ? d : {}; ["news", "eras", "issues", "bands", "units", "opts"].forEach(k => { if (!d[k] || typeof d[k] !== "object") d[k] = {}; }); d.settings = Object.assign({ u: 0, imp: false }, d.settings || {}); return d; }
 let D = normalize(lsGet(K_DATA, null));
 const U = Object.assign({ tab: "r", z: "w", nh: false }, lsGet(K_UI, {}), { sheet: null, arg: null, lim: 120, bottom: true, unit: null, draft: null, tedit: false, listY: 0, toY: null });
-if (U.tab !== "n") U.tab = "r";
+if (!["n", "v"].includes(U.tab)) U.tab = "r";
 const NET = { conn: null, sha: null, state: "", dirty: false, timer: null, busy: false };
 const touch = o => { if (o) o.u = now(); return o; };
 function saveLocal(){ lsSet(K_DATA, D); }
-function saveUI(){ lsSet(K_UI, { tab: U.tab, z: U.z, nh: U.nh }); }
+function saveUI(){ lsSet(K_UI, { tab: U.tab, z: U.z, nh: U.nh, view: U.view, vr: U.vr }); }
 function mut(fn){ fn(); saveLocal(); saveUI(); queuePush(); render(); }
 function quiet(fn){ fn(); saveLocal(); queuePush(); }
 // 省アプリの中の「報道」で記したものを、いちどだけ引きつぐ
@@ -321,9 +347,14 @@ function fieldHTML(f, val){
   if (f.t === "time") return '<div class="chips"><button class="chip' + (val ? "" : " on") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="">始めた時刻と同じ</button><input class="fi qtime" type="time" data-hin="ftm" data-hv="' + f.k + '" value="' + esc(val || "") + '"></div>';
   if (f.t === "scale") return '<div class="qsc">' + [1, 2, 3, 4, 5].map(n => '<button class="' + ((val || 0) >= n ? "on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + n + '">' + n + "</button>").join("") + "</div>";
   if (f.t === "num") return '<div class="chips">' + f.o.map(n => '<button class="chip' + (+val === n ? " on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + n + '">' + n + "</button>").join("") + '<input class="fi qtime" type="number" min="1" inputmode="numeric" data-hin="fnum" data-hv="' + f.k + '" value="' + (val && !f.o.includes(+val) ? val : "") + '" placeholder="ほか"></div>';
-  const vs = [].concat(val || []), opts = poolOpts(f.p); vs.forEach(v => { if (!opts.includes(v)) opts.push(v); });
-  return '<div class="chips">' + opts.map(o => '<button class="chip' + (vs.includes(o) ? " on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + esc(o) + '">' + esc(o) + "</button>").join("") +
-    (FIXED[f.p] ? "" : '<button class="chip add" data-ha="kopt" data-hv="' + f.k + '">＋</button>') + "</div>";
+  const vs = [].concat(val || []), chip = o => '<button class="chip' + (vs.includes(o) ? " on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + esc(o) + '">' + esc(o) + "</button>";
+  if (!GRP[f.p]) return '<div class="chips">' + poolOpts(f.p).map(chip).join("") + "</div>";
+  // ① よく使う6つ ② 種類 → 中身 ③ 種類の中に＋で足す
+  const top = poolOpts(f.p).slice(0, 6); vs.forEach(v => { if (!top.includes(v)) top.push(v); });
+  const open = U.grp && U.grp.k === f.k ? U.grp.g : null, og = open && grpList(f.p).find(g => g[0] === open);
+  return '<div class="qsub">よく使う</div><div class="chips">' + top.map(chip).join("") + "</div>" +
+    '<div class="qsub">種類から選ぶ</div><div class="qgs">' + grpList(f.p).map(g => '<button class="' + (open === g[0] ? "on" : "") + '" style="--g:' + g[3] + '" data-ha="kg" data-hv="' + f.k + '" data-hx="' + g[0] + '">' + g[2] + " " + g[1] + "</button>").join("") + "</div>" +
+    (og ? '<div class="qcr">' + og[1] + " ›</div><div class=\"chips\">" + grpItems(f.p, og[0]).map(chip).join("") + '<button class="chip add" data-ha="kopt" data-hv="' + f.k + '" data-hx="' + og[0] + '">＋ ' + og[1] + "に足す</button></div>" : "");
 }
 const curBlock = () => { const u = curUnit(); return u && u.bl.find(x => x.id === (U.arg || {}).bid); };
 function sheetBlk(){ const b = curBlock(); if (!b) return ""; const bk = bkOf(b.k); b.v = b.v || {};
@@ -403,6 +434,91 @@ function sheetBand(){ const b = D.bands[(U.arg || {}).id]; if (!b) return "";
 }
 
 
+/* ───────── 観点(同じ記録を、観点ごとに違う絵で見る。中身の細かいものまで、細い層として入る) ───────── */
+const AMT_W = { "ちょっと": 1, "ふつう": 2, "たっぷり": 3 };
+// それぞれの観点が、どのブロックの何を見るか
+const VIEWS = [
+  { id: "act", n: "行動の川", kind: "river", p: "act", from: "行動", d: "何をしていたか。太さは量(時間ブロックがあれば時間)。中の細い層が一つ一つの中身。",
+    get: u => { const jk = u.bl.find(b => b.k === "jikn" && b.v && b.v.min), out = []; u.bl.forEach(b => { if (b.k === "kodo" && b.v && b.v.what) out.push([b.v.what, jk ? jk.v.min / 30 : (AMT_W[b.v.amt] || 2)]); }); return out; } },
+  { id: "feel", n: "気持ちの空", kind: "sky", p: "feel", from: "気持ち", d: "その日の空の色が、その日の気持ち。濃さは強さ。",
+    get: u => u.bl.filter(b => b.k === "kimo" && b.v && b.v.kind).map(b => [b.v.kind, b.v.lv || 3]) },
+  { id: "why", n: "原因の流れ", kind: "flow", p: "why", p2: "act", from: "理由かきっかけ(なぜ)と行動", d: "左の「なぜ」から、右の「したこと」へ。太いほど多い。",
+    get: u => { const ws = new Set(), as = new Set(); u.bl.forEach(b => { if (!b.v) return; if ((b.k === "riyu" || b.k === "kikk") && b.v.why) ws.add(b.v.why); if (b.k === "kodo" && b.v.what) as.add(b.v.what); }); const out = []; ws.forEach(w => as.forEach(a => out.push([w, a, 1]))); return out; } },
+  { id: "place", n: "居場所の川", kind: "river", p: "place", from: "場所かきっかけ(どこで)", d: "どこで過ごしていたか。",
+    get: u => Array.from(new Set(u.bl.filter(b => b.v && (b.k === "bash" || b.k === "kikk") && b.v.where).map(b => b.v.where))).map(v => [v, 1]) },
+  { id: "who", n: "人の川", kind: "river", p: "who", from: "だれと", d: "だれと過ごしていたか。",
+    get: u => [].concat(...u.bl.filter(b => b.k === "dare" && b.v && b.v.who).map(b => b.v.who)).map(v => [v, 1]) }
+];
+const VMIN = 3;
+function vRange(){ const td = today(), r = U.vr == null ? 28 : U.vr; let from = r ? addDays(td, -(r - 1)) : (unitList()[0] || { day: td }).day; if (daysBetween(from, td) < 6) from = addDays(td, -6);
+  const span = daysBetween(from, td) + 1, wk = span > 42; if (wk) from = monOf(from); const bins = []; for (let d = from; d <= td; d = addDays(d, wk ? 7 : 1)) bins.push(d); return { from, to: td, bins, wk }; }
+const binOf = (R, day) => { if (day < R.from || day > R.to) return -1; return R.wk ? Math.floor(daysBetween(R.from, day) / 7) : daysBetween(R.from, day); };
+function vData(V, R){ const out = []; unitList().forEach(u => { const i = binOf(R, u.day); if (i < 0) return; V.get(u).forEach(r => out.push({ i, r })); }); return out; }
+// 種類の色を、中身ごとに少しずつ明るくする
+function shade(hex, k){ return tint(hex, Math.min(.75, k)); }
+const sp = (x, y) => x.toFixed(1) + "," + y.toFixed(1);
+function curve(pts){ let s = "M" + sp(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], mx = (x0 + x1) / 2; s += " C" + sp(mx, y0) + " " + sp(mx, y1) + " " + sp(x1, y1); } return s; }
+// 中身を種類の順に並べ、それぞれに色を付ける
+function layers(p, totals, drill){ const gs = grpList(p).concat(GRP[p] && GRP[p].some(g => g[0] === "etc") ? [] : []), byG = {};
+  Object.keys(totals).forEach(v => { const g = gOf(p, v); if (drill && g[0] !== drill) return; (byG[g[0]] = byG[g[0]] || { g, xs: [] }).xs.push(v); });
+  const order = (GRP[p] || []).map(g => g[0]).concat(["etc"]), out = [];
+  order.forEach(gid => { const o = byG[gid]; if (!o) return; o.xs.sort((a, b) => totals[b] - totals[a]); o.xs.forEach((v, j) => out.push({ v, g: o.g, c: shade(o.g[3], drill ? j * 0.5 / Math.max(1, o.xs.length - 1) : j * 0.13) })); });
+  return out; }
+function viewRiver(V, R, data){
+  const W = Math.min(window.innerWidth, 760) - 32, H = 230, n = R.bins.length, drill = U.vg && U.vg.v === V.id ? U.vg.g : null, tot = {}, ser = {};
+  data.forEach(({ i, r: [v, w] }) => { tot[v] = (tot[v] || 0) + w; (ser[v] = ser[v] || new Array(n).fill(0))[i] += w; });
+  const L = layers(V.p, tot, drill); if (!L.length) return '<p class="qempty">この種類の記録は、この期間にない。</p>';
+  const colT = R.bins.map((_, i) => L.reduce((s, l) => s + ser[l.v][i], 0)), mx = Math.max(...colT, 1), k = (H - 16) / mx, dx = n > 1 ? W / (n - 1) : W;
+  const X = i => n > 1 ? i * dx : W / 2; let base = colT.map(t => (H - t * k) / 2), paths = "";
+  // 列が1つのときも川に見えるよう、両端をのばす
+  L.forEach(l => { const top = [], bot = []; R.bins.forEach((_, i) => { const y0 = base[i], y1 = y0 + ser[l.v][i] * k; top.push([X(i), y0]); bot.push([X(i), y1]); base[i] = y1; });
+    if (n === 1) { top.unshift([0, top[0][1]]); top.push([W, top[1][1]]); bot.unshift([0, bot[0][1]]); bot.push([W, bot[1][1]]); }
+    const tip = l.g[1] + " › " + l.v + "(" + Math.round(tot[l.v] * 10) / 10 + ")";
+    paths += '<path d="' + curve(top) + " L" + curve(bot.slice().reverse()).slice(1) + ' Z" fill="' + l.c + '" data-tip="' + esc(tip) + '" data-ha="vsel" data-hv="' + esc(tip) + '"/>'; });
+  const gt = {}; L.forEach(l => { gt[l.g[0]] = gt[l.g[0]] || { g: l.g, t: 0, n: 0 }; gt[l.g[0]].t += tot[l.v]; gt[l.g[0]].n++; });
+  const legend = drill ? '<div class="vlg"><button data-ha="vg" data-hv="' + V.id + '|">‹ ぜんぶの種類</button>' + L.map(l => '<span><i style="background:' + l.c + '"></i>' + esc(l.v) + "</span>").join("") + "</div>"
+    : '<div class="vlg">' + Object.values(gt).map(o => '<button data-ha="vg" data-hv="' + V.id + "|" + o.g[0] + '"><i style="background:' + o.g[3] + '"></i>' + o.g[2] + " " + o.g[1] + "<small>" + o.n + "</small></button>").join("") + "</div>";
+  return '<svg class="vsvg" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '"><g stroke="#FBF8F1" stroke-width=".7">' + paths + "</g></svg>" + axis(R, W) + legend;
+}
+function viewSky(V, R, data){
+  const W = Math.min(window.innerWidth, 760) - 32, H = 170, n = R.bins.length, cw = W / n, tot = {}, cols = R.bins.map(() => ({}));
+  data.forEach(({ i, r: [v, w] }) => { tot[v] = (tot[v] || 0) + w; cols[i][v] = (cols[i][v] || 0) + w; });
+  const L = layers(V.p, tot, null), cmap = {}; L.forEach(l => { cmap[l.v] = l.c; });
+  let rects = "", hits = ""; cols.forEach((c, i) => { const vs = L.map(l => l.v).filter(v => c[v]), s = vs.reduce((a, v) => a + c[v], 0); let y = 0;
+    vs.forEach(v => { const h = c[v] / s * H; rects += '<rect x="' + (i * cw - .5).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (cw + 1).toFixed(1) + '" height="' + (h + .5).toFixed(1) + '" fill="' + cmap[v] + '"/>'; y += h; });
+    if (!vs.length) rects += '<rect x="' + (i * cw - .5).toFixed(1) + '" y="0" width="' + (cw + 1).toFixed(1) + '" height="' + H + '" fill="#E9E4D8"/>';
+    const tip = (R.wk ? mdS(R.bins[i]) + "の週" : md(R.bins[i])) + ":" + (vs.length ? vs.map(v => v + "×" + c[v]).join("・") : "記録なし");
+    hits += '<rect x="' + (i * cw).toFixed(1) + '" y="0" width="' + cw.toFixed(1) + '" height="' + H + '" fill="transparent" data-tip="' + esc(tip) + '" data-ha="vsel" data-hv="' + esc(tip) + '"/>'; });
+  const gs = {}; L.forEach(l => { gs[l.g[0]] = l.g; });
+  return '<svg class="vsvg" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '"><defs><filter id="vblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="' + Math.max(3, cw * .45).toFixed(1) + ' 6"/></filter><clipPath id="vclip"><rect width="' + W + '" height="' + H + '" rx="12"/></clipPath></defs><g clip-path="url(#vclip)"><g filter="url(#vblur)">' + rects + "</g></g>" + hits + "</svg>" + axis(R, W) +
+    '<div class="vlg">' + Object.values(gs).map(g => '<span><i style="background:' + g[3] + '"></i>' + g[2] + " " + g[1] + "</span>").join("") + "</div>";
+}
+function viewFlow(V, R, data){
+  const W = Math.min(window.innerWidth, 760) - 32, tl = {}, tr = {}, pairs = {};
+  data.forEach(({ r: [a, b, w] }) => { tl[a] = (tl[a] || 0) + w; tr[b] = (tr[b] || 0) + w; const k = a + "\u0001" + b; pairs[k] = (pairs[k] || 0) + w; });
+  const La = layers(V.p, tl, null), Lb = layers(V.p2, tr, null), total = Object.values(tl).reduce((s, x) => s + x, 0), gap = 4, H = Math.max(180, 18 * Math.max(La.length, Lb.length) + gap * 10), k = (H - gap * (Math.max(La.length, Lb.length) - 1)) / total;
+  const nodeW = 10, x0 = 92, x1 = W - 92, pos = (L, t) => { let y = 0; const m = {}; L.forEach(l => { m[l.v] = { y, h: t[l.v] * k, l, off: 0 }; y += t[l.v] * k + gap; }); return m; }, A = pos(La, tl), B = pos(Lb, tr);
+  let rib = "", nodes = "";
+  La.forEach(la => Lb.forEach(lb => { const w = pairs[la.v + "\u0001" + lb.v]; if (!w) return; const a = A[la.v], b = B[lb.v], h = w * k, ya = a.y + a.off + h / 2, yb = b.y + b.off + h / 2; a.off += h; b.off += h; const mx = (x0 + x1) / 2, tip = la.v + " → " + lb.v + "(" + w + ")";
+    rib += '<path d="M' + sp(x0 + nodeW, ya) + " C" + sp(mx, ya) + " " + sp(mx, yb) + " " + sp(x1, yb) + '" stroke="' + la.c + '" stroke-width="' + Math.max(1, h).toFixed(1) + '" fill="none" opacity=".55" data-tip="' + esc(tip) + '" data-ha="vsel" data-hv="' + esc(tip) + '"/>'; }));
+  const lab = (m, x, anchor) => Object.values(m).map(o => '<rect x="' + x + '" y="' + o.y.toFixed(1) + '" width="' + nodeW + '" height="' + Math.max(1, o.h).toFixed(1) + '" fill="' + o.l.g[3] + '" data-tip="' + esc(o.l.g[1] + " › " + o.l.v) + '"/>' + (o.h >= 11 ? '<text x="' + (anchor === "end" ? x - 4 : x + nodeW + 4) + '" y="' + (o.y + o.h / 2 + 4).toFixed(1) + '" text-anchor="' + anchor + '">' + esc(cut(o.l.v, 7)) + "</text>" : "")).join("");
+  nodes = lab(A, x0, "end") + lab(B, x1, "start");
+  return '<svg class="vsvg flow" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '">' + rib + nodes + '</svg><div class="vlg"><span>左:なぜ</span><span>右:したこと</span><span>細いものはさわると名前が出る</span></div>';
+}
+function axis(R, W){ const n = R.bins.length, lab = i => R.wk ? mdS(R.bins[i]) + "〜" : mdS(R.bins[i]); const ids = n > 1 ? [0, Math.floor((n - 1) / 2), n - 1] : [0];
+  return '<div class="vax" style="width:' + W + 'px">' + ids.map(i => '<span style="left:' + (n > 1 ? i / (n - 1) * 100 : 50) + '%">' + lab(i) + "</span>").join("") + "</div>"; }
+function viewKanten(){
+  const R = vRange(), stats = VIEWS.map(V => { const d = vData(V, R); return { V, d, ok: d.length >= VMIN }; });
+  let cur = stats.find(s => s.V.id === U.view) || stats.find(s => s.ok) || stats[0]; U.view = cur.V.id;
+  const tabs = '<div class="vtabs">' + stats.slice().sort((a, b) => (b.ok ? 1 : 0) - (a.ok ? 1 : 0)).map(s => '<button class="' + (s === cur ? "on" : "") + (s.ok ? "" : " off") + '" data-ha="view" data-hv="' + s.V.id + '">' + s.V.n + "</button>").join("") + "</div>";
+  const rng = '<div class="nzm vr">' + [[7, "1週"], [28, "4週"], [84, "12週"], [0, "全部"]].map(([k, n]) => '<button class="' + ((U.vr == null ? 28 : U.vr) === k ? "on" : "") + '" data-ha="vr" data-hv="' + k + '">' + n + "</button>").join("") + "</div>";
+  const body = !cur.ok ? '<div class="vwait"><b>' + cur.V.n + "</b>は、" + cur.V.from + "のブロックがこの期間に " + VMIN + " つたまると現れる(いま " + cur.d.length + ")。</div>"
+    : cur.V.kind === "river" ? viewRiver(cur.V, R, cur.d) : cur.V.kind === "sky" ? viewSky(cur.V, R, cur.d) : viewFlow(cur.V, R, cur.d);
+  return tabs + '<div class="nbar">' + rng + "<span></span></div>" + '<div class="vbox">' + body + "</div>" + (U.vsel ? '<div class="vsel">' + esc(U.vsel) + "</div>" : "") +
+    '<p class="note" style="margin:.6rem 2px 0">' + cur.V.d + "</p>" + '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>";
+}
+
+
 /* ───────── 下から出る紙 ───────── */
 const sheetWrap = inner => '<div class="dim" data-ha="close"></div><div class="bs" role="dialog" aria-modal="true"><div class="grab"></div>' + inner + "</div>";
 function sheetList(){
@@ -418,9 +534,9 @@ function render(){
   const app = $("#app"), y = window.scrollY, ae = document.activeElement, aid = ae && ae.id;
   const tl0 = $("#sk-tl"), tls = tl0 ? { l: tl0.scrollLeft, z: tl0.dataset.z } : null;
   let sel = null; try { if (aid && ae.selectionStart != null) sel = [ae.selectionStart, ae.selectionEnd]; } catch (e) {}
-  const tab = U.tab === "n" ? "n" : "r", u = curUnit(); if (!u) { U.unit = null; U.draft = null; }
-  app.innerHTML = u ? viewUnit(u) : '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["r", "記す"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + "</nav></header>" +
-    (tab === "n" ? viewChron(chronEntries()) + '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" : viewList());
+  const tab = ["n", "v"].includes(U.tab) ? U.tab : "r", u = curUnit(); if (!u) { U.unit = null; U.draft = null; }
+  app.innerHTML = u ? viewUnit(u) : '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["r", "記す"], ["v", "観点"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + "</nav></header>" +
+    (tab === "n" ? viewChron(chronEntries()) + '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" : tab === "v" ? viewKanten() : viewList());
   $("#sheet").innerHTML = U.sheet === "blk" ? sheetBlk() : U.sheet === "list" ? sheetList() : U.sheet === "band" ? sheetBand() : "";
   if (U.sheet && !$("#sheet").innerHTML) U.sheet = null;
   document.body.classList.toggle("lock", !!U.sheet);
@@ -455,19 +571,26 @@ document.addEventListener("click", ev => {
     case "ub": mut(() => { const u = curUnit(); u.b = v || null; touch(u); }); return;
     case "udel": { if (!confirm("この記録を消しますか。")) return; const u = curUnit(); quiet(() => touch(Object.assign(u, { del: true }))); if (history.state && history.state.q) history.back(); else closeUnit(); toast("消した"); return; }
     // ブロック
-    case "kadd": { const bid = rid(); mut(() => { const u = ensureSaved(); u.bl.push({ id: bid, k: v, v: {} }); touch(u); }); U.sheet = "blk"; U.arg = { bid }; render();
+    case "kadd": { const bid = rid(); mut(() => { const u = ensureSaved(); u.bl.push({ id: bid, k: v, v: {} }); touch(u); }); U.sheet = "blk"; U.arg = { bid }; U.grp = null; render();
       if (BK[v] && BK[v].f[0].t === "text") { const t = $("#sk-ft"); t && t.focus(); } return; }
-    case "kopen": U.sheet = "blk"; U.arg = { bid: v }; render(); return;
+    case "kopen": U.sheet = "blk"; U.arg = { bid: v }; U.grp = null; render(); return;
     case "kv": { const x = b.dataset.hx, f = (bkOf((curBlock() || {}).k).f.find(ff => ff.k === v) || {});
       setField(v, (o, k) => { if (f.t === "multi") { const arr = [].concat(o[k] || []); o[k] = arr.includes(x) ? arr.filter(y => y !== x) : arr.concat(x); if (!o[k].length) delete o[k]; }
         else if (f.t === "scale" || f.t === "num") { if (+o[k] === +x) delete o[k]; else o[k] = +x; }
         else if (f.t === "time") delete o[k];
         else { if (o[k] === x) delete o[k]; else o[k] = x; } }); return; }
-    case "kopt": { const bl = curBlock(); if (!bl) return; const f = bkOf(bl.k).f.find(ff => ff.k === v); if (!f || !f.p) return; const t = (prompt("新しい選択肢") || "").trim(); if (!t) return;
-      if (!poolOpts(f.p).includes(t)) { const id = rid(); D.opts[id] = { id, p: f.p, v: t, u: now() }; }
+    case "kg": U.grp = U.grp && U.grp.k === v && U.grp.g === b.dataset.hx ? null : { k: v, g: b.dataset.hx }; render(); return;
+    case "kopt": { const bl = curBlock(); if (!bl) return; const f = bkOf(bl.k).f.find(ff => ff.k === v); if (!f || !f.p) return; const g = b.dataset.hx || "etc", gn = (grpList(f.p).find(x => x[0] === g) || ETC)[1];
+      const t = (prompt(gn + " に足す(新しい選択肢)") || "").trim(); if (!t) return;
+      if (!poolOpts(f.p).includes(t)) { const id = rid(); D.opts[id] = { id, p: f.p, g, v: t, u: now() }; }
       setField(v, (o, k) => { if (f.t === "multi") { const arr = [].concat(o[k] || []); if (!arr.includes(t)) arr.push(t); o[k] = arr; } else o[k] = t; }); return; }
     case "kmv": mut(() => { const u = curUnit(), i = u.bl.findIndex(x => x.id === U.arg.bid), j = i + (+v); if (i < 0 || j < 0 || j >= u.bl.length) return; const t = u.bl[i]; u.bl[i] = u.bl[j]; u.bl[j] = t; touch(u); }); return;
     case "krm": U.sheet = null; mut(() => { const u = curUnit(); u.bl = u.bl.filter(x => x.id !== U.arg.bid); touch(u); }); return;
+    // 観点
+    case "view": U.view = v; U.vg = null; U.vsel = null; saveUI(); render(); return;
+    case "vr": U.vr = +v; U.vsel = null; saveUI(); render(); return;
+    case "vg": { const [vid, g] = v.split("|"); U.vg = g ? { v: vid, g } : null; U.vsel = null; render(); return; }
+    case "vsel": U.vsel = U.vsel === v ? null : v; render(); return;
     // 年表
     case "nh": U.nh = !U.nh; saveUI(); render(); return;
     case "z": U.z = v; saveUI(); render(); return;
@@ -552,6 +675,7 @@ NET.conn = findConn();
 render();
 if (NET.conn) pull();
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { if (!NET.conn) NET.conn = findConn(); if (NET.conn) pull(); } else if (NET.dirty) push(); });
+let _rw = window.innerWidth; window.addEventListener("resize", () => { if (U.tab === "v" && Math.abs(window.innerWidth - _rw) > 40) { _rw = window.innerWidth; render(); } });
 window.SK = { get D(){ return D; }, U, render, unitList, chronEntries, migrate };
 </script>
 </body>
