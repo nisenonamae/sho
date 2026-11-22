@@ -928,6 +928,8 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .bigbtn:disabled{opacity:.45}
 #hy .askq .res{display:block;margin-top:.25rem;font-size:.78rem;font-weight:700;color:var(--c)}
 #hy .askq.none{border-style:solid;background:#EEF6F6}
+#hy .askq .raw{margin-top:.3rem;font-size:.78rem;color:var(--sub);white-space:pre-wrap}
+#hy .askq .raw summary{cursor:pointer;font-weight:700}
 #hy .note2.tp.info{background:#F3F1EA}
 #hy .note2.tp.info .nh b{background:#7A6A3A}
 #hy .cmpk.tpk button{font-weight:700}
@@ -1121,7 +1123,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-22 r148";
+const APP_VERSION = "2026-11-22 r149";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5512,7 +5514,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.51";
+const APP_VERSION = "h5.52";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6434,7 +6436,8 @@ function entryHTML(e, opts){
   if (e.k === "pause") return '<div class="divider">ここで休会(' + new Date(e.at).getHours() + ":" + pad(new Date(e.at).getMinutes()) + ")" + (e.back ? "・" + (e.back - e.at < 60000 ? "すぐ再開" : ago2(e.back - e.at) + "後に再開") : "") + "</div>";
   if (e.k === "yoron") return yoronHTML(e);
   if (e.k === "ask") return '<div class="askq' + (e.none ? " none" : "") + '" style="--c:' + CLAUDE.c + '"><span class="nh">議長が第三者(Claude)に' + (e.kind === "info" ? "専門家の情報を頼んだ" : "偏りの点検を頼んだ") + (e.as ? "(" + esc(e.as) + ")" : "") + "</span>" + esc(e.x) +
-    (e.n ? '<span class="res">' + (e.none ? (e.kind === "info" ? "→ 使える情報はなかった" : "→ 「確かに」はなかった。偏りは見つからなかった") + "(" + e.n + " 件を見た)" : "→ " + e.n + " 件の中から " + e.pick + " 件を取り入れた") + "</span>" : "") + "</div>";
+    (e.none ? '<span class="res">' + (e.kind === "info" ? "→ 使える情報はなかった" : "→ 「確かに」はなかった。偏りは見つからなかった") + (e.n ? "(" + e.n + " 件を見た)" : "") + "</span>" : e.hit ? '<span class="res">→ 「確かに」があった' + (e.kind === "info" ? "(使える情報)" : "") + "</span>" : e.n ? '<span class="res">→ ' + e.n + " 件の中から " + e.pick + " 件を取り入れた</span>" : "") +
+    (e.raw ? '<details class="raw"><summary>答えの全文</summary>' + esc(e.raw) + "</details>" : "") + "</div>";
   if (e.k === "shingi") return '<button class="note2' + (opts && opts.hl ? " hl" : "") + '" data-ha="entry" data-hv="' + e.id + '"><span class="nh">議長' + (e.g ? "・" + esc(e.g) : "") + "</span>" + esc(e.x) + "</button>";
   if (e.k === "sum") return '<button class="sum2" data-ha="entry" data-hv="' + e.id + '"><span class="nh"><span>議長・整理(まとめ)</span><span>議決に出る</span></span>' + esc(e.x) + "</button>";
   return sayHTML(e, opts);
@@ -6571,9 +6574,7 @@ function askOf(d){ d.ask = d.ask || { q: "", seat: "neutral", mode: "lines", pas
 function sheetAsk(s){
   const cp = curPart(s), d = cp && cp.d && s.debates[cp.d]; if (!d) return "";
   const a = askOf(d), seats = seatList(), info = a.kind === "info";
-  const got = String(a.paste || "").trim() ? (a.mode === "lines" ? parseAnswer(a.paste) : [{ x: String(a.paste).trim(), g: null }]) : [];
-  const nPick = got.filter(e => a.pick[e.x]).length;
-  return sheetWrap('<div style="--pc:' + CLAUDE.c + '"><h3>第三者(Claude)に聞く</h3><p class="d">議長が外の目を入れる。いまの審議の論点・目的・世論・発言録をつけて聞き、返ってきた中から「確かに」と思うものだけを発言録に入れる。</p>' +
+  return sheetWrap('<div style="--pc:' + CLAUDE.c + '"><h3>第三者(Claude)に聞く</h3><p class="d">議長が外の目を入れる。いまの審議の論点・目的・世論・発言録をつけて聞き、答えは Claude の画面で見るだけでよい。見たら、「確かに」があったか、なかったかを押す。</p>' +
     '<div class="lbl">何をもらう</div><div class="chips" style="margin-bottom:.2rem">' + [["check", "偏りの点検", "議論が偏っていないか、見落とした見方"], ["info", "専門家の情報", "判断に要る事実・知見。意見はもらわない"]].map(([k, l, x]) => '<button class="chip' + (a.kind === k ? " on" : "") + '" style="text-align:left" data-ha="askkind" data-hv="' + k + '"><b>' + l + '</b><small style="display:block;font-size:.66rem;font-weight:400">' + x + "</small></button>").join("") + "</div>" +
     '<div class="lbl" style="margin-top:.7rem">聞きたいこと</div><textarea class="fi" id="hy-askq" style="min-height:3.2rem" data-hin="askq" placeholder="' + (info ? "例:夜22時以降に勉強したときの記憶の定着" : "例:勉強ばかりで、健康の声を軽く見ていないか") + '">' + esc(a.q) + "</textarea>" +
     '<div class="chips" style="margin-top:.45rem">' + (info ? ASKQ_INFO : ASKQ).map(x => '<button class="chip" data-ha="askpre" data-hv="' + x + '">' + x + "</button>").join("") + "</div>" +
@@ -6581,11 +6582,10 @@ function sheetAsk(s){
       seats.map(m => '<button class="chip' + (a.seat === m.id ? " on" : "") + '" style="' + (a.seat === m.id ? "--pc:" + m.c : "") + '" data-ha="askseat" data-hv="' + m.id + '">' + esc(m.name) + "の目で</button>").join("") + "</div>") +
     '<div class="lbl" style="margin-top:.8rem">答え方</div><div class="chips">' + [["lines", info ? "1行に1つの情報" : "1行ずつの発言(印つき)"], ["whole", "ひとまとまりの答え"]].map(([k, l]) => '<button class="chip' + (a.mode === k ? " on" : "") + '" data-ha="askmode" data-hv="' + k + '">' + l + "</button>").join("") + "</div>" +
     '<button class="copy" style="margin-top:.9rem" data-ha="askcopy"><span>⧉</span><span>相談文をコピー<small>コピーして Claude に貼る</small></span></button>' +
-    '<div class="lbl" style="margin-top:.9rem">Claude の答えを貼る</div><textarea class="fi" id="hy-askpaste" style="min-height:4.5rem" data-hin="askpaste" placeholder="' + (a.mode === "lines" ? "1行ずつ分かれて、下に並ぶ" : "そのまま1つとして下に出る") + '">' + esc(a.paste) + "</textarea>" +
-    (got.length ? '<div class="lbl" style="margin-top:.8rem">「確かに」と思うものを選ぶ<span style="font-weight:400;color:var(--sub)"> ・' + got.length + " 件中 " + nPick + " 件</span></div>" +
-      '<div class="tppick">' + got.map(e => '<button class="' + (a.pick[e.x] ? "on" : "") + '" data-ha="askpick" data-hv="' + esc(e.x) + '"><span class="ck">' + (a.pick[e.x] ? "✓" : "") + "</span>" + (e.g ? '<span class="tg ' + tagCls(e.g) + '">' + esc(tagSym(e.g)) + "</span>" : "") + "<span>" + esc(e.x) + "</span></button>").join("") + "</div>" +
-      '<button class="bigbtn" data-ha="askput"' + (nPick ? "" : " disabled") + ">" + (nPick ? "選んだ " + nPick + " 件を発言録に入れる" : "選ぶと入れられる") + "</button>" +
-      '<button class="bigbtn ghost" data-ha="asknone">' + (info ? "使える情報はなかった、と記録する" : "「確かに」はなかった(偏りは見つからなかった)、と記録する") + "</button>" : "") + "</div>");
+    '<div class="lbl" style="margin-top:1rem">Claude の答えを見たら</div>' +
+    '<button class="bigbtn" data-ha="askhit">「確かに」があった → 議長が要約して書く</button>' +
+    '<button class="bigbtn ghost" data-ha="asknone">' + (info ? "使える情報はなかった、と記録する" : "「確かに」はなかった(偏りは見つからなかった)、と記録する") + "</button>" +
+    '<details class="hd" style="margin-top:.7rem"' + (String(a.paste || "").trim() ? " open" : "") + '><summary>答えを貼って残しておく(なくてよい)</summary><textarea class="fi" id="hy-askpaste" style="min-height:4rem;margin-top:.4rem" data-hin="askpaste" placeholder="貼ると、発言録の記録の中にたたんで残る">' + esc(a.paste) + "</textarea></details></div>");
 }
 function buildAsk(s, d){
   const a = askOf(d), m = a.seat === "neutral" ? null : memberOf(a.seat), gk = gkeyOfDebate(s, d), r = s.res[gk], L = [];
@@ -7398,7 +7398,14 @@ function onClick(ev){
     case "askcopy": { const d = s.debates[curPart(s).d], a = askOf(d); a.q = ($("#hy-askq") || {}).value ?? a.q; a.wait = true; saveLocal(); copyText(buildAsk(s, d)).then(ok => toast(ok ? "コピーした。Claude に貼って、答えをここに貼る" : "コピーできなかった")); return; }
     case "askkind": { const d = s.debates[curPart(s).d]; askOf(d).q = ($("#hy-askq") || {}).value ?? askOf(d).q; mut(() => { askOf(d).kind = v; }); return; }
     case "askpick": { const d = s.debates[curPart(s).d], a = askOf(d); mut(() => { if (a.pick[v]) delete a.pick[v]; else a.pick[v] = 1; }); return; }
-    case "asknone":
+    case "askhit":
+    case "asknone": { const d = s.debates[curPart(s).d], a = askOf(d), q = (($("#hy-askq") || {}).value ?? a.q).trim(), raw = String((($("#hy-askpaste") || {}).value ?? a.paste) || "").trim(), hit = b.dataset.ha === "askhit";
+      const as = a.kind === "info" || a.seat === "neutral" ? "" : memberOf(a.seat).name + "の目で";
+      U.logStick = true;
+      mut(() => { d.e.push({ id: rid(), k: "ask", kind: a.kind, x: q || (a.kind === "info" ? "この論点の判断に要る事実と知見" : "この議論の偏りと、見落としている見方"), as, hit: hit || undefined, none: hit ? undefined : true, raw: raw || undefined, at: now() });
+        d.ask = { q: "", seat: a.seat, mode: a.mode, kind: a.kind, pick: {}, paste: "", wait: false }; U.sheet = null; if (hit) { U.seat = "C"; U.cKind = a.kind; } });
+      if (hit) { const c = $("#hy-comp"); if (c) c.focus({ preventScroll: true }); toast("「確かに」と思ったことを、自分の言葉で書く"); } else toast("「取り入れるものはなかった」と記録した");
+      return; }
     case "askput": { const d = s.debates[curPart(s).d], a = askOf(d), el = $("#hy-askpaste"), q = (($("#hy-askq") || {}).value ?? a.q).trim(), txt = el ? el.value : a.paste;
       if (!String(txt).trim()) { el && el.focus(); return; }
       const all = a.mode === "lines" ? parseAnswer(txt) : [{ id: rid(), k: "say", m: "C", x: String(txt).trim(), g: null, at: now() }];
@@ -7476,7 +7483,7 @@ function onInput(ev){
     case "tplname": quiet(() => { const tp = tplOf(t.dataset.hk); tp.n = t.value; touch(D.settings); }); return;
     case "tpldesc": quiet(() => { const tp = tplOf(t.dataset.hk); tp.d = t.value; touch(D.settings); }); return;
     case "askq": quiet(() => { const cp = curPart(s); if (cp && cp.d) askOf(s.debates[cp.d]).q = t.value; }); return;
-    case "askpaste": mut(() => { const cp = curPart(s); if (cp && cp.d) askOf(s.debates[cp.d]).paste = t.value; }); return;
+    case "askpaste": quiet(() => { const cp = curPart(s); if (cp && cp.d) askOf(s.debates[cp.d]).paste = t.value; }); return;
     case "agx": quiet(() => { const a = D.agendas[t.dataset.hv]; if (a && t.value.trim()) { a.x = t.value.trim(); touch(a); } }); return;
     case "goaltx": quiet(() => { goalOf(resOf(s, t.dataset.hk)).text = t.value; }); return;
     case "goalwhy": quiet(() => { goalOf(resOf(s, t.dataset.hk)).reason = t.value; }); return;
