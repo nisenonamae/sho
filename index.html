@@ -1097,7 +1097,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-22 r142";
+const APP_VERSION = "2026-11-22 r143";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5488,7 +5488,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.31";
+const APP_VERSION = "h5.32";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6210,6 +6210,26 @@ function partVerdict(s, p, i, n, nx){
 /* スクロールの位置は画面ごとに覚える(会の中はパーツ・タブ・検証の何件目かごと)。
    同じ画面のまま描き直すときは動かさない。ほかの画面から戻ったときは、前にいた位置に戻す */
 const SCR = {};
+/* 打っている欄は、描き直しても消さずに残す。消すとスマホのキーボードが閉じて、開き直すときに画面が動くため。
+   その欄に至る枝だけ残して、まわりは新しい中身に入れ替える */
+function setHTML(box, html, f){
+  if (!f || !f.id || !box.contains(f) || !/^(TEXTAREA|INPUT)$/.test(f.tagName)) { box.innerHTML = html; return; }
+  const t = document.createElement("div"); t.innerHTML = html;
+  const nf = t.querySelector("#" + CSS.escape(f.id));
+  const oc = [], nc = []; for (let x = f; x && x !== box; x = x.parentNode) oc.unshift(x); for (let x = nf; x && x !== t; x = x.parentNode) nc.unshift(x);
+  if (!nf || oc.length !== nc.length || oc.some((x, i) => x.tagName !== nc[i].tagName)) { box.innerHTML = html; return; }
+  let op = box, np = t;
+  for (let i = 0; i < oc.length; i++) {
+    const ok = oc[i], nk = nc[i]; let c;
+    Array.from(op.childNodes).forEach(x => { if (x !== ok) op.removeChild(x); });
+    while ((c = np.firstChild) !== nk) op.insertBefore(c, ok);
+    np.removeChild(nk); while ((c = np.firstChild)) op.appendChild(c);
+    Array.from(ok.attributes).forEach(a => { if (!nk.hasAttribute(a.name)) ok.removeAttribute(a.name); });
+    Array.from(nk.attributes).forEach(a => { if (ok.getAttribute(a.name) !== a.value) ok.setAttribute(a.name, a.value); });
+    op = ok; np = nk;
+  }
+  if (f.value !== nf.value) f.value = nf.value;
+}
 function scrKey(){ const s = S(); if (U.view === "sess" && s) { const cp = curPart(s); return "s:" + s.id + ":" + (cp ? cp.id : "") + ":" + (cp && ["resolve", "compare", "verdict"].includes(cp.t) ? U.resTab || "" : "") + ":" + (cp && cp.t === "verify" ? U.verifyIdx || 0 : ""); }
   return U.view === "done" ? "d:" + U.doneId : U.view; }
 function render(){
@@ -6219,11 +6239,13 @@ function render(){
   const app = $("#hy-app"), y = window.scrollY, ae = document.activeElement, aid = ae && ae.id;
   const lb0 = $("#hy-logbody"), lbs = lb0 ? { d: lb0.dataset.d, top: lb0.scrollTop, bottom: lb0.scrollHeight - lb0.scrollTop - lb0.clientHeight < 40 } : null;
   let sel = null; try { if (aid && ae.selectionStart != null) sel = [ae.selectionStart, ae.selectionEnd]; } catch (e) {}
-  if (U.view === "set") app.innerHTML = viewSettings();
-  else if (U.view === "done" && U.doneId && D.sessions[U.doneId]) app.innerHTML = viewDone(D.sessions[U.doneId]);
-  else if (U.view === "sess" && S()) app.innerHTML = viewSession();
-  else { U.view = "home"; app.innerHTML = viewHome(); }
-  $("#hy-sheet").innerHTML = U.sheet ? viewSheet() : "";
+  let html;
+  if (U.view === "set") html = viewSettings();
+  else if (U.view === "done" && U.doneId && D.sessions[U.doneId]) html = viewDone(D.sessions[U.doneId]);
+  else if (U.view === "sess" && S()) html = viewSession();
+  else { U.view = "home"; html = viewHome(); }
+  setHTML(app, html, ae);
+  setHTML($("#hy-sheet"), U.sheet ? viewSheet() : "", ae);
   const dock = $(".dock"); const sp = $(".spacer"); if (dock && sp) sp.style.setProperty("--sp", (dock.offsetHeight + 12) + "px");
   const sv = $(".sv"), tp = $(".sv>.top"); if (sv && tp) sv.style.setProperty("--toph", tp.offsetHeight + "px");
   // 選んでいる席が横に隠れていたら、席の並びだけを横に動かして見せる
@@ -6957,8 +6979,7 @@ function postEntry(){
     if (U.smode === "sum") U.smode = "fact";
     if (s.recap && s.recap.d === d.id) U.recapOff[s.recap.at] = 1;
   });
-  const e2 = $("#hy-comp"); if (e2) e2.focus({ preventScroll: true });
-  const end = $("#hy-logend"); if (end) { const r = end.getBoundingClientRect(), dock = $(".dock"); const h = dock ? dock.offsetHeight : 0; if (r.bottom > window.innerHeight - h) window.scrollBy(0, r.bottom - (window.innerHeight - h) + 12); }
+  const e2 = $("#hy-comp"); if (e2 && document.activeElement !== e2) e2.focus({ preventScroll: true });
 }
 // 会を消す(試しに開いた会など)。この会で確かめた結果は元に戻し、この会で決めたことも消す
 function deleteSession(s){
@@ -7524,6 +7545,7 @@ function inRoot(ev){ return mounted() && ROOT.contains(ev.target); }
 function start(){
   if (started) return; started = true;
   document.addEventListener("click", ev => { if (inRoot(ev)) onClick(ev); });
+  document.addEventListener("mousedown", ev => { const ae = document.activeElement; if (ae && ae.id === "hy-comp" && ev.target.closest && ev.target.closest("#hy .dock button")) ev.preventDefault(); });
   document.addEventListener("input", ev => { if (inRoot(ev)) onInput(ev); });
   document.addEventListener("keydown", ev => { if (inRoot(ev)) onKey(ev); });
   document.addEventListener("change", ev => { if (inRoot(ev)) onChange(ev); });
