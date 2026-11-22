@@ -1100,7 +1100,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-22 r144";
+const APP_VERSION = "2026-11-22 r145";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5491,7 +5491,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.40";
+const APP_VERSION = "h5.41";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -5626,7 +5626,7 @@ const memberOf = id => { if (id === "C") return CLAUDE;
   const m = D.settings.members.find(x => x.id === id); if (!m) return { id, name: "?", s: "?", c: "#888" }; if (!m.p) return m;
   const f = D.settings.members.find(x => x.id === m.p) || {}, k = id + "|" + m.name + "|" + m.s + "|" + m.d + "|" + f.name + "|" + f.c, o = _mo[id];
   if (o && o._k === k) return o; return _mo[id] = { id, p: m.p, _k: k, short: m.name, fac: f.name || "", name: m.name + "(" + (f.name || "?") + ")", s: m.s || f.s || "?", c: f.c || "#888", d: m.d || f.d || "", on: m.on }; };
-const seatOK = id => { const iv = indOf(id); if (iv) { const f = facOf(id); return !!(f && !f.del && f.on && isInd(f)); } const m = D.settings.members.find(x => x.id === id); if (!m || m.del || !m.on) return false; if (!m.p) return true; const f = facOf(id); return !!(f && !f.del && f.on); };
+const seatOK = id => { const iv = indOf(id); if (iv) { const f = facOf(id); return !!(f && !f.del && f.on); } const m = D.settings.members.find(x => x.id === id); if (!m || m.del || !m.on) return false; if (!m.p) return true; const f = facOf(id); return !!(f && !f.del && f.on); };
 // Claude に座ってもらえる席:派閥と、その中の議員
 const seatList = () => members().filter(m => m.on).flatMap(f => [f].concat(subsOf(f.id).filter(m => m.on).map(m => memberOf(m.id))));
 const agendaList = () => Object.values(D.agendas).filter(a => !a.del);
@@ -6471,17 +6471,18 @@ function partDebate(s, p, i, n, nx){
     foot(s, nx, nextLabel(s, nx), sub, yoP + seatsHTML + inp + '<div style="height:.45rem"></div>');
 }
 // 選んだ派閥の中の議員(いなければ出さない)
+// 選んだ派閥の段:派閥として・登録した議員・この会の①②…・「＋ 別の人」
 function subSeatsHTML(seat){
   const f = seat === "sh" || seat === "C" ? null : facOf(seat); if (!f) return "";
-  if (isInd(f)) { const s = S(), used = {}; Object.values((s && s.debates) || {}).forEach(d => d.e.forEach(e => { if (e.k === "say") used[e.m] = 1; }));
-    const xs = indsIn(s, f.id).filter(x => used[x.id] || x.id === seat), cur = indOf(seat);
-    return '<div class="seats inseat" style="--c:' + f.c + '"><span class="sl">' + esc(f.name) + "の人</span>" +
-      (xs.length ? xs.map(x => '<button class="seat' + (seat === x.id ? " on" : "") + '" style="--c:' + f.c + '" data-ha="seat" data-hv="' + x.id + '"><span class="av">' + circ(x.no) + "</span>" + esc(x.name || f.name + circ(x.no)) + "</button>").join("") : '<span class="sl" style="color:var(--sub);font-weight:400">発言すると' + esc(f.name) + "①になる</span>") +
-      (xs.length || cur ? '<button class="seat" style="--c:' + f.c + '" data-ha="indnew" data-hv="' + f.id + '">＋ 別の人</button>' : "") +
-      (cur && used[seat] ? '<button class="seat" style="--c:var(--sub)" data-ha="indname" data-hv="' + seat + '">名前を付ける</button>' : "") + "</div>"; }
-  const xs = subsOf(f.id).filter(m => m.on); if (!xs.length) return "";
-  return '<div class="seats inseat" style="--c:' + f.c + '"><span class="sl">' + esc(f.name) + 'の中</span><button class="seat' + (seat === f.id ? " on" : "") + '" style="--c:' + f.c + '" data-ha="seat" data-hv="' + f.id + '">派閥として</button>' +
-    xs.map(m => '<button class="seat' + (seat === m.id ? " on" : "") + '" style="--c:' + f.c + '" data-ha="seat" data-hv="' + m.id + '"><span class="av">' + esc(m.s || f.s) + "</span>" + esc(m.name) + "</button>").join("") + "</div>";
+  const s = S(), used = {}; Object.values((s && s.debates) || {}).forEach(d => d.e.forEach(e => { if (e.k === "say") used[e.m] = 1; }));
+  const ind = isInd(f), regs = subsOf(f.id).filter(m => m.on), xs = indsIn(s, f.id).filter(x => used[x.id] || x.id === seat), cur = indOf(seat);
+  const chip = (id, av, label) => '<button class="seat' + (seat === id ? " on" : "") + '" style="--c:' + f.c + '" data-ha="seat" data-hv="' + id + '">' + (av ? '<span class="av">' + esc(av) + "</span>" : "") + esc(label) + "</button>";
+  return '<div class="seats inseat" style="--c:' + f.c + '"><span class="sl">' + esc(f.name) + (ind ? "の人" : "の中") + "</span>" +
+    (ind ? "" : chip(f.id, "", "派閥として")) + regs.map(m => chip(m.id, m.s || f.s, m.name)).join("") +
+    xs.map(x => chip(x.id, circ(x.no), x.name || f.name + circ(x.no))).join("") +
+    (ind && !xs.length ? '<span class="sl" style="color:var(--sub);font-weight:400">発言すると' + esc(f.name) + "①になる</span>" : "") +
+    (!ind || xs.length || cur ? '<button class="seat" style="--c:' + f.c + '" data-ha="indnew" data-hv="' + f.id + '">＋ 別の人</button>' : "") +
+    (cur && used[seat] ? '<button class="seat" style="--c:var(--sub)" data-ha="indname" data-hv="' + seat + '">名前を付ける</button>' : "") + "</div>";
 }
 /* 5 Claude 相談 */
 function partConsult(s, p, i, n, nx){
@@ -6508,7 +6509,7 @@ function buildPrompt(s){
   const L = [];
   L.push("自分の生活と勉強のしかたを決める会議「最高評議会」の第" + s.no + "回(" + titleOf(s) + ")です。自分の中の立場を「議員」として座らせて議論しています。");
   if (D.settings.members.some(m => m.p && !m.del)) L.push("議員は派閥(属性)ごとにまとまっていて、派閥の中の議員は「名前(派閥)」と書いています。");
-  if (D.settings.members.some(m => isInd(m) && !m.p && !m.del)) L.push("「" + D.settings.members.filter(m => isInd(m) && !m.p && !m.del).map(m => m.name + "①」「" + m.name + "②").join("」「") + "」のような番号つきの発言者は、どの派閥にも入らない、それぞれ別の人です。");
+  if (Object.keys(D.settings.inds || {}).length) L.push("「推進派①」「中立②」のような番号つきの発言者は、それぞれ別の人です(同じ派閥の中で意見が割れたときに分けている。中立・無所属の人はどの派閥にも入らない)。");
   L.push(m ? "あなたは議員「" + m.name + "」(" + (m.d || "") + ")の席に座って、この議論に加わってください。発言録の穴と、反対意見を出してください。" : "あなたは中立の参考人として、この議論の穴と、見落としている案を出してください。");
   L.push("");
   groups(s).forEach(g => {
@@ -6554,7 +6555,7 @@ function buildAsk(s, d){
   const a = askOf(d), m = a.seat === "neutral" ? null : memberOf(a.seat), gk = gkeyOfDebate(s, d), r = s.res[gk], L = [];
   L.push("自分の生活と勉強のしかたを決める会議「最高評議会」の第" + s.no + "回(" + titleOf(s) + ")です。自分の中の立場を「議員」として座らせて議論しています。いま審議の途中で、ひとつ聞きたいことがあります。");
   if (D.settings.members.some(m => m.p && !m.del)) L.push("議員は派閥(属性)ごとにまとまっていて、派閥の中の議員は「名前(派閥)」と書いています。");
-  if (D.settings.members.some(m => isInd(m) && !m.p && !m.del)) L.push("「" + D.settings.members.filter(m => isInd(m) && !m.p && !m.del).map(m => m.name + "①」「" + m.name + "②").join("」「") + "」のような番号つきの発言者は、どの派閥にも入らない、それぞれ別の人です。");
+  if (Object.keys(D.settings.inds || {}).length) L.push("「推進派①」「中立②」のような番号つきの発言者は、それぞれ別の人です(同じ派閥の中で意見が割れたときに分けている。中立・無所属の人はどの派閥にも入らない)。");
   L.push(m ? "あなたは議員「" + m.name + "」(" + (m.d || "") + ")の席に座って答えてください。" : "あなたは中立の参考人として答えてください。");
   L.push("");
   const myP = s.parts.find(q => q.d === d.id), anc = myP ? ancestors(s, myP) : [];
@@ -6876,12 +6877,13 @@ function sheetMembers(){
   const row = (m, i, n, f) => { const c = f ? f.c : m.c, off = !m.on || (f && !f.on);
     return '<div class="pr memrow' + (f ? " sub" : "") + (off ? " off" : "") + '"><span class="mv"><button data-ha="mmove" data-hv="' + m.id + '" data-hd="-1"' + (i ? "" : " disabled") + ' aria-label="上へ">▲</button><button data-ha="mmove" data-hv="' + m.id + '" data-hd="1"' + (i < n - 1 ? "" : " disabled") + ' aria-label="下へ">▼</button></span><span class="av" style="--c:' + c + '">' + esc(m.s || (f && f.s) || "") + '</span><button class="tapzone" data-ha="medit" data-hv="' + m.id + '"><span class="m"><b>' + esc(m.name) + "</b><span>" + esc(m.d || (f ? "" : "")) + '</span></span></button><button class="sw' + (m.on ? " on" : "") + '" data-ha="mtoggle" data-hv="' + m.id + '" aria-label="席に出す"></button></div>' +
       (U.editMem === m.id ? '<div class="edrow' + (f ? " sub" : "") + '"><div class="two"><input class="fi" data-hin="mem" data-hv="' + m.id + '" data-hf="s" value="' + esc(m.s || "") + '" maxlength="2" aria-label="一文字"><input class="fi" data-hin="mem" data-hv="' + m.id + '" data-hf="name" value="' + esc(m.name) + '" aria-label="名前"></div><input class="fi" data-hin="mem" data-hv="' + m.id + '" data-hf="d" value="' + esc(m.d || "") + '" placeholder="' + (f ? "ひとこと(" + esc(f.name) + "の中で、どんな立場か)" : "ひとこと(どんな属性か)") + '">' +
-        (f ? "" : '<button class="chip' + (isInd(m) ? " on" : "") + '" style="margin:.1rem 0 .5rem" data-ha="mind" data-hv="' + m.id + '">' + (isInd(m) ? "✓ " : "") + "ひとりずつ ①②… と数える(中立・無所属向け)</button>") +
+        (f ? "" : '<button class="chip' + (isInd(m) ? " on" : "") + '" style="margin:.1rem 0 .5rem" data-ha="mind" data-hv="' + m.id + '">' + (isInd(m) ? "✓ " : "") + "派閥として話さず、最初から①②…と数える(中立・無所属向け)</button>") +
         (f ? "" : '<div class="palette">' + PALETTE.map(x => '<button class="' + (m.c === x ? "on" : "") + '" style="--c:' + x + '" data-ha="mcolor" data-hv="' + m.id + '" data-hc="' + x + '" aria-label="色"></button>').join("") + "</div>") +
         '<div style="display:flex;justify-content:space-between"><button class="mini" data-ha="mdel" data-hv="' + m.id + '">' + (f ? "この議員を消す" : "この派閥を消す") + '</button><button class="mini" data-ha="medit" data-hv="">閉じる</button></div></div>' : ""); };
   return sheetWrap('<h3>派閥と議員</h3><p class="d">上の段が派閥(属性)、その中に議員を登録できる。審議では、派閥そのものとしても、中の議員としても発言できる。議員の色は派閥の色になる。名前を押すと直せる。</p>' +
     facs.map((f, i) => { const xs = subsOf(f.id); return '<div class="card facg" style="--pc:' + f.c + '">' + row(f, i, facs.length, null) + xs.map((m, k) => row(m, k, xs.length, f)).join("") +
-      (isInd(f) ? '<p class="note" style="margin:.4rem .8rem .6rem 1.4rem">会のなかで、発言するたびに' + esc(f.name) + "①・②…と別の人として数える。席で「＋ 別の人」を押すと次の番号になる。</p>" : '<button class="addbtn subadd" data-ha="madd" data-hv="' + f.id + '">+ ' + esc(f.name) + "に議員を足す</button>") + "</div>"; }).join("") +
+      (isInd(f) ? '<p class="note" style="margin:.4rem .8rem .6rem 1.4rem">会のなかで、' + esc(f.name) + "①・②…と別の人として数える。席で「＋ 別の人」を押すと次の番号になる。</p>" : '<button class="addbtn subadd" data-ha="madd" data-hv="' + f.id + '">+ ' + esc(f.name) + "に議員を足す</button>") + "</div>"; }).join("") +
+    '<p class="note">どの派閥でも、審議の席で「＋ 別の人」を押すと、その会だけの①②…を出せる(同じ派閥の中で意見が割れたとき)。いつも出てくる人は、議員として足すとよい。</p>' +
     '<div class="card"><button class="addbtn" style="border-top:0" data-ha="madd" data-hv="">+ 派閥を足す</button></div><p class="note">Claude 相談の答えは「Claude(参考人)」の発言として入る。派閥や議員を消しても、今までの発言は残る。</p>');
 }
 function sheetPause(s){
