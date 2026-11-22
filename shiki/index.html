@@ -198,6 +198,52 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .qjjn button{flex:none;border:0;border-radius:10px;background:var(--c,var(--ink));color:#fff;font:inherit;font-weight:800;font-size:.84rem;padding:0 .9rem;cursor:pointer}
 .vscroll{max-height:440px;overflow-y:auto}
 .vsvg.life text{font-size:11px;fill:var(--ink);font-family:inherit;font-weight:700}
+/* タイムライン */
+#app:has(.qbar){padding-bottom:6.5rem}
+.dnav{position:sticky;top:3.05rem;z-index:5;background:var(--paper);display:flex;align-items:center;gap:.2rem;padding:.2rem 0 .35rem;border-bottom:1px solid var(--rule)}
+.dnav button{border:0;background:none;font:inherit;color:var(--ink);cursor:pointer;padding:.2rem .45rem;font-size:1.25rem;line-height:1}
+.dnav button:disabled{color:var(--rule);cursor:default}
+.dnav .dl{font-size:.98rem;font-weight:900;padding:.2rem .2rem}
+.dnav .dtd{margin-left:auto;font-size:.74rem;font-weight:800;border:1.5px solid var(--ink);border-radius:999px;padding:.15rem .7rem}
+.dnav .dcal{font-size:1.1rem;margin-left:auto}.dnav .dtd+.dcal{margin-left:.1rem}
+.tl{min-height:55vh}
+.post{display:flex;gap:.7rem;padding:.75rem 2px;border-bottom:1px solid #EAE3D5;cursor:pointer}
+.post .pt{flex:none;width:2.6rem;font-size:.72rem;color:#9a9284;padding-top:.2rem;font-variant-numeric:tabular-nums}
+.post .pc{flex:1;min-width:0}
+.post .px{font-size:.95rem;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}
+.ptags{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.4rem}
+.tg{display:inline-block;border-radius:6px;padding:.08rem .5rem;font-size:.72rem;color:#fff;line-height:1.55;max-width:100%;overflow-wrap:anywhere}.tg b{font-weight:800}
+.pims{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:.45rem;border-radius:10px;overflow:hidden;max-width:420px}
+.pims button{border:0;padding:0;background:#E9E4D8;cursor:zoom-in;display:block;aspect-ratio:1}.pims img{width:100%;height:100%;object-fit:cover;display:block}
+.pims.one{grid-template-columns:1fr}.pims.one button{aspect-ratio:4/3}
+img[data-ph]:not([src]){visibility:hidden}
+.qbar{position:fixed;left:0;right:0;bottom:0;z-index:8;background:#fff;border-top:1px solid var(--rule);padding:.5rem 12px calc(.55rem + env(safe-area-inset-bottom))}
+.qbar>div{max-width:736px;margin:0 auto}
+.qbst{font-size:.66rem;color:var(--sub);margin:0 2px .35rem}
+.qbph{display:flex;gap:.35rem;margin-bottom:.45rem;overflow-x:auto}.qbph span{position:relative;flex:none}.qbph img{width:3.4rem;height:3.4rem;border-radius:8px;object-fit:cover;display:block;background:#E9E4D8}
+.qbph button,.qphs .x{position:absolute;top:-.3rem;right:-.3rem;width:1.3rem;height:1.3rem;border-radius:50%;border:0;background:var(--ink);color:#fff;font-size:.62rem;cursor:pointer;line-height:1}
+.qbr{display:flex;gap:.4rem;align-items:flex-end}
+.qbi{flex:none;width:2.4rem;height:2.45rem;border:0;border-radius:11px;background:var(--sheet);font-size:1.05rem;cursor:pointer}
+.qbr textarea{flex:1;min-width:0;resize:none;border:1.5px solid var(--ink);border-radius:12px;padding:.45rem .7rem;font:inherit;font-size:.95rem;line-height:1.5;background:#fff;color:var(--ink);height:2.45rem}
+.qbs{flex:none;height:2.45rem;border:0;border-radius:11px;background:var(--ink);color:#fff;font:inherit;font-weight:900;font-size:.88rem;padding:0 .9rem;cursor:pointer}
+/* 積み木の画面の字と写真 */
+.qx{margin:.6rem 0 .4rem;resize:vertical}
+.qphs{display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:.2rem}.qphs span{position:relative}.qphs span>button:first-child{border:0;padding:0;background:#E9E4D8;border-radius:9px;overflow:hidden;display:block;cursor:zoom-in}
+.qphs img{width:4.2rem;height:4.2rem;object-fit:cover;display:block}
+.qphs .add{border:1.5px dashed var(--rule);background:none;border-radius:9px;padding:0 .7rem;height:2.1rem;font:inherit;font-size:.76rem;color:var(--sub);cursor:pointer}
+/* 写真を大きく */
+.phv{position:fixed;inset:0;z-index:30;background:rgba(20,18,16,.92);display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+.phv img{max-width:96vw;max-height:92vh;object-fit:contain}
+/* カレンダー */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:.5rem}
+.cal>span{text-align:center;font-size:.66rem;color:var(--sub)}
+.cd{position:relative;aspect-ratio:.82;border:1px solid #ECE4D3;border-radius:8px;background:#fff center/cover no-repeat;font:inherit;color:var(--ink);cursor:pointer;padding:0;text-align:left;overflow:hidden}
+.cd b{position:absolute;left:.3rem;top:.15rem;font-size:.74rem}
+.cd i{position:absolute;right:.3rem;bottom:.15rem;font-style:normal;font-size:.6rem;color:var(--sub)}
+.cd.hp b,.cd.hp i{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.cd.out{opacity:.35}.cd:disabled{opacity:.25;cursor:default}
+.cd.sel{outline:2.5px solid var(--ink);outline-offset:1px}
+.cdots{position:absolute;left:.3rem;bottom:.3rem;display:flex;gap:2px}.cdots s{width:.34rem;height:.34rem;border-radius:50%;display:block}
 </style>
 </head>
 <body>
@@ -205,7 +251,7 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.20";
+const VER = "s2.30";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -278,7 +324,7 @@ const bkOf = k => BK[k] || BK.hito;
 
 function normalize(d){ d = d && typeof d === "object" ? d : {}; ["news", "eras", "issues", "bands", "units", "opts"].forEach(k => { if (!d[k] || typeof d[k] !== "object") d[k] = {}; }); d.settings = Object.assign({ u: 0, imp: false }, d.settings || {}); return d; }
 let D = normalize(lsGet(K_DATA, null));
-const U = Object.assign({ tab: "r", z: "w", nh: false }, lsGet(K_UI, {}), { sheet: null, arg: null, lim: 120, bottom: true, unit: null, draft: null, tedit: false, listY: 0, toY: null });
+const U = Object.assign({ tab: "r", z: "w", nh: false }, lsGet(K_UI, {}), { q: lsGet("shiki-q", ""), qph: lsGet("shiki-qph", []), qat: null, day: null, cal: false, sheet: null, arg: null, lim: 120, bottom: true, unit: null, draft: null, tedit: false, listY: 0, toY: null });
 if (!["n", "v"].includes(U.tab)) U.tab = "r";
 const NET = { conn: null, sha: null, state: "", dirty: false, timer: null, busy: false };
 const touch = o => { if (o) o.u = now(); return o; };
@@ -296,7 +342,8 @@ function migrate(){ let n = 0; Object.values(D.news).forEach(x => { if (!x || !x
 if (!lsGet("shiki-impL", false)) { takeOld(lsGet("hyogikai-data", null)); lsSet("shiki-impL", true); }
 if (migrate()) saveLocal();
 
-const unitList = () => Object.values(D.units).filter(x => x && !x.del && x.bl && x.bl.length).sort((a, b) => a.at - b.at);
+const hasBody = x => (x.bl && x.bl.length) || (x.x && x.x.trim()) || (x.ph && x.ph.length);
+const unitList = () => Object.values(D.units).filter(x => x && !x.del && hasBody(x)).map(x => { if (!x.bl) x.bl = []; return x; }).sort((a, b) => a.at - b.at);
 const uCat = u => u.cat || (u.bl.some(b => b.k === "deki" || b.k === "kodo") ? "o" : u.bl.some(b => b.k === "kimo") ? "s" : "o");
 function bSum(b){ const v = b.v || {}, t = s => String(s || "").trim();
   switch (b.k) {
@@ -310,10 +357,10 @@ function bSum(b){ const v = b.v || {}, t = s => String(s || "").trim();
     case "bash": return v.where || "";
   } return ""; }
 const NAME_ORDER = ["deki", "kodo", "kimo", "hito", "riyu", "kikk", "bash", "dare", "jikn"];
-function uName(u){ for (const k of NAME_ORDER) { const b = u.bl.find(x => x.k === k && bSum(x)); if (b) return cut(bSum(b).split("\n")[0], 30); } return u.bl.map(b => bkOf(b.k).n).join("・") || "新しい記録"; }
+function uName(u){ if (u.x && u.x.trim()) return cut(u.x.trim().split("\n")[0], 30); for (const k of NAME_ORDER) { const b = u.bl.find(x => x.k === k && bSum(x)); if (b) return cut(bSum(b).split("\n")[0], 30); } return u.bl.map(b => bkOf(b.k).n).join("・") || (u.ph && u.ph.length ? "写真" : "新しい記録"); }
 function uEmo(u){ const f = u.bl.find(b => b.k === "kimo" && b.v && FEEL_E[b.v.kind]); const nm = uName(u), hit = EMO_KW.find(([w]) => nm.includes(w)); if (hit) return hit[1]; if (f) return FEEL_E[f.v.kind];
   const d = EMO_DEF[uCat(u) === "s" ? "h" : uCat(u) === "o" ? "a" : "w"]; return d[hsh(u.id) % d.length]; }
-function uFull(u){ return [uName(u)].concat(u.bl.map(b => bSum(b).replace(/\n/g, " ")).filter(s => s && s !== uName(u))).join(" / "); }
+function uFull(u){ return [u.x && u.x.trim() ? u.x.trim().replace(/\n/g, " ") : uName(u)].concat(u.bl.map(b => bSum(b).replace(/\n/g, " ")).filter(s => s && s !== uName(u))).join(" / "); }
 // 年表に載せる形
 function chronEntries(){ return unitList().map(u => { const c = catOf(uCat(u)); return { id: u.id, day: u.day, at: u.at, t: c.id === "s" ? "h" : "a", c: c.c, kn: c.n, x: uFull(u), e: u.e || uEmo(u), b: u.b, top: u.top }; }); }
 // 選択肢:よく使うものから並ぶ
@@ -348,6 +395,8 @@ function viewUnit(u){
     '<div class="qst"><span>記録を始めた時刻</span><b>' + md(u.day) + " " + hm(u.at) + "</b>" +
     '<button data-ha="ut" data-hv="-5">−5分</button><button data-ha="ut" data-hv="5">＋5分</button><button data-ha="utx">' + (U.tedit ? "とじる" : "変える") + "</button></div>" +
     (u.c ? '<div class="qwr">記した日時 ' + md(ymd(new Date(u.c))) + " " + hm(u.c) + (u.e2 ? "・最後に直した日時 " + md(ymd(new Date(u.e2))) + " " + hm(u.e2) : "") + "</div>" : "") + (U.tedit ? '<div class="qte"><input class="fi" type="date" data-hin="ud" value="' + u.day + '" max="' + today() + '"><input class="fi" type="time" data-hin="utm" value="' + hm(u.at) + '"></div>' : "") +
+    '<textarea class="fi qx" id="sk-ux" data-hin="ux" rows="2" placeholder="字(書かなくていい)">' + esc(u.x || "") + "</textarea>" +
+    '<div class="qphs">' + (u.ph || []).map(p => '<span><button data-ha="phv" data-hv="' + p.id + '">' + phImg(p.id) + '</button><button class="x" data-ha="phrm" data-hv="' + p.id + '" aria-label="外す">✕</button></span>').join("") + '<button class="add" data-ha="phadd" data-hv="unit">📷 写真</button></div>' +
     '<div class="qcat">' + CAT.map(k => '<button class="' + (c === k.id ? "on" : "") + '" style="--c:' + k.c + '" data-ha="ucat" data-hv="' + k.id + '">' + k.n + "</button>").join("") + "</div>" +
     '<div class="qbase" style="background:' + catOf(c).base + '">' + (u.bl.length ? '<div class="qg">' + u.bl.map(blockHTML).join("") + "</div>" : '<p class="qempty">下のブロックを押すと、ここに積まれる</p>') + "</div>" +
     (bs.length ? '<div class="nwl">入れる帯(この日にかかっている帯)</div><div class="chips">' + bs.map(b => '<button class="chip' + (u.b === b.id ? " on" : "") + '" data-ha="ub" data-hv="' + (u.b === b.id ? "" : b.id) + '">' + esc(bPath(b.id).map(p => cut(p.n, 8)).join(" › ")) + "</button>").join("") + "</div>" : "") +
@@ -355,7 +404,7 @@ function viewUnit(u){
     '<div class="qpal"><div><div class="qph">ブロックを足す(押すと下に積まれる)</div>' + BK_ORDER.map(k => '<button style="--c:' + BK[k].c + '" data-ha="kadd" data-hv="' + k + '">' + BK[k].n + "</button>").join("") + "</div></div>";
 }
 function openUnit(id){ U.unit = id; U.draft = null; U.tedit = false; U.sheet = null; U.listY = window.scrollY; U.toY = 0; try { history.pushState({ q: 1 }, ""); } catch (e) {} render(); }
-function closeUnit(){ const u = curUnit(); if (u && !U.draft && !u.bl.length) quiet(() => touch(Object.assign(u, { del: true })));
+function closeUnit(){ const u = curUnit(); if (u && U.draft && hasBody(u)) quiet(() => { D.units[u.id] = u; touch(u); }); else if (u && !U.draft && !hasBody(u)) quiet(() => touch(Object.assign(u, { del: true })));
   U.unit = null; U.draft = null; U.tedit = false; U.sheet = null; U.toY = U.listY; render(); }
 window.addEventListener("popstate", () => { if (U.unit || U.draft) closeUnit(); });
 function setAt(u, at){ u.at = at; u.day = ymd(new Date(at)); touch(u); }
@@ -393,6 +442,45 @@ function sheetBlk(){ const b = curBlock(); if (!b) return ""; const bk = bkOf(b.
     '<div class="chips" style="margin-top:1rem"><button class="chip" data-ha="kmv" data-hv="-1">↑ 前へ</button><button class="chip" data-ha="kmv" data-hv="1">↓ 後へ</button></div>' +
     '<div class="links" style="margin-top:.9rem"><button data-ha="krm">このブロックを外す</button><span></span></div><button class="bigbtn" data-ha="close">閉じる</button>').replace('class="bs"', 'class="bs" style="--c:' + bk.c + '"');
 }
+
+
+/* ───────── 記す = 1日のタイムライン(引き出し日記のように、つぶやきが積まれる) ───────── */
+// 字として見せるもの:ユニットの字。なければ、前の形の「できごと」「ひとこと」の字
+function postText(u){ if (u.x && u.x.trim()) return { t: u.x, skip: null }; const b = u.bl.find(b => (b.k === "hito" || b.k === "deki") && b.v && String(b.v.x || "").trim()); return b ? { t: b.v.x, skip: b.id } : { t: "", skip: null }; }
+function tagHTML(b){ const bk = bkOf(b.k), s = bSum(b).replace(/\n→ /g, " → ").replace(/\n/g, "・"), lv = b.k === "kimo" && b.v && b.v.lv ? " " + "●".repeat(b.v.lv) : "";
+  return '<span class="tg" style="background:' + bk.c + '"><b>' + bk.n + "</b>" + (s ? " " + esc(cut(s, b.k === "riyu" ? 40 : 26)) : "") + lv + "</span>"; }
+function phImg(id, cls){ return '<img class="' + (cls || "") + '" data-ph="' + id + '"' + (PHURL[id] ? ' src="' + PHURL[id] + '" data-done="1"' : "") + ' alt="">'; }
+function phGrid(ph){ if (!ph || !ph.length) return ""; return '<div class="pims' + (ph.length === 1 ? " one" : "") + '">' + ph.map(p => '<button data-ha="phv" data-hv="' + p.id + '">' + phImg(p.id) + "</button>").join("") + "</div>"; }
+function postHTML(u){ const pt = postText(u), bl = u.bl.filter(b => b.id !== pt.skip);
+  return '<div class="post" data-ha="uopen" data-hv="' + u.id + '"><span class="pt">' + hm(u.at) + '</span><div class="pc">' + (pt.t ? '<div class="px">' + esc(pt.t) + "</div>" : "") + phGrid(u.ph) +
+    (bl.length ? '<div class="ptags">' + bl.map(tagHTML).join("") + "</div>" : "") + "</div></div>"; }
+const curDay = () => U.day && U.day <= today() ? U.day : today();
+// 下の欄から記すときの時刻:今日なら書きはじめた時刻、過去の日ならその日の最後の記録の5分後(なければ12時)
+function qAt(){ const d = curDay(); if (d === today()) return U.qat || now(); const xs = unitList().filter(u => u.day === d); return xs.length ? xs[xs.length - 1].at + 5 * 60000 : new Date(d + "T12:00:00").getTime(); }
+function viewDay(){
+  const d = curDay(), xs = unitList().filter(u => u.day === d), td = d === today();
+  const nav = '<div class="dnav"><button data-ha="dmv" data-hv="-1" aria-label="前の日">‹</button><button class="dl" data-ha="cal">' + ymdJ(d) + '</button><button data-ha="dmv" data-hv="1" aria-label="次の日"' + (td ? " disabled" : "") + '>›</button>' +
+    (td ? "" : '<button class="dtd" data-ha="dtoday">今日へ</button>') + '<button class="dcal" data-ha="cal" aria-label="カレンダー">📅</button></div>';
+  const qph = U.qph || [];
+  const bar = '<div class="qbar"><div>' + (U.qat && td ? '<div class="qbst">書きはじめた時刻 ' + hm(U.qat) + "</div>" : td ? "" : '<div class="qbst">' + md(d) + " に書き足す</div>") +
+    (qph.length ? '<div class="qbph">' + qph.map(p => '<span>' + phImg(p.id) + '<button data-ha="qphrm" data-hv="' + p.id + '" aria-label="外す">✕</button></span>').join("") + "</div>" : "") +
+    '<div class="qbr"><button class="qbi" data-ha="phadd" data-hv="bar" aria-label="写真">📷</button><button class="qbi" data-ha="qblk" aria-label="ブロックを組む">▦</button>' +
+    '<textarea id="sk-q" data-hin="q" rows="1" placeholder="' + (td ? "いまのことを書く" : "この日のことを書く") + '">' + esc(U.q || "") + '</textarea><button class="qbs" data-ha="qsend">記す</button></div></div></div>';
+  return nav + '<div class="tl">' + (xs.length ? xs.map(postHTML).join("") : '<p class="qnone" style="text-align:center;margin:3rem 0">この日の記録はまだない。<br>下から書く。▦ でブロックを組める。</p>') + "</div>" + bar;
+}
+/* ───────── カレンダー(写真のある日は写真が出る) ───────── */
+function viewCal(){
+  const m = U.calm || curDay().slice(0, 7), y = +m.slice(0, 4), mo = +m.slice(5, 7), first = m + "-01", start = addDays(first, -((new Date(first + "T00:00:00").getDay() + 6) % 7)), by = {};
+  unitList().forEach(u => { if (u.day >= start) (by[u.day] = by[u.day] || []).push(u); });
+  let cells = ""; for (let i = 0; i < 42; i++) { const d = addDays(start, i); if (i >= 35 && d.slice(0, 7) !== m) break; const xs = by[d] || [], ph = xs.map(u => (u.ph || [])[0]).find(Boolean), out = d.slice(0, 7) !== m, fut = d > today();
+    const dots = []; xs.forEach(u => u.bl.forEach(b => { if (dots.length < 3 && b.v && b.k === "kimo" && b.v.kind) dots.push(gOf("feel", b.v.kind)[3]); }));
+    cells += '<button class="cd' + (out ? " out" : "") + (ph ? " hp" : "") + (d === curDay() ? " sel" : "") + '"' + (fut ? " disabled" : "") + ' data-ha="cday" data-hv="' + d + '"' + (ph ? ' data-ph="' + ph.id + '"' + (PHURL[ph.id] ? ' style="background-image:url(' + PHURL[ph.id] + ')" data-done="1"' : "") : "") + "><b>" + +d.slice(8) + "</b>" +
+      (dots.length ? '<span class="cdots">' + dots.map(c => '<s style="background:' + c + '"></s>').join("") + "</span>" : "") + (xs.length ? "<i>" + xs.length + "</i>" : "") + "</button>"; }
+  const pm = mo === 1 ? (y - 1) + "-12" : y + "-" + pad(mo - 1), nm = mo === 12 ? (y + 1) + "-01" : y + "-" + pad(mo + 1);
+  return '<div class="dnav"><button data-ha="calm" data-hv="' + pm + '">‹</button><button class="dl" data-ha="cal">' + y + "年" + mo + '月</button><button data-ha="calm" data-hv="' + nm + '"' + (nm > today().slice(0, 7) ? " disabled" : "") + '>›</button><button class="dtd" data-ha="cday" data-hv="' + today() + '">今日へ</button></div>' +
+    '<div class="cal">' + ["月", "火", "水", "木", "金", "土", "日"].map(w => "<span>" + w + "</span>").join("") + cells + "</div>" + '<p class="note" style="margin:.5rem 2px">右下の数 = その日の記録の数。点 = その日の気持ちの色。写真のある日は写真が出る。</p>';
+}
+function sheetPhv(){ const id = (U.arg || {}).ph; return id ? '<div class="phv" data-ha="close">' + phImg(id) + "</div>" : ""; }
 
 const kindOf = x => NKIND.some(k => k.id === x.t) ? x.t : "a";
 function emoGuess(x){ const t = String(x.x || ""), hit = EMO_KW.find(([w]) => t.includes(w)); if (hit) return hit[1]; const d = EMO_DEF[kindOf(x)]; return d[hsh(x.id) % d.length]; }
@@ -588,16 +676,17 @@ function render(){
   let sel = null; try { if (aid && ae.selectionStart != null) sel = [ae.selectionStart, ae.selectionEnd]; } catch (e) {}
   const tab = ["n", "v"].includes(U.tab) ? U.tab : "r", u = curUnit(); if (!u) { U.unit = null; U.draft = null; }
   app.innerHTML = u ? viewUnit(u) : '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["r", "記す"], ["v", "観点"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + '</nav><button class="gear' + (NET.state === "err" ? " err" : "") + '" data-ha="set" aria-label="設定">⚙</button></header>' +
-    (tab === "n" ? viewChron(chronEntries()) : tab === "v" ? viewKanten() : viewList());
-  $("#sheet").innerHTML = U.sheet === "set" ? sheetSet() : U.sheet === "blk" ? sheetBlk() : U.sheet === "list" ? sheetList() : U.sheet === "band" ? sheetBand() : "";
+    (tab === "n" ? viewChron(chronEntries()) : tab === "v" ? viewKanten() : U.cal ? viewCal() : viewDay());
+  $("#sheet").innerHTML = U.sheet === "phv" ? sheetPhv() : U.sheet === "set" ? sheetSet() : U.sheet === "blk" ? sheetBlk() : U.sheet === "list" ? sheetList() : U.sheet === "band" ? sheetBand() : "";
   if (U.sheet && !$("#sheet").innerHTML) U.sheet = null;
   document.body.classList.toggle("lock", !!U.sheet);
   { const tl = $("#sk-tl"); if (tl) { if (!tls || tls.z !== tl.dataset.z) tl.scrollLeft = +tl.dataset.td >= 0 ? Math.max(0, +tl.dataset.td - tl.clientWidth * 0.78) : 0; else tl.scrollLeft = tls.l; } }
   if (U.jumpGo) { U.jumpGo = false; const el = document.getElementById("d-" + U.xday); if (el) window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 60); U.toY = null; U.bottom = false; }
   else if (U.toY != null) { window.scrollTo(0, U.toY); U.toY = null; }
-  else if (U.bottom) { U.bottom = false; window.scrollTo(0, !u && tab === "r" ? document.documentElement.scrollHeight : 0); }
+  else if (U.bottom) { U.bottom = false; window.scrollTo(0, !u && tab === "r" && !U.cal ? document.documentElement.scrollHeight : 0); }
   else if (U.keep) { window.scrollTo(0, y + document.documentElement.scrollHeight - U.keep); U.keep = 0; }
   else if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+  hydrate(); { const q = $("#sk-q"); if (q) growQ(q); }
   if (aid) { const n = document.getElementById(aid); if (n && n !== ae) { n.focus({ preventScroll: true }); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
 }
 document.addEventListener("mouseover", ev => { const t = ev.target.closest && ev.target.closest("[data-tip]"), tip = $("#tip"); if (!tip) return; if (!t) { tip.classList.remove("on"); return; }
@@ -607,6 +696,8 @@ function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add
 
 /* ───────── 操作 ───────── */
 // ブロックの欄を変える(下書きならまず記録にする)
+function clearQ(){ U.q = ""; U.qph = []; U.qat = null; lsSet("shiki-q", ""); lsSet("shiki-qph", []); }
+function growQ(t){ t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight + 2, 160) + "px"; }
 function setField(fk, fn){ mut(() => { const u = ensureSaved(), b = u.bl.find(x => x.id === U.arg.bid); if (!b) return; b.v = b.v || {}; fn(b.v, fk); edited(u); }); }
 // 過去の記録を直したら、直した日時を残す
 function edited(u){ touch(u); if (u.c && now() - u.c > 10 * 60000) u.e2 = now(); }
@@ -616,6 +707,20 @@ document.addEventListener("click", ev => {
     case "tab": U.tab = v; U.bottom = true; U.lim = 120; U.draw = null; saveUI(); render(); return;
     case "more": U.lim += 200; U.keep = document.documentElement.scrollHeight; render(); return;
     case "close": U.sheet = null; render(); return;
+    // 記す(タイムライン)
+    case "dmv": { const d = addDays(curDay(), +v); U.day = d > today() ? today() : d; U.qat = null; U.bottom = true; render(); return; }
+    case "dtoday": U.day = null; U.qat = null; U.bottom = true; render(); return;
+    case "cal": U.cal = !U.cal; U.calm = curDay().slice(0, 7); U.toY = 0; render(); return;
+    case "calm": U.calm = v; render(); return;
+    case "cday": U.day = v === today() ? null : v; U.cal = false; U.qat = null; U.bottom = true; render(); return;
+    case "phadd": U.phTarget = v; phInput().click(); return;
+    case "phv": U.sheet = "phv"; U.arg = { ph: v }; render(); return;
+    case "qphrm": U.qph = (U.qph || []).filter(p => p.id !== v); lsSet("shiki-qph", U.qph); render(); return;
+    case "phrm": { const u = curUnit(); if (!u) return; if (U.draft) { u.ph = (u.ph || []).filter(p => p.id !== v); render(); } else mut(() => { u.ph = (u.ph || []).filter(p => p.id !== v); edited(u); }); return; }
+    case "qsend": { const x = ((($("#sk-q") || {}).value) || "").trim(), ph = U.qph || []; if (!x && !ph.length) { toast("字か写真を入れてから押す"); const q = $("#sk-q"); q && q.focus(); return; }
+      const at = qAt(); U.bottom = true; mut(() => { const id = rid(); D.units[id] = { id, at, day: ymd(new Date(at)), u: now(), c: now(), x, ph, bl: [] }; clearQ(); }); toast("記した"); phFlush(); return; }
+    case "qblk": { const x = ((($("#sk-q") || {}).value) || "").trim(), at = qAt(); U.draft = { id: rid(), at, day: ymd(new Date(at)), u: now(), c: now(), x, ph: U.qph || [], bl: [] }; clearQ();
+      U.unit = null; U.tedit = false; U.listY = window.scrollY; U.toY = 0; try { history.pushState({ q: 1 }, ""); } catch (e) {} render(); return; }
     case "set": U.sheet = "set"; render(); return;
     case "sync": if (NET.conn) { NET.dirty = true; pull(); toast("同期している"); } return;
     // ユニット
@@ -681,6 +786,8 @@ document.addEventListener("click", ev => { if (!U.draw || U.tab !== "n" || curUn
   const r = inn.getBoundingClientRect(), d = addDays(inn.dataset.from, Math.max(0, Math.floor((ev.clientX - r.left) / +inn.dataset.dw))), day = d > today() ? today() : d;
   if (!U.draw.from) { U.draw.from = day; render(); } else bandMake(U.draw.from, day); });
 document.addEventListener("input", ev => { const t = ev.target, k = t.dataset && t.dataset.hin; if (!k) return;
+  if (k === "q") { U.q = t.value; lsSet("shiki-q", U.q); if (t.value && !U.qat && curDay() === today()) { U.qat = now(); const st = $(".qbar .qbst"); if (!st) { render(); return; } } if (!t.value && !(U.qph || []).length) U.qat = null; growQ(t); return; }
+  if (k === "ux") { const u = curUnit(); if (!u) return; if (U.draft) u.x = t.value; else quiet(() => { u.x = t.value; edited(u); }); return; }
   if (k === "jump") { if (/^\d{4}-\d\d-\d\d$/.test(t.value)) { U.xday = t.value > today() ? today() : t.value; U.jumpGo = true; render(); } return; }
   if (k === "bn") { quiet(() => { const x = D.bands[t.dataset.hv]; if (x && t.value.trim()) { x.n = t.value.trim(); touch(x); } }); return; }
   if (k === "bf" || k === "bt") { if (/^\d{4}-\d\d-\d\d$/.test(t.value) && t.value <= today()) quiet(() => { const x = D.bands[t.dataset.hv]; if (!x) return; if (k === "bf" && t.value <= bEnd(x)) x.from = t.value; if (k === "bt" && t.value >= x.from) x.to = t.value; touch(x); }); return; }
@@ -724,7 +831,7 @@ async function push(){
   if (!NET.conn || !NET.conn.token || !NET.dirty) { updSaved(); return; } if (NET.busy) { queuePush(800); return; } NET.busy = true;
   try { for (let i = 0; i < 3; i++) { const body = { message: "史記を更新", content: b64e(JSON.stringify(D)), branch: NET.conn.branch || "main" }; if (NET.sha) body.sha = NET.sha;
       const r = await fetch(api(DATA_PATH), { method: "PUT", headers: hdr({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
-      if (r.ok) { const j = await r.json(); NET.sha = j.content && j.content.sha; NET.dirty = false; NET.state = ""; break; }
+      if (r.ok) { const j = await r.json(); NET.sha = j.content && j.content.sha; NET.dirty = false; NET.state = ""; phFlush(); break; }
       if (r.status === 409 || r.status === 422) { D = merge(D, await fetchRemote(DATA_PATH)); saveLocal(); continue; } throw new Error("保存 " + r.status); }
   } catch (e) { NET.state = "err"; console.warn(e); }
   NET.busy = false; updSaved();
@@ -735,9 +842,41 @@ function findConn(){
   return null;
 }
 
+
+/* ───────── 写真(縮めて端末に保存し、GitHub にも置く。ほかの端末では取りに行く) ───────── */
+const PH_DIR = "roadmap/apps/shiki/photos/", PHURL = {}, K_PHQ = "shiki-phq";
+let _idb = null;
+function idb(){ return _idb || (_idb = new Promise((res, rej) => { try { const r = indexedDB.open("shiki-ph", 1); r.onupgradeneeded = () => r.result.createObjectStore("p"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } })); }
+async function phPut(id, blob){ try { const db = await idb(); await new Promise((res, rej) => { const t = db.transaction("p", "readwrite"); t.objectStore("p").put(blob, id); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {} }
+async function phGet(id){ try { const db = await idb(); return await new Promise(res => { const r = db.transaction("p").objectStore("p").get(id); r.onsuccess = () => res(r.result || null); r.onerror = () => res(null); }); } catch (e) { return null; } }
+const _phWait = {};
+function phURL(id){ if (PHURL[id]) return Promise.resolve(PHURL[id]); if (_phWait[id]) return _phWait[id];
+  return _phWait[id] = (async () => { let b = await phGet(id);
+    if (!b && NET.conn) { try { const r = await fetch(api(PH_DIR + id + ".jpg") + "?ref=" + encodeURIComponent(NET.conn.branch || "main"), { headers: hdr({ Accept: "application/vnd.github.raw" }), cache: "no-store" }); if (r.ok) { b = await r.blob(); await phPut(id, b); } } catch (e) {} }
+    delete _phWait[id]; if (!b) return null; return PHURL[id] = URL.createObjectURL(b); })(); }
+function hydrate(){ document.querySelectorAll("[data-ph]").forEach(el => { if (el.dataset.done) return; el.dataset.done = "1";
+  phURL(el.dataset.ph).then(u => { if (!u) { el.classList.add("miss"); el.dataset.done = ""; return; } if (el.tagName === "IMG") el.src = u; else el.style.backgroundImage = "url(" + u + ")"; }); }); }
+// 長い辺を1280pxにして、JPEG で 150KB くらいに縮める
+async function shrink(file){ const url = URL.createObjectURL(file); try { const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+  const M = 1280, k = Math.min(1, M / Math.max(img.naturalWidth, img.naturalHeight)), w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k)), c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(img, 0, 0, w, h);
+  const blob = await new Promise(r => c.toBlob(r, "image/jpeg", .78)); return { blob, w, h }; } finally { URL.revokeObjectURL(url); } }
+async function addPhotos(files){ const out = []; for (const f of files) { if (!/^image\//.test(f.type)) continue; try { const { blob, w, h } = await shrink(f), id = "p" + rid(); await phPut(id, blob); PHURL[id] = URL.createObjectURL(blob); out.push({ id, w, h }); const q = lsGet(K_PHQ, []); q.push(id); lsSet(K_PHQ, q); } catch (e) { toast("写真を読めなかった"); } } return out; }
+const blobB64 = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(b); });
+let _phBusy = false;
+async function phFlush(){ if (_phBusy || !NET.conn || !NET.conn.token) return; const q = lsGet(K_PHQ, []); if (!q.length) return; _phBusy = true;
+  try { for (const id of q.slice()) { const b = await phGet(id); let ok = !b;
+      if (b) { const r = await fetch(api(PH_DIR + id + ".jpg"), { method: "PUT", headers: hdr({ "Content-Type": "application/json" }), body: JSON.stringify({ message: "史記の写真", content: await blobB64(b), branch: NET.conn.branch || "main" }) }); ok = r.ok || r.status === 422; }
+      if (!ok) break; lsSet(K_PHQ, lsGet(K_PHQ, []).filter(x => x !== id)); } } catch (e) { console.warn(e); }
+  _phBusy = false; }
+const phInput = () => { let el = $("#sk-file"); if (!el) { el = document.createElement("input"); el.type = "file"; el.id = "sk-file"; el.accept = "image/*"; el.multiple = true; el.hidden = true; document.body.appendChild(el); } return el; };
+document.addEventListener("change", async ev => { if (ev.target.id !== "sk-file") return; const files = Array.from(ev.target.files || []); ev.target.value = ""; if (!files.length) return; const got = await addPhotos(files); if (!got.length) return;
+  if (U.phTarget === "unit") { const u = curUnit(); if (!u) return; if (U.draft) { u.ph = (u.ph || []).concat(got); render(); } else mut(() => { u.ph = (u.ph || []).concat(got); edited(u); }); }
+  else { if (!U.qat && curDay() === today()) U.qat = now(); U.qph = (U.qph || []).concat(got); lsSet("shiki-qph", U.qph); render(); }
+  phFlush(); });
+
 NET.conn = findConn();
 render();
-if (NET.conn) pull();
+if (NET.conn) { pull(); phFlush(); }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { if (!NET.conn) NET.conn = findConn(); if (NET.conn) pull(); } else if (NET.dirty) push(); });
 let _rw = window.innerWidth; window.addEventListener("resize", () => { if (U.tab === "v" && Math.abs(window.innerWidth - _rw) > 40) { _rw = window.innerWidth; render(); } });
 window.SK = { get D(){ return D; }, U, render, unitList, chronEntries, migrate };
