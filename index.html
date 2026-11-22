@@ -585,7 +585,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .next small{display:block;font-weight:400;font-size:.66rem;opacity:.9;margin-top:.1rem}
 #hy .spacer{height:var(--sp,120px)}
 #hy .dim{position:fixed;inset:0;background:rgba(34,32,28,.45);z-index:40}
-#hy .bs{position:fixed;left:0;right:0;bottom:0;max-height:88vh;overflow:auto;z-index:41;background:var(--paper);border-radius:18px 18px 0 0;padding:.6rem 16px calc(18px + env(safe-area-inset-bottom));max-width:600px;margin:0 auto}
+#hy .bs{position:fixed;left:0;right:0;bottom:0;max-height:88vh;overflow:auto;overscroll-behavior:contain;z-index:41;background:var(--paper);border-radius:18px 18px 0 0;padding:.6rem 16px calc(18px + env(safe-area-inset-bottom));max-width:600px;margin:0 auto}
 #hy .grab{width:40px;height:4px;border-radius:2px;background:var(--rule);margin:0 auto .8rem}
 #hy .bs h3{margin:0;font-size:1.1rem}
 #hy .bs p.d{margin:.25rem 0 .7rem;font-size:.76rem;color:var(--sub);line-height:1.55}
@@ -1097,7 +1097,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-22 r141";
+const APP_VERSION = "2026-11-22 r142";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5488,7 +5488,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.30";
+const APP_VERSION = "h5.31";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6207,6 +6207,11 @@ function partVerdict(s, p, i, n, nx){
 }
 
 /* ───────── 描画 ───────── */
+/* スクロールの位置は画面ごとに覚える(会の中はパーツ・タブ・検証の何件目かごと)。
+   同じ画面のまま描き直すときは動かさない。ほかの画面から戻ったときは、前にいた位置に戻す */
+const SCR = {};
+function scrKey(){ const s = S(); if (U.view === "sess" && s) { const cp = curPart(s); return "s:" + s.id + ":" + (cp ? cp.id : "") + ":" + (cp && ["resolve", "compare", "verdict"].includes(cp.t) ? U.resTab || "" : "") + ":" + (cp && cp.t === "verify" ? U.verifyIdx || 0 : ""); }
+  return U.view === "done" ? "d:" + U.doneId : U.view; }
 function render(){
   if (!mounted()) { document.body.classList.remove("hy-full"); return; }
   document.body.classList.toggle("hy-full", (U.view === "sess" && !!S()) || U.view === "done");
@@ -6230,7 +6235,9 @@ function render(){
     upd(); lb.addEventListener("scroll", upd, { passive: true });
   }
   U.logStick = false;
-  if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+  const k1 = scrKey(), k0 = U.scrK; U.scrK = k1;
+  if (k0 && k0 !== k1) { SCR[k0] = y; const to = SCR[k1] || 0; window.scrollTo(0, Math.min(to, document.documentElement.scrollHeight - window.innerHeight)); }
+  else if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
   if (aid) { const n = document.getElementById(aid); if (n && n !== ae && document.activeElement !== n) { n.focus({ preventScroll: true }); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
   tick(true);
 }
@@ -6936,7 +6943,6 @@ function sheetRetitle(s){
 function goPart(s, id){
   flush(s); s.cur = id; U.nextArm = null; U.verifyIdx = 0;
   const p = partOf(s, id); if (p && ["resolve", "compare", "verdict"].includes(p.t)) U.resTab = null;
-  window.scrollTo(0, 0);
 }
 function insertAfterCur(s, part){ const i = s.parts.indexOf(curPart(s)); s.parts.splice(i + 1, 0, part); }
 function postEntry(){
@@ -7040,26 +7046,26 @@ function onClick(ev){
   const b = ev.target.closest("[data-ha]"); if (!b) return;
   const a = b.dataset.ha, v = b.dataset.hv, s = S();
   switch (a) {
-    case "view": U.view = v; saveUI(); render(); window.scrollTo(0, 0); return;
+    case "view": U.view = v; saveUI(); render(); return;
     case "len": U.len = v; saveUI(); render(); return;
-    case "open": mut(() => openSession(U.len === "auto" ? recNext().tpl : (U.len || "full"))); window.scrollTo(0, 0); return;
-    case "resume": mut(() => { doResume(S()); U.view = "sess"; }); window.scrollTo(0, 0); return;
+    case "open": mut(() => openSession(U.len === "auto" ? recNext().tpl : (U.len || "full"))); return;
+    case "resume": mut(() => { doResume(S()); U.view = "sess"; }); return;
     case "resumeclose": mut(() => { const x = S(); doResume(x); const c = x.parts.find(p => p.t === "close") || (x.parts.push(mkPart("close")), x.parts[x.parts.length - 1]); c.on = true; goPart(x, c.id); U.view = "sess"; }); return;
     case "sheet": U.sheet = b.dataset.hs; U.arg = v ? { dest: v } : null; render(); return;
     case "sheetclose": if (U.sheet === "yo") yoCommit(s); U.sheet = null; U.arg = null; U.editMem = null; render(); return;
     case "pause": U.sheet = "pause"; U.arg = null; render(); return;
     case "pwhy": U.arg.why = v; render(); return;
     case "pwhen": U.arg.when = v; render(); return;
-    case "dopause": { const x = U.arg || {}; U.sheet = null; U.arg = null; mut(() => { doPause(s, x.why || "わけなし", x.when); U.view = "home"; }); window.scrollTo(0, 0); return; }
+    case "dopause": { const x = U.arg || {}; U.sheet = null; U.arg = null; mut(() => { doPause(s, x.why || "わけなし", x.when); U.view = "home"; }); return; }
     case "hist": U.open[v] = !U.open[v]; render(); return;
     case "next": {
       const cp = curPart(s);
-      if (cp.t === "verify") { const list = verifyList(s); if (list.length && U.verifyIdx < list.length - 1) { U.verifyIdx++; render(); window.scrollTo(0, 0); return; } }
+      if (cp.t === "verify") { const list = verifyList(s); if (list.length && U.verifyIdx < list.length - 1) { U.verifyIdx++; render(); return; } }
       if (cp.t === "pick" && !Object.keys(s.picks).some(id => D.agendas[id]) && !freeDeb(s) && !s.parts.some(p => (p.t === "debate" || p.t === "goal") && p.on) && (!s.tpl || s.tpl.includes("debate") || s.tpl.includes("goal"))) { mut(() => setFree(s, true), { render: false }); }
       if (cp.t === "goal") { const d0 = s.debates[cp.d], g0 = d0 && goalOf(resOf(s, gkeyOfDebate(s, d0))); if (g0 && g0.mode === "split" && false) { if ((g0.subs || []).some(x => !x.made)) { toast("「分けて進む」を押すと、小さい論点が入る"); return; } if (!(g0.reason || "").trim()) { toast("分ける理由を書く"); return; } } }
       if (cp.t === "goal") { const d = s.debates[cp.d], gl = d && goalOf(resOf(s, gkeyOfDebate(s, d))); if (gl && gl.mode !== "split" && gl.text.trim() && !gl.reason.trim()) { toast("目的を決めた理由を書く(世論・事実・一貫性のどれに基づいたか)"); return; } }
       if (cp.t === "verdict") { const r = s.res[U.resTab]; if (r && !r.cont && ((r.text || "").trim() || (r.vopts || []).length) && !(r.why || "").trim()) { toast("裁定の理由を書く"); return; } }
-      if (cp.t === "resolve" || cp.t === "compare" || cp.t === "verdict") { const gs = cp.t === "resolve" ? topGroups(s) : groups(s), gi = gs.findIndex(g => g.key === U.resTab); if (gi >= 0 && gi < gs.length - 1) { U.resTab = gs[gi + 1].key; render(); window.scrollTo(0, 0); return; } }
+      if (cp.t === "resolve" || cp.t === "compare" || cp.t === "verdict") { const gs = cp.t === "resolve" ? topGroups(s) : groups(s), gi = gs.findIndex(g => g.key === U.resTab); if (gi >= 0 && gi < gs.length - 1) { U.resTab = gs[gi + 1].key; render(); return; } }
       if (cp.t === "debate") { const d = s.debates[cp.d]; if (d && d.e.length && !d.e.some(e => e.k === "sum") && U.nextArm !== cp.id) { U.nextArm = cp.id; render(); toast("まとめを書くと、議決のときに見やすい。もう一度押すと進む。"); return; } }
       const nx = nextPart(s); mut(() => { cp.done = true; if (nx) goPart(s, nx.id); }); if (!nx) toast("最後のパーツ。閉会は構成から足せる。"); return;
     }
@@ -7132,7 +7138,7 @@ function onClick(ev){
     case "freetalk": mut(() => setFree(s, !freeDeb(s))); return;
     case "freetalkgo": mut(() => { const cp = curPart(s); setFree(s, true); const fd = freeDeb(s); if (!fd) return;
       const blk = s.parts.filter(p => p.d === fd.id || (s.debates[p.d] && s.debates[p.d].gkey === "d:" + fd.id));
-      const ci = s.parts.indexOf(cp); s.parts = s.parts.filter(p => !blk.includes(p)); s.parts.splice(s.parts.indexOf(cp), 0, ...blk.sort((a, b) => (a.t === "goal" ? 0 : 1) - (b.t === "goal" ? 0 : 1))); goPart(s, blk[0].id); }); window.scrollTo(0, 0); return;
+      const ci = s.parts.indexOf(cp); s.parts = s.parts.filter(p => !blk.includes(p)); s.parts.splice(s.parts.indexOf(cp), 0, ...blk.sort((a, b) => (a.t === "goal" ? 0 : 1) - (b.t === "goal" ? 0 : 1))); goPart(s, blk[0].id); }); return;
     case "nextpick": mut(() => { const l = D.settings.nextPicks = picksNow(), i = l.indexOf(v); D.settings.nextPicksTouched = true; if (i >= 0) l.splice(i, 1); else l.push(v); touch(D.settings); }); return;
     case "ttlauto": mut(() => { s.title = ""; }); return;
     case "ttlpick": { const el = $("#hy-ttx"); if (el) { el.value = v; el.focus(); } return; }
@@ -7311,7 +7317,7 @@ function onClick(ev){
     case "paste": { const el = $("#hy-paste"), list = parseAnswer(el ? el.value : ""); if (!list.length) { el && el.focus(); return; } mut(() => { s.consult.ans.push(...list); s.consult.paste = ""; }); toast(list.length + " 行を発言録に入れた"); return; }
     case "showlink": mut(() => { s.consult.showLink = true; }); return;
     case "skipconsult": { const cp = curPart(s), nx = nextPart(s); mut(() => { s.consult.skip = true; cp.done = true; if (nx) goPart(s, nx.id); }); return; }
-    case "restab": U.resTab = v; render(); window.scrollTo(0, 0); return;
+    case "restab": U.resTab = v; render(); return;
     case "ridea": mut(() => {
       const r = resOf(s, b.dataset.hk); const i = r.picked.indexOf(v); if (i >= 0) r.picked.splice(i, 1); else r.picked.push(v);
       if (!r.edited) { const g = groups(s).find(x => x.key === b.dataset.hk), ideas = ideasOf(s, g); r.text = r.picked.map(id => (ideas.find(x => x.id === id) || {}).x).filter(Boolean).join("。").replace(/。。/g, "。"); }
@@ -7327,7 +7333,7 @@ function onClick(ev){
     case "kdel": mut(() => { const k = s.kini.find(x => x.id === v); if (k) k.del = true; }); return;
     case "close": {
       const nx = s; const mins = Math.round(liveElapsed(nx) / 60000);
-      mut(() => { finalize(nx); U.view = "done"; }); window.scrollTo(0, 0); toast("第" + nx.no + "回を閉会した(" + mins + "分)"); return;
+      mut(() => { finalize(nx); U.view = "done"; }); toast("第" + nx.no + "回を閉会した(" + mins + "分)"); return;
     }
     // 議員
     case "mtoggle": mut(() => { const m = D.settings.members.find(x => x.id === v); m.on = !m.on; touch(D.settings); }); return;
