@@ -943,6 +943,12 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .card2 .q{display:block;color:var(--sub);font-size:.8rem}
 #hy .card2 .res{display:block;margin-top:.2rem;font-size:.76rem;font-weight:800;color:#8A6A00}
 #hy .say.carded{box-shadow:inset 3px 0 0 #F2C230}
+#hy .say.warned{box-shadow:inset 3px 0 0 #E8DDB0}
+#hy .bs .tgs{flex-wrap:wrap}
+#hy .bs .tgs button{white-space:nowrap}
+#hy .warn2{margin:.35rem 0 .5rem;padding:.3rem .65rem;border-left:3px solid #D9C57A;background:#FBF8EC;border-radius:0 8px 8px 0;font-size:.8rem;line-height:1.6;white-space:pre-wrap;color:var(--ink)}
+#hy .warn2 .nh{display:block;font-size:.66rem;font-weight:800;color:#8A7A3A}
+#hy .warn2 .q{display:block;color:var(--sub);font-size:.76rem}
 #hy .cardwait{border:2px solid #E0B020;background:#FFF8DD;border-radius:14px;padding:.7rem .8rem}
 #hy .cardwait .ct{display:flex;align-items:center;font-size:.95rem}
 #hy .cardwait .cw{font-size:.84rem;margin:.25rem 0}
@@ -1136,7 +1142,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-22 r150";
+const APP_VERSION = "2026-11-23 r151";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5527,7 +5533,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.60";
+const APP_VERSION = "h5.61";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6442,13 +6448,14 @@ function partPick(s, p, i, n, nx){
 }
 /* 4 審議 */
 function sayHTML(e, opts){
-  const m = memberOf(e.m), hl = (opts && opts.hl ? " hl" : "") + (e.k === "say" && cardedIds(S())[e.id] ? " carded" : "");
+  const m = memberOf(e.m), hl = (opts && opts.hl ? " hl" : "") + (e.k === "say" && cardedIds(S())[e.id] ? " carded" : e.k === "say" && warnedIds(S())[e.id] ? " warned" : "");
   if (e.m === "C") return '<button class="note2 tp' + (e.kind === "info" ? " info" : "") + hl + '" data-ha="entry" data-hv="' + e.id + '"><span class="nh">' + (e.kind === "info" ? "議長・専門家の情報" : "議長・第三者の目") + '<b>Claude</b>' + (e.mine ? "・要約" : e.as ? "・" + esc(e.as) : "") + "</span>" + (e.g ? '<span class="tg ' + tagCls(e.g) + '" title="' + esc(tagTitle(e.g)) + '">' + esc(tagSym(e.g)) + "</span>" : "") + esc(e.x) + "</button>";
   return '<button class="say' + hl + '" style="--c:' + m.c + '" data-ha="entry" data-hv="' + e.id + '"><span class="av">' + esc(m.s) + '</span><span class="m"><span class="nm" style="display:block">' + (m.p ? esc(m.short) + (m.fac ? '<small class="fac">' + esc(m.fac) + "</small>" : "") : esc(m.name)) + (e.mine ? "・自分で要約" : e.as ? "・" + esc(e.as) : "") + '</span><span class="tx" style="display:block">' + (e.g ? '<span class="tg ' + tagCls(e.g) + '" title="' + esc(e.g) + '">' + esc(tagSym(e.g)) + "</span>" : "") + esc(e.x) + "</span></span></button>";
 }
 function entryHTML(e, opts){
   if (e.k === "pause") return '<div class="divider">ここで休会(' + new Date(e.at).getHours() + ":" + pad(new Date(e.at).getMinutes()) + ")" + (e.back ? "・" + (e.back - e.at < 60000 ? "すぐ再開" : ago2(e.back - e.at) + "後に再開") : "") + "</div>";
   if (e.k === "yoron") return yoronHTML(e);
+  if (e.k === "warn") { const m = memberOf(e.m), s0 = S(), ref = s0 && findEntry(s0, e.ref); return '<div class="warn2"><span class="nh">議長の注意(' + esc(m.name) + ")</span>" + (ref ? '<span class="q">「' + esc(cut(ref.x, 30)) + "」</span>" : "") + esc(e.why) + "</div>"; }
   if (e.k === "card") { const m = memberOf(e.m), s0 = S(), ref = s0 && findEntry(s0, e.ref); return '<div class="card2' + (e.no >= 2 ? " two" : "") + '"><span class="nh"><i class="yc"></i>議長の指摘・イエローカード(' + esc(m.name) + "・" + e.no + "枚目)</span>" + (ref ? '<span class="q">「' + esc(cut(ref.x, 36)) + "」</span>" : "") + esc(e.why) +
     '<span class="res">' + (e.ok ? "✓ 受け止めた" : "OK を待っている") + (e.no >= 2 ? "・" + esc(m.name) + "はこの会から退場" : "") + "</span></div>"; }
   if (e.k === "ask") return '<div class="askq' + (e.none ? " none" : "") + '" style="--c:' + CLAUDE.c + '"><span class="nh">議長が第三者(Claude)に' + (e.kind === "info" ? "専門家の情報を頼んだ" : "偏りの点検を頼んだ") + (e.as ? "(" + esc(e.as) + ")" : "") + "</span>" + esc(e.x) +
@@ -6523,6 +6530,9 @@ function cardsOf(s, m){ const out = []; Object.values((s && s.debates) || {}).fo
 const outOf = (s, m) => !!s && cardsOf(s, m).length >= 2;
 const cardWait = s => cardsOf(s).find(e => !e.ok) || null;
 const cardedIds = s => { const o = {}; cardsOf(s).forEach(e => { o[e.ref] = 1; }); return o; };
+// 注意:イエローカードの手前。記録に残るだけで、OK も退場もない
+function warnsOf(s, m){ const out = []; Object.values((s && s.debates) || {}).forEach(d => d.e.forEach(e => { if (e.k === "warn" && (m == null || e.m === m)) out.push(e); })); return out; }
+const warnedIds = s => { const o = {}; warnsOf(s).forEach(e => { o[e.ref] = 1; }); return o; };
 // 議長の書き方:事実・問い・整理と、議長が招く第三者(Claude)
 const tpKind = () => U.cKind === "info" ? "info" : "check";
 const chairModes = cur => [["fact", "事実"], ["q", "問い"], ["sum", "整理"], ["C", "第三者"]].map(([k, l]) => '<button class="' + (cur === k ? "on" : "") + (k === "C" ? " tp" : "") + '" data-ha="smode" data-hv="' + k + '">' + l + "</button>").join("");
@@ -6578,6 +6588,7 @@ function buildPrompt(s){
       d.e.forEach(e => {
         if (e.k === "pause" || e.k === "yoron") return;
         if (e.k === "card") { L.push("- (議長が" + memberOf(e.m).name + "にイエローカード:" + e.why + ")"); return; }
+        if (e.k === "warn") { L.push("- (議長が" + memberOf(e.m).name + "に注意:" + e.why + ")"); return; }
         if (e.k === "ask") { L.push("- (議長が第三者に" + (e.kind === "info" ? "情報を" : "偏りの点検を") + "頼んだ)" + e.x.replace(/\n/g, " / ") + (e.none ? " → 取り入れるものはなかった" : "")); return; }
         if (e.k === "shingi") L.push("- (自分のメモ)" + e.x.replace(/\n/g, " / "));
         else if (e.k === "sum") L.push("- (まとめ)" + e.x.replace(/\n/g, " / "));
@@ -6636,6 +6647,7 @@ function buildAsk(s, d){
   d.e.forEach(e => {
     if (e.k === "pause" || e.k === "yoron") return;
     if (e.k === "card") { L.push("- (議長が" + memberOf(e.m).name + "にイエローカード:" + e.why + ")"); return; }
+    if (e.k === "warn") { L.push("- (議長が" + memberOf(e.m).name + "に注意:" + e.why + ")"); return; }
     if (e.k === "ask") L.push("- (議長が第三者に" + (e.kind === "info" ? "情報を" : "偏りの点検を") + "頼んだ)" + e.x.replace(/\n/g, " / ") + (e.none ? " → 取り入れるものはなかった" : ""));
     else if (e.k === "shingi") L.push("- (議長・" + (e.g || "メモ") + ")" + e.x.replace(/\n/g, " / "));
     else if (e.k === "sum") L.push("- (議長・整理)" + e.x.replace(/\n/g, " / "));
@@ -6987,8 +6999,10 @@ function sheetEntry(s){
   return sheetWrap('<h3>この発言</h3><div class="card" style="margin-top:.6rem">' + entryHTML(e) + "</div>" +
     (e.k === "say" ? '<div class="lbl">印</div><div class="tgs" style="gap:.4rem;margin-bottom:.8rem">' + TAGS.map(([t, c]) => '<button style="font-size:.8rem;padding:.35rem .7rem" class="' + c + (e.g === t ? " on" : "") + '" data-ha="etag" data-hv="' + t + '"><b class="sym">' + tagSym(t) + "</b> " + t + "</button>").join("") + "</div>" : "") +
     (e.k === "say" && e.m !== "C" && !inConsult ? (cardedIds(s)[e.id] ? '<p class="note" style="margin:0 0 .8rem">この発言には、イエローカードが出ている。</p>' :
-      '<div class="lbl">議長の指摘(汚い言動のとき)</div><div class="chips" style="margin-bottom:.4rem">' + CARD_WHY.map(x => '<button class="chip" data-ha="cardpre" data-hv="' + x + '">' + x + "</button>").join("") + "</div>" +
-      '<input class="fi" id="hy-cardwhy" placeholder="指摘のことば(なくてもよい)" value="' + esc(a.cardWhy || "") + '"><button class="bigbtn yel" style="margin:.5rem 0 1rem" data-ha="ecard"><i class="yc big"></i> ' + esc(memberOf(e.m).name) + "にイエローカード(" + (cardsOf(s, e.m).length + 1) + "枚目" + (cardsOf(s, e.m).length ? "・退場になる" : "") + ")</button>") : "") +
+      '<div class="lbl">議長の指摘(汚い言動のとき)・軽ければ注意、重ければイエローカード</div><div class="chips" style="margin-bottom:.4rem">' + CARD_WHY.map(x => '<button class="chip" data-ha="cardpre" data-hv="' + x + '">' + x + "</button>").join("") + "</div>" +
+      '<input class="fi" id="hy-cardwhy" placeholder="指摘のことば(なくてもよい)" value="' + esc(a.cardWhy || "") + '">' +
+      (warnedIds(s)[e.id] ? '<p class="note" style="margin:.4rem 0 0">この発言には、もう注意をした。</p>' : '<button class="bigbtn ghost" style="margin:.5rem 0 0" data-ha="ewarn">注意する(記録に残るだけ' + (warnsOf(s, e.m).length ? "・" + esc(memberOf(e.m).name) + "は" + (warnsOf(s, e.m).length + 1) + "回目の注意" : "") + ")</button>") +
+      '<button class="bigbtn yel" style="margin:.5rem 0 1rem" data-ha="ecard"><i class="yc big"></i> ' + esc(memberOf(e.m).name) + "にイエローカード(" + (cardsOf(s, e.m).length + 1) + "枚目" + (cardsOf(s, e.m).length ? "・退場になる" : "") + ")</button>") : "") +
     '<div class="lbl">書き直す</div><textarea class="fi" id="hy-etx">' + esc(e.x) + "</textarea>" +
     '<div class="chips" style="margin-top:.8rem;--pc:var(--p4)"><button class="chip on" data-ha="esave">直す</button>' + (inConsult ? "" : '<button class="chip" data-ha="eissue">ここから論点を変える</button>') + '<button class="chip" data-ha="edel">消す</button></div>');
 }
@@ -7396,6 +7410,8 @@ function onClick(ev){
     case "cardpre": { U.arg.cardWhy = v; const el = $("#hy-cardwhy"); if (el) el.value = v; return; }
     case "ecard": { const cp = curPart(s), d = cp && s.debates[cp.d], e = d && d.e.find(x => x.id === U.arg.entry); if (!e) return; const why = (($("#hy-cardwhy") || {}).value || "").trim() || "汚い言動";
       mut(() => { d.e.push({ id: rid(), k: "card", m: e.m, ref: e.id, why, no: cardsOf(s, e.m).length + 1, ok: false, at: now() }); U.sheet = null; U.arg = null; U.logStick = true; }); return; }
+    case "ewarn": { const cp = curPart(s), d = cp && s.debates[cp.d], e = d && d.e.find(x => x.id === U.arg.entry); if (!e) return; const why = (($("#hy-cardwhy") || {}).value || "").trim() || "言い方に気をつける";
+      mut(() => { d.e.push({ id: rid(), k: "warn", m: e.m, ref: e.id, why, at: now() }); U.sheet = null; U.arg = null; U.logStick = true; }); toast("注意した"); return; }
     case "cardok": mut(() => { const c = cardsOf(s).find(x => x.id === v); if (c) { c.ok = true; c.okAt = now(); if (c.no >= 2 && U.seat === c.m) U.seat = "sh"; } }); { const c = $("#hy-comp"); if (c) c.focus({ preventScroll: true }); } return;
     case "etag": mut(() => { const e = findEntry(s, U.arg.entry); if (e) e.g = e.g === v ? null : v; }); return;
     case "esave": { const x = ($("#hy-etx").value || "").trim(); if (!x) return; mut(() => { const e = findEntry(s, U.arg.entry); if (e) e.x = x; U.sheet = null; }); return; }
