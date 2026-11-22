@@ -31,7 +31,7 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .dim{position:fixed;inset:0;background:rgba(34,32,28,.45);z-index:20}
 .bs{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--paper);border-radius:20px 20px 0 0;padding:.5rem 16px calc(1rem + env(safe-area-inset-bottom));max-height:88vh;overflow-y:auto;max-width:760px;margin:0 auto}
 .bs .grab{width:2.6rem;height:.28rem;border-radius:999px;background:var(--rule);margin:.2rem auto .7rem}.bs h3{margin:0 0 .4rem;font-size:1.1rem}.bs .d{margin:0 0 .5rem;font-size:.78rem;color:var(--sub)}
-#toast{position:fixed;left:50%;top:4.2rem;transform:translate(-50%,-400%);background:var(--ink);color:#fff;border-radius:999px;padding:.5rem 1.1rem;font-size:.84rem;z-index:40;transition:transform .2s;white-space:nowrap}#toast.on{transform:translate(-50%,0)}
+#toast{position:fixed;left:50%;top:4.2rem;transform:translate(-50%,-12px);opacity:0;visibility:hidden;pointer-events:none;background:var(--ink);color:#fff;border-radius:999px;padding:.5rem 1.1rem;font-size:.84rem;z-index:40;transition:transform .2s,opacity .2s,visibility .2s;white-space:nowrap}#toast.on{transform:translate(-50%,0);opacity:1;visibility:visible}
 .nzm{display:inline-flex;border:1.5px solid var(--ink);border-radius:9px;overflow:hidden}.nzm button{border:0;background:none;padding:.25rem .8rem;font-size:.76rem;font-weight:800;font-family:inherit;color:var(--ink);cursor:pointer}.nzm button.on{background:var(--ink);color:#fff}
 .npk{display:flex;justify-content:space-between;align-items:center;background:var(--ink);color:#fff;border-radius:10px;padding:.45rem .7rem;font-size:.8rem;margin-bottom:.4rem}.npk button{border:1px solid rgba(255,255,255,.5);background:none;color:#fff;border-radius:7px;padding:.15rem .6rem;font-size:.72rem;font-family:inherit}
 .ntl{overflow-x:auto;background:#FBF9F3;border:1px solid var(--rule);border-radius:10px;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
@@ -182,6 +182,10 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .vlg i{display:inline-block;width:.65rem;height:.65rem;border-radius:3px;margin-right:.25rem;vertical-align:-1px}.vlg button i{margin:0}
 .vwait{padding:2.4rem 1.2rem;text-align:center;font-size:.84rem;color:var(--sub);line-height:1.8}.vwait b{color:var(--ink)}
 .vsel{margin-top:.45rem;background:var(--ink);color:#fff;border-radius:10px;padding:.4rem .75rem;font-size:.8rem}
+.hd .tabs{margin-left:auto}
+.gear{position:relative;flex:none;width:2.1rem;height:2.1rem;border:0;background:none;font-size:1.15rem;color:var(--sub);cursor:pointer;font-family:inherit;padding:0}
+.gear.err::after{content:"";position:absolute;top:.3rem;right:.25rem;width:.5rem;height:.5rem;border-radius:50%;background:#B8432F}
+.setp{margin:.1rem 0 .5rem;font-size:.82rem;line-height:1.7}
 </style>
 </head>
 <body>
@@ -189,7 +193,7 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.10";
+const VER = "s2.11";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -313,7 +317,7 @@ function viewList(){
     h += '<button class="ql" data-ha="uopen" data-hv="' + u.id + '"><span class="qt">' + hm(u.at) + "</span>" + mini(u) + '<span class="qn">' + esc(uName(u)) + "</span></button>"; });
   return '<div class="qlist">' + (xs.length > lim ? '<button class="nsm" data-ha="more">もっと前を見る(あと ' + (xs.length - lim) + " 件)</button>" : "") +
     (h || '<p class="note" style="text-align:center;margin:3rem 0">右下の＋から記す。<br>ブロックを積んで、1つの記録(ユニット)にする。</p>') + "</div>" +
-    '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" + '<button class="qfab" data-ha="unew" aria-label="新しく記す">＋</button>';
+    '<button class="qfab" data-ha="unew" aria-label="新しく記す">＋</button>';
 }
 
 /* ───────── ユニットの中身 = 積み木 ───────── */
@@ -515,12 +519,19 @@ function viewKanten(){
   const body = !cur.ok ? '<div class="vwait"><b>' + cur.V.n + "</b>は、" + cur.V.from + "のブロックがこの期間に " + VMIN + " つたまると現れる(いま " + cur.d.length + ")。</div>"
     : cur.V.kind === "river" ? viewRiver(cur.V, R, cur.d) : cur.V.kind === "sky" ? viewSky(cur.V, R, cur.d) : viewFlow(cur.V, R, cur.d);
   return tabs + '<div class="nbar">' + rng + "<span></span></div>" + '<div class="vbox">' + body + "</div>" + (U.vsel ? '<div class="vsel">' + esc(U.vsel) + "</div>" : "") +
-    '<p class="note" style="margin:.6rem 2px 0">' + cur.V.d + "</p>" + '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>";
+    '<p class="note" style="margin:.6rem 2px 0">' + cur.V.d + "</p>";
 }
 
 
 /* ───────── 下から出る紙 ───────── */
 const sheetWrap = inner => '<div class="dim" data-ha="close"></div><div class="bs" role="dialog" aria-modal="true"><div class="grab"></div>' + inner + "</div>";
+// 設定:保存の様子や版など、ふだん見なくていいもの
+function sheetSet(){ const c = NET.conn, n = unitList().length;
+  return sheetWrap("<h3>設定</h3>" + '<div class="nwl">保存</div><p class="setp">' + savedLabel() + "</p>" +
+    '<p class="setp">' + (c ? "省アプリのつながりを借りて、" + esc(c.owner) + "/" + esc(c.repo) + " に保存している。ほかの端末にも自動で出る。" : "まだどこにもつながっていない。省アプリでつなぐと、ここも自動でつながる。") + "</p>" +
+    (c ? '<button class="chip" data-ha="sync">いま同期する</button>' : "") +
+    '<div class="nwl">記録</div><p class="setp">ユニット ' + n + " 件・自分で足した選択肢 " + Object.values(D.opts).filter(o => o && !o.del).length + " 件</p>" +
+    '<div class="nwl">版</div><p class="setp">史記 ' + VER + "</p>" + '<button class="bigbtn" data-ha="close">とじる</button>'); }
 function sheetList(){
   const a = U.arg || {}, all = chronEntries(), tops = nTops(all), xs = all.filter(x => x.day >= a.from && x.day <= a.to && pinBand(x) === (a.b || null) && (U.nh || kindOf(x) !== "h")), days = Array.from(new Set(xs.map(x => x.day)));
   return sheetWrap("<h3>" + (a.from === a.to ? md(a.from) : mdS(a.from) + "〜" + mdS(a.to)) + '</h3><p class="d">' + xs.length + " 件</p>" +
@@ -528,16 +539,16 @@ function sheetList(){
 }
 
 /* ───────── 描画 ───────── */
-function savedLabel(){ if (!NET.conn) return '<span class="saved">✓ 手元に保存済み(省アプリでつなぐと、ほかの端末にも出る)</span>'; return '<span class="saved' + (NET.state === "err" ? " err" : "") + '">' + (NET.state === "err" ? "！ つながらない(手元には保存済み)" : NET.busy || NET.dirty ? "… 保存中" : "✓ 保存済み") + "</span>"; }
-function updSaved(){ const el = $(".saved"); if (el) el.outerHTML = savedLabel(); }
+function savedLabel(){ if (!NET.conn) return '<span class="saved">✓ 手元に保存済み</span>'; return '<span class="saved' + (NET.state === "err" ? " err" : "") + '">' + (NET.state === "err" ? "！ つながらない(手元には保存済み)" : NET.busy || NET.dirty ? "… 保存中" : "✓ 保存済み") + "</span>"; }
+function updSaved(){ const el = $(".saved"); if (el) el.outerHTML = savedLabel(); const g = $(".gear"); if (g) g.classList.toggle("err", NET.state === "err"); }
 function render(){
   const app = $("#app"), y = window.scrollY, ae = document.activeElement, aid = ae && ae.id;
   const tl0 = $("#sk-tl"), tls = tl0 ? { l: tl0.scrollLeft, z: tl0.dataset.z } : null;
   let sel = null; try { if (aid && ae.selectionStart != null) sel = [ae.selectionStart, ae.selectionEnd]; } catch (e) {}
   const tab = ["n", "v"].includes(U.tab) ? U.tab : "r", u = curUnit(); if (!u) { U.unit = null; U.draft = null; }
-  app.innerHTML = u ? viewUnit(u) : '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["r", "記す"], ["v", "観点"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + "</nav></header>" +
-    (tab === "n" ? viewChron(chronEntries()) + '<p class="foot">' + savedLabel() + "<span>史記 " + VER + "</span></p>" : tab === "v" ? viewKanten() : viewList());
-  $("#sheet").innerHTML = U.sheet === "blk" ? sheetBlk() : U.sheet === "list" ? sheetList() : U.sheet === "band" ? sheetBand() : "";
+  app.innerHTML = u ? viewUnit(u) : '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["r", "記す"], ["v", "観点"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + '</nav><button class="gear' + (NET.state === "err" ? " err" : "") + '" data-ha="set" aria-label="設定">⚙</button></header>' +
+    (tab === "n" ? viewChron(chronEntries()) : tab === "v" ? viewKanten() : viewList());
+  $("#sheet").innerHTML = U.sheet === "set" ? sheetSet() : U.sheet === "blk" ? sheetBlk() : U.sheet === "list" ? sheetList() : U.sheet === "band" ? sheetBand() : "";
   if (U.sheet && !$("#sheet").innerHTML) U.sheet = null;
   document.body.classList.toggle("lock", !!U.sheet);
   { const tl = $("#sk-tl"); if (tl) { if (!tls || tls.z !== tl.dataset.z) tl.scrollLeft = +tl.dataset.td >= 0 ? Math.max(0, +tl.dataset.td - tl.clientWidth * 0.78) : 0; else tl.scrollLeft = tls.l; } }
@@ -561,6 +572,8 @@ document.addEventListener("click", ev => {
     case "tab": U.tab = v; U.bottom = true; U.lim = 120; U.draw = null; saveUI(); render(); return;
     case "more": U.lim += 200; U.keep = document.documentElement.scrollHeight; render(); return;
     case "close": U.sheet = null; render(); return;
+    case "set": U.sheet = "set"; render(); return;
+    case "sync": if (NET.conn) { NET.dirty = true; pull(); toast("同期している"); } return;
     // ユニット
     case "unew": U.draft = { id: rid(), at: now(), day: today(), u: now(), bl: [] }; U.unit = null; U.tedit = false; U.listY = window.scrollY; U.toY = 0; try { history.pushState({ q: 1 }, ""); } catch (e) {} render(); return;
     case "uopen": case "edit": U.sheet = null; openUnit(v); return;
