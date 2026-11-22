@@ -934,6 +934,19 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .note2.tp.info .nh b{background:#7A6A3A}
 #hy .cmpk.tpk button{font-weight:700}
 #hy .cmpk.tpk button.on{background:#22808A;border-color:#22808A;color:#fff}
+#hy i.yc{display:inline-block;width:.5rem;height:.7rem;border-radius:2px;background:#F2C230;margin-left:.2rem;vertical-align:-.05em;box-shadow:0 0 0 1px rgba(0,0,0,.15) inset}
+#hy i.yc.big{width:.75rem;height:1.05rem;margin:0 .35rem 0 0}
+#hy .seat.out{opacity:.5;text-decoration:line-through;cursor:not-allowed}
+#hy .card2{margin:.5rem 0;padding:.5rem .7rem;border:1.5px solid #E0B020;background:#FFF8DD;border-radius:10px;font-size:.86rem;line-height:1.65;white-space:pre-wrap}
+#hy .card2.two{border-color:#C0392B;background:#FDECEA}
+#hy .card2 .nh{display:block;font-size:.7rem;font-weight:800;color:#8A6A00;margin-bottom:.15rem}
+#hy .card2 .q{display:block;color:var(--sub);font-size:.8rem}
+#hy .card2 .res{display:block;margin-top:.2rem;font-size:.76rem;font-weight:800;color:#8A6A00}
+#hy .say.carded{box-shadow:inset 3px 0 0 #F2C230}
+#hy .cardwait{border:2px solid #E0B020;background:#FFF8DD;border-radius:14px;padding:.7rem .8rem}
+#hy .cardwait .ct{display:flex;align-items:center;font-size:.95rem}
+#hy .cardwait .cw{font-size:.84rem;margin:.25rem 0}
+#hy .bigbtn.yel{background:#F2C230;color:#3A2E00;border-color:#E0B020}
 #hy .askq{margin:.6rem 0 .2rem;padding:.4rem .7rem;border:1.5px dashed var(--c);border-radius:10px;font-size:.84rem;line-height:1.6;white-space:pre-wrap;color:var(--ink)}
 #hy .askq .nh{display:block;font-size:.68rem;font-weight:800;color:var(--c);margin-bottom:.1rem}
 #hy .gmode{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;margin-bottom:.2rem}
@@ -1123,7 +1136,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-22 r149";
+const APP_VERSION = "2026-11-22 r150";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5514,7 +5527,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.52";
+const APP_VERSION = "h5.60";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -5650,7 +5663,8 @@ const memberOf = id => { if (id === "C") return CLAUDE;
   const m = D.settings.members.find(x => x.id === id); if (!m) return { id, name: "?", s: "?", c: "#888" }; if (!m.p) return m;
   const f = D.settings.members.find(x => x.id === m.p) || {}, k = id + "|" + m.name + "|" + m.s + "|" + m.d + "|" + f.name + "|" + f.c, o = _mo[id];
   if (o && o._k === k) return o; return _mo[id] = { id, p: m.p, _k: k, short: m.name, fac: f.name || "", name: m.name + "(" + (f.name || "?") + ")", s: m.s || f.s || "?", c: f.c || "#888", d: m.d || f.d || "", on: m.on }; };
-const seatOK = id => { const iv = indOf(id); if (iv) { const f = facOf(id); return !!(f && !f.del && f.on); } const m = D.settings.members.find(x => x.id === id); if (!m || m.del || !m.on) return false; if (!m.p) return true; const f = facOf(id); return !!(f && !f.del && f.on); };
+const seatOK = id => { if (U.view === "sess" && outOf(S(), id)) return false; return seatOK0(id); };
+const seatOK0 = id => { const iv = indOf(id); if (iv) { const f = facOf(id); return !!(f && !f.del && f.on); } const m = D.settings.members.find(x => x.id === id); if (!m || m.del || !m.on) return false; if (!m.p) return true; const f = facOf(id); return !!(f && !f.del && f.on); };
 // Claude に座ってもらえる席:派閥と、その中の議員
 const seatList = () => members().filter(m => m.on).flatMap(f => [f].concat(subsOf(f.id).filter(m => m.on).map(m => memberOf(m.id))));
 const agendaList = () => Object.values(D.agendas).filter(a => !a.del);
@@ -6428,13 +6442,15 @@ function partPick(s, p, i, n, nx){
 }
 /* 4 審議 */
 function sayHTML(e, opts){
-  const m = memberOf(e.m), hl = opts && opts.hl ? " hl" : "";
+  const m = memberOf(e.m), hl = (opts && opts.hl ? " hl" : "") + (e.k === "say" && cardedIds(S())[e.id] ? " carded" : "");
   if (e.m === "C") return '<button class="note2 tp' + (e.kind === "info" ? " info" : "") + hl + '" data-ha="entry" data-hv="' + e.id + '"><span class="nh">' + (e.kind === "info" ? "議長・専門家の情報" : "議長・第三者の目") + '<b>Claude</b>' + (e.mine ? "・要約" : e.as ? "・" + esc(e.as) : "") + "</span>" + (e.g ? '<span class="tg ' + tagCls(e.g) + '" title="' + esc(tagTitle(e.g)) + '">' + esc(tagSym(e.g)) + "</span>" : "") + esc(e.x) + "</button>";
   return '<button class="say' + hl + '" style="--c:' + m.c + '" data-ha="entry" data-hv="' + e.id + '"><span class="av">' + esc(m.s) + '</span><span class="m"><span class="nm" style="display:block">' + (m.p ? esc(m.short) + (m.fac ? '<small class="fac">' + esc(m.fac) + "</small>" : "") : esc(m.name)) + (e.mine ? "・自分で要約" : e.as ? "・" + esc(e.as) : "") + '</span><span class="tx" style="display:block">' + (e.g ? '<span class="tg ' + tagCls(e.g) + '" title="' + esc(e.g) + '">' + esc(tagSym(e.g)) + "</span>" : "") + esc(e.x) + "</span></span></button>";
 }
 function entryHTML(e, opts){
   if (e.k === "pause") return '<div class="divider">ここで休会(' + new Date(e.at).getHours() + ":" + pad(new Date(e.at).getMinutes()) + ")" + (e.back ? "・" + (e.back - e.at < 60000 ? "すぐ再開" : ago2(e.back - e.at) + "後に再開") : "") + "</div>";
   if (e.k === "yoron") return yoronHTML(e);
+  if (e.k === "card") { const m = memberOf(e.m), s0 = S(), ref = s0 && findEntry(s0, e.ref); return '<div class="card2' + (e.no >= 2 ? " two" : "") + '"><span class="nh"><i class="yc"></i>議長の指摘・イエローカード(' + esc(m.name) + "・" + e.no + "枚目)</span>" + (ref ? '<span class="q">「' + esc(cut(ref.x, 36)) + "」</span>" : "") + esc(e.why) +
+    '<span class="res">' + (e.ok ? "✓ 受け止めた" : "OK を待っている") + (e.no >= 2 ? "・" + esc(m.name) + "はこの会から退場" : "") + "</span></div>"; }
   if (e.k === "ask") return '<div class="askq' + (e.none ? " none" : "") + '" style="--c:' + CLAUDE.c + '"><span class="nh">議長が第三者(Claude)に' + (e.kind === "info" ? "専門家の情報を頼んだ" : "偏りの点検を頼んだ") + (e.as ? "(" + esc(e.as) + ")" : "") + "</span>" + esc(e.x) +
     (e.none ? '<span class="res">' + (e.kind === "info" ? "→ 使える情報はなかった" : "→ 「確かに」はなかった。偏りは見つからなかった") + (e.n ? "(" + e.n + " 件を見た)" : "") + "</span>" : e.hit ? '<span class="res">→ 「確かに」があった' + (e.kind === "info" ? "(使える情報)" : "") + "</span>" : e.n ? '<span class="res">→ ' + e.n + " 件の中から " + e.pick + " 件を取り入れた</span>" : "") +
     (e.raw ? '<details class="raw"><summary>答えの全文</summary>' + esc(e.raw) + "</details>" : "") + "</div>";
@@ -6475,15 +6491,17 @@ function partDebate(s, p, i, n, nx){
   // 入力
   const seat = U.seat === "C" ? "C" : U.seat === "sh" || !seatOK(U.seat) ? "sh" : U.seat;
   const seatsHTML = '<div class="seats"><button class="seat sh' + (seat === "sh" || seat === "C" ? " on" : "") + '" style="--c:#22201C" data-ha="seat" data-hv="sh"><span class="av">議</span>議長' + (d.ask && d.ask.wait ? '<i class="dot" style="background:' + CLAUDE.c + '"></i>' : "") + '</button>' +
-    members().filter(m => m.on).map(m => { const has = subsOf(m.id).some(x => x.on); return '<button class="seat' + (seat === m.id || (facOf(seat) || {}).id === m.id ? " on" : "") + '" style="--c:' + m.c + '" data-ha="seat" data-hv="' + m.id + '"><span class="av">' + esc(m.s) + "</span>" + esc(m.name) + (has ? '<i class="nsub">' + subsOf(m.id).filter(x => x.on).length + "</i>" : "") + "</button>"; }).join("") +
+    members().filter(m => m.on).map(m => { const has = subsOf(m.id).some(x => x.on); if (outOf(S(), m.id)) return '<button class="seat out" style="--c:' + m.c + '" disabled><span class="av">' + esc(m.s) + "</span>" + esc(m.name) + '<i class="yc"></i><i class="yc"></i>退場</button>'; return '<button class="seat' + (seat === m.id || (facOf(seat) || {}).id === m.id ? " on" : "") + '" style="--c:' + m.c + '" data-ha="seat" data-hv="' + m.id + '"><span class="av">' + esc(m.s) + "</span>" + esc(m.name) + cardMarks(m.id) + (has ? '<i class="nsub">' + subsOf(m.id).filter(x => x.on).length + "</i>" : "") + "</button>"; }).join("") +
 
     '<button class="seat plus" style="--c:var(--sub)" data-ha="sheet" data-hs="members" aria-label="派閥と議員の設定">+</button></div>' + subSeatsHTML(seat);
   const dk = d.id + ":" + seat, draft = U.drafts[dk] || "";
+  const cw = cardWait(s);
   let inp;
   const sm = U.smode === "sum" || U.smode === "q" ? U.smode : "fact";
   if (seat === "sh") inp = '<div class="inp tall" style="--c:#22201C"><div class="bot" style="margin:0 0 .35rem"><span class="cmpk">' + chairModes(sm) + '</span></div><textarea id="hy-comp" rows="3" placeholder="' + ({ fact: "議長として:わかっている事実を置く", q: "議長として:いま何を決めるのか、問いを出す", sum: "議長として:ここまでを整理する(議決に出る)" })[sm] + '…" data-hdk="' + dk + '">' + esc(draft) + '</textarea><div class="bot"><span></span><button class="send" data-ha="post">書く</button></div></div>';
   else if (seat === "C") inp = '<div class="inp tall" style="--c:#22201C"><div class="bot" style="margin:0 0 .35rem"><span class="cmpk">' + chairModes("C") + '</span><button class="mini" data-ha="sheet" data-hs="ask">相談する</button></div><div class="cmpk tpk" style="margin:0 0 .35rem">' + Object.entries(TPK).map(([k, l]) => '<button class="' + (tpKind() === k ? "on" : "") + '" data-ha="cpk" data-hv="' + k + '">' + l + "</button>").join("") + '</div><textarea id="hy-comp" rows="3" placeholder="' + (tpKind() === "info" ? "議長として:専門家(Claude)にもらった情報を書く…" : "議長として:第三者(Claude)の意見を、要約して書く…") + '" data-hdk="' + dk + '">' + esc(draft) + '</textarea><div class="bot"><span class="tgs">' + TAGS.map(([t, c]) => '<button class="' + c + (U.tag === t ? " on" : "") + '" data-ha="tag" data-hv="' + t + '" aria-label="' + tagTitle(t) + '" title="' + tagTitle(t) + '">' + tagSym(t) + "</button>").join("") + '</span><button class="send" data-ha="post">書く</button></div></div>';
   else { const m = memberOf(seat); inp = '<div class="inp tall" style="--c:' + m.c + '"><textarea id="hy-comp" rows="3" placeholder="' + esc(m.name) + 'として発言…(Enter で改行)" data-hdk="' + dk + '">' + esc(draft) + '</textarea><div class="bot"><span class="tgs">' + TAGS.map(([t, c]) => '<button class="' + c + (U.tag === t ? " on" : "") + '" data-ha="tag" data-hv="' + t + '" aria-label="' + tagTitle(t) + '" title="' + tagTitle(t) + '">' + tagSym(t) + "</button>").join("") + '</span><button class="send" data-ha="post">発言</button></div></div>'; }
+  if (cw) { const m = memberOf(cw.m); inp = '<div class="cardwait"><div class="ct"><i class="yc big"></i><b>' + esc(m.name) + "にイエローカード(" + cw.no + "枚目)</b></div><div class=\"cw\">議長の指摘:" + esc(cw.why) + "</div>" + (cw.no >= 2 ? '<div class="cw" style="font-weight:800">2枚目なので、' + esc(m.name) + "はこの会から退場する。</div>" : '<div class="cw">もう1枚で、この会から退場。</div>') + '<button class="bigbtn" data-ha="cardok" data-hv="' + cw.id + '">OK(受け止めた)</button></div>'; }
   const sub = !hasSum && d.e.length ? "まとめがまだ" + (U.nextArm === p.id ? "・もう一度押すと進む" : "") : (hasSum ? "まとめが書けた" : "");
   // 世論は、スマホでは発言録の上、PC では右の列(入力欄の上)に出す
   const yo = yoCard(s, gObj, rr, isGoal ? "crit" : "opt"), yoM = '<div class="mbonly">' + yo + "</div>", yoP = '<div class="pconly">' + yo + "</div>";
@@ -6498,15 +6516,23 @@ function partDebate(s, p, i, n, nx){
     foot(s, nx, nextLabel(s, nx), sub, yoP + seatsHTML + inp + '<div style="height:.45rem"></div>');
 }
 // 選んだ派閥の中の議員(いなければ出さない)
+/* イエローカード:汚い言動は議長が指摘する。出された側は OK(受け止めた)を押すまで次に進めない。
+   同じ発言者に2枚たまると、その会から退場(席に座れない)。いきなりのレッドカードはない */
+const CARD_WHY = ["人格を攻撃した", "決めつけた", "乱暴な言葉", "茶化した", "話をそらした"];
+function cardsOf(s, m){ const out = []; Object.values((s && s.debates) || {}).forEach(d => d.e.forEach(e => { if (e.k === "card" && (m == null || e.m === m)) out.push(e); })); return out; }
+const outOf = (s, m) => !!s && cardsOf(s, m).length >= 2;
+const cardWait = s => cardsOf(s).find(e => !e.ok) || null;
+const cardedIds = s => { const o = {}; cardsOf(s).forEach(e => { o[e.ref] = 1; }); return o; };
 // 議長の書き方:事実・問い・整理と、議長が招く第三者(Claude)
 const tpKind = () => U.cKind === "info" ? "info" : "check";
 const chairModes = cur => [["fact", "事実"], ["q", "問い"], ["sum", "整理"], ["C", "第三者"]].map(([k, l]) => '<button class="' + (cur === k ? "on" : "") + (k === "C" ? " tp" : "") + '" data-ha="smode" data-hv="' + k + '">' + l + "</button>").join("");
 // 選んだ派閥の段:派閥として・登録した議員・この会の①②…・「＋ 別の人」
+const cardMarks = id => { const n = cardsOf(S(), id).length; return n ? '<i class="yc"></i>'.repeat(Math.min(n, 2)) : ""; };
 function subSeatsHTML(seat){
   const f = seat === "sh" || seat === "C" ? null : facOf(seat); if (!f) return "";
   const s = S(), used = {}; Object.values((s && s.debates) || {}).forEach(d => d.e.forEach(e => { if (e.k === "say") used[e.m] = 1; }));
   const ind = isInd(f), regs = subsOf(f.id).filter(m => m.on), xs = indsIn(s, f.id).filter(x => used[x.id] || x.id === seat), cur = indOf(seat);
-  const chip = (id, av, label) => '<button class="seat' + (seat === id ? " on" : "") + '" style="--c:' + f.c + '" data-ha="seat" data-hv="' + id + '">' + (av ? '<span class="av">' + esc(av) + "</span>" : "") + esc(label) + "</button>";
+  const chip = (id, av, label) => outOf(s, id) ? '<button class="seat out" style="--c:' + f.c + '" disabled>' + (av ? '<span class="av">' + esc(av) + "</span>" : "") + esc(label) + "・退場</button>" : '<button class="seat' + (seat === id ? " on" : "") + '" style="--c:' + f.c + '" data-ha="seat" data-hv="' + id + '">' + (av ? '<span class="av">' + esc(av) + "</span>" : "") + esc(label) + cardMarks(id) + "</button>";
   return '<div class="seats inseat" style="--c:' + f.c + '"><span class="sl">' + esc(f.name) + (ind ? "の人" : "の中") + "</span>" +
     (ind ? "" : chip(f.id, "", "派閥として")) + regs.map(m => chip(m.id, m.s || f.s, m.name)).join("") +
     xs.map(x => chip(x.id, circ(x.no), x.name || f.name + circ(x.no))).join("") +
@@ -6551,6 +6577,7 @@ function buildPrompt(s){
       L.push("□ 審議" + circ(dn(s, d)) + " 論点:" + (d.title || "(未記入)"));
       d.e.forEach(e => {
         if (e.k === "pause" || e.k === "yoron") return;
+        if (e.k === "card") { L.push("- (議長が" + memberOf(e.m).name + "にイエローカード:" + e.why + ")"); return; }
         if (e.k === "ask") { L.push("- (議長が第三者に" + (e.kind === "info" ? "情報を" : "偏りの点検を") + "頼んだ)" + e.x.replace(/\n/g, " / ") + (e.none ? " → 取り入れるものはなかった" : "")); return; }
         if (e.k === "shingi") L.push("- (自分のメモ)" + e.x.replace(/\n/g, " / "));
         else if (e.k === "sum") L.push("- (まとめ)" + e.x.replace(/\n/g, " / "));
@@ -6608,6 +6635,7 @@ function buildAsk(s, d){
   L.push(""); L.push("■ ここまでの発言録");
   d.e.forEach(e => {
     if (e.k === "pause" || e.k === "yoron") return;
+    if (e.k === "card") { L.push("- (議長が" + memberOf(e.m).name + "にイエローカード:" + e.why + ")"); return; }
     if (e.k === "ask") L.push("- (議長が第三者に" + (e.kind === "info" ? "情報を" : "偏りの点検を") + "頼んだ)" + e.x.replace(/\n/g, " / ") + (e.none ? " → 取り入れるものはなかった" : ""));
     else if (e.k === "shingi") L.push("- (議長・" + (e.g || "メモ") + ")" + e.x.replace(/\n/g, " / "));
     else if (e.k === "sum") L.push("- (議長・整理)" + e.x.replace(/\n/g, " / "));
@@ -6958,6 +6986,9 @@ function sheetEntry(s){
   const inConsult = s.consult.ans.includes(e);
   return sheetWrap('<h3>この発言</h3><div class="card" style="margin-top:.6rem">' + entryHTML(e) + "</div>" +
     (e.k === "say" ? '<div class="lbl">印</div><div class="tgs" style="gap:.4rem;margin-bottom:.8rem">' + TAGS.map(([t, c]) => '<button style="font-size:.8rem;padding:.35rem .7rem" class="' + c + (e.g === t ? " on" : "") + '" data-ha="etag" data-hv="' + t + '"><b class="sym">' + tagSym(t) + "</b> " + t + "</button>").join("") + "</div>" : "") +
+    (e.k === "say" && e.m !== "C" && !inConsult ? (cardedIds(s)[e.id] ? '<p class="note" style="margin:0 0 .8rem">この発言には、イエローカードが出ている。</p>' :
+      '<div class="lbl">議長の指摘(汚い言動のとき)</div><div class="chips" style="margin-bottom:.4rem">' + CARD_WHY.map(x => '<button class="chip" data-ha="cardpre" data-hv="' + x + '">' + x + "</button>").join("") + "</div>" +
+      '<input class="fi" id="hy-cardwhy" placeholder="指摘のことば(なくてもよい)" value="' + esc(a.cardWhy || "") + '"><button class="bigbtn yel" style="margin:.5rem 0 1rem" data-ha="ecard"><i class="yc big"></i> ' + esc(memberOf(e.m).name) + "にイエローカード(" + (cardsOf(s, e.m).length + 1) + "枚目" + (cardsOf(s, e.m).length ? "・退場になる" : "") + ")</button>") : "") +
     '<div class="lbl">書き直す</div><textarea class="fi" id="hy-etx">' + esc(e.x) + "</textarea>" +
     '<div class="chips" style="margin-top:.8rem;--pc:var(--p4)"><button class="chip on" data-ha="esave">直す</button>' + (inConsult ? "" : '<button class="chip" data-ha="eissue">ここから論点を変える</button>') + '<button class="chip" data-ha="edel">消す</button></div>');
 }
@@ -7360,8 +7391,12 @@ function onClick(ev){
     case "cpk": U.cKind = v; saveUI(); render(); { const c = $("#hy-comp"); if (c) c.focus({ preventScroll: true }); } return;
     case "smode": if (v === "C") U.seat = "C"; else { U.seat = "sh"; U.smode = v; } saveUI(); render(); { const c = $("#hy-comp"); if (c) c.focus({ preventScroll: true }); } return;
     case "tag": U.tag = U.tag === v ? null : v; render(); { const c = $("#hy-comp"); if (c) c.focus({ preventScroll: true }); } return;
-    case "post": postEntry(); return;
+    case "post": if (cardWait(s)) return; postEntry(); return;
     case "entry": U.sheet = "entry"; U.arg = { entry: v }; render(); return;
+    case "cardpre": { U.arg.cardWhy = v; const el = $("#hy-cardwhy"); if (el) el.value = v; return; }
+    case "ecard": { const cp = curPart(s), d = cp && s.debates[cp.d], e = d && d.e.find(x => x.id === U.arg.entry); if (!e) return; const why = (($("#hy-cardwhy") || {}).value || "").trim() || "汚い言動";
+      mut(() => { d.e.push({ id: rid(), k: "card", m: e.m, ref: e.id, why, no: cardsOf(s, e.m).length + 1, ok: false, at: now() }); U.sheet = null; U.arg = null; U.logStick = true; }); return; }
+    case "cardok": mut(() => { const c = cardsOf(s).find(x => x.id === v); if (c) { c.ok = true; c.okAt = now(); if (c.no >= 2 && U.seat === c.m) U.seat = "sh"; } }); { const c = $("#hy-comp"); if (c) c.focus({ preventScroll: true }); } return;
     case "etag": mut(() => { const e = findEntry(s, U.arg.entry); if (e) e.g = e.g === v ? null : v; }); return;
     case "esave": { const x = ($("#hy-etx").value || "").trim(); if (!x) return; mut(() => { const e = findEntry(s, U.arg.entry); if (e) e.x = x; U.sheet = null; }); return; }
     case "edel": mut(() => { const cp = curPart(s), d = cp && s.debates[cp.d]; if (d) d.e = d.e.filter(e => e.id !== U.arg.entry); s.consult.ans = s.consult.ans.filter(e => e.id !== U.arg.entry); U.sheet = null; }); return;
