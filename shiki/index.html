@@ -186,6 +186,18 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .gear{position:relative;flex:none;width:2.1rem;height:2.1rem;border:0;background:none;font-size:1.15rem;color:var(--sub);cursor:pointer;font-family:inherit;padding:0}
 .gear.err::after{content:"";position:absolute;top:.3rem;right:.25rem;width:.5rem;height:.5rem;border-radius:50%;background:#B8432F}
 .setp{margin:.1rem 0 .5rem;font-size:.82rem;line-height:1.7}
+.qjump{display:flex;justify-content:flex-end;margin:.1rem 0 -.4rem}.qjump label{font-size:.72rem;color:var(--sub);display:inline-flex;align-items:center;gap:.35rem}.qjump input{border:1px solid var(--rule);border-radius:8px;background:var(--white);padding:.15rem .4rem;font:inherit;font-size:.78rem;color:var(--ink)}
+.qd{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.qd button{border:0;background:none;font:inherit;font-size:.68rem;font-weight:700;color:var(--faint);cursor:pointer;padding:.1rem 0}
+.qnone{font-size:.78rem;color:var(--faint);margin:.3rem 2px .4rem}
+.qwr{font-size:.66rem;color:var(--faint);margin-top:.15rem}
+.qjjs{display:flex;flex-direction:column;gap:.35rem;margin:.3rem 0}
+.qjj{text-align:left;border:1.5px solid var(--rule);border-radius:10px;background:var(--white);padding:.45rem .65rem;font:inherit;font-size:.84rem;line-height:1.55;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;gap:.6rem}
+.qjj small{flex:none;font-size:.64rem;color:var(--faint);margin-top:.15rem}.qjj.on{background:var(--c,var(--ink));border-color:var(--c,var(--ink));color:#fff;font-weight:700}
+.qjjn{display:flex;gap:.4rem;align-items:stretch;margin:.4rem 0}.qjjn textarea{flex:1;min-width:0;font-size:.88rem;resize:none}
+.qjjn button{flex:none;border:0;border-radius:10px;background:var(--c,var(--ink));color:#fff;font:inherit;font-weight:800;font-size:.84rem;padding:0 .9rem;cursor:pointer}
+.vscroll{max-height:440px;overflow-y:auto}
+.vsvg.life text{font-size:11px;fill:var(--ink);font-family:inherit;font-weight:700}
 </style>
 </head>
 <body>
@@ -193,7 +205,7 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.11";
+const VER = "s2.20";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -235,7 +247,7 @@ const GRP = {
   place: [["home", "家", "🏠", "#A8841E", ["自分の部屋", "リビング"]], ["school", "学校・塾", "🏫", "#3F6FB0", ["鉄緑"]], ["out", "外", "🌳", "#4F8A6B", ["本屋", "公園", "カフェ"]], ["trans", "移動中", "🚃", "#6F7A87", ["電車", "歩き"]]],
   why: [["body", "体", "🛌", "#6F7A87", ["眠くて", "つかれて", "お腹がすいて"]], ["mind", "気持ち", "💭", "#B0699A", ["不安で", "飽きて"]], ["task", "やること", "📐", "#3F6FB0", ["わからなくて", "多すぎて", "つまらなくて"]],
     ["env", "まわり", "📱", "#C97F2E", ["通知が来て", "話しかけられて"]], ["vague", "なんとなく", "🌀", "#9C917C", ["なんとなく"]]],
-  feel: [["bright", "明るい", "☀️", "#E2B23C", ["うれしい", "たのしい", "やる気"]], ["calm", "おだやか", "🌿", "#6FAF8E", ["ほっとした", "落ち着いた"]], ["heavy", "重い", "🌧", "#6F86B0", ["不安", "さみしい", "つかれた"]], ["rough", "荒れ", "⚡", "#C9584A", ["イライラ", "逃げたい"]]],
+  feel: [["bright", "明るい", "☀️", "#E2B23C", ["うれしい", "たのしい", "やる気"]], ["calm", "おだやか", "🌿", "#6FAF8E", ["ほっとした", "落ち着いた"]], ["heavy", "重い", "🌧", "#6F86B0", ["不安", "さみしい", "つかれた"]], ["rough", "荒れ", "⚡", "#C9584A", ["イライラ", "逃げたい", "焦り"]]],
   who: [["self", "ひとり", "🧍", "#9C917C", ["ひとり"]], ["fam", "家族", "🏠", "#A8841E", ["家族"]], ["fr", "友達", "🙌", "#4F8A6B", ["友達"]], ["tch", "先生", "🏫", "#3F6FB0", ["先生"]]]
 };
 const ETC = ["etc", "ほか", "・", "#9C917C", []];
@@ -247,14 +259,15 @@ const grpList = p => (GRP[p] || []).concat(Object.values(D.opts).some(o => o && 
 function gOf(p, v){ for (const g of GRP[p] || []) if (g[4].includes(v)) return g; const o = Object.values(D.opts).find(o => o && !o.del && o.p === p && o.v === v); return (o && (GRP[p] || []).find(g => g[0] === o.g)) || ETC; }
 function usedEtc(p){ return false; }
 function grpItems(p, gid){ const g = (GRP[p] || []).find(x => x[0] === gid); return Array.from(new Set((g ? g[4] : []).concat(Object.values(D.opts).filter(o => o && !o.del && o.p === p && (o.g || "etc") === gid).map(o => o.v)))); }
-const FEEL_E = { "うれしい": "😊", "たのしい": "😆", "ほっとした": "😌", "落ち着いた": "🍵", "やる気": "🔥", "不安": "😟", "イライラ": "😤", "逃げたい": "🫠", "つかれた": "😮‍💨", "さみしい": "🥲" };
+const FEEL_E = { "うれしい": "😊", "たのしい": "😆", "ほっとした": "😌", "落ち着いた": "🍵", "やる気": "🔥", "不安": "😟", "イライラ": "😤", "逃げたい": "🫠", "焦り": "😣", "つかれた": "😮‍💨", "さみしい": "🥲" };
 // ブロック(作るのは Claude。中身の形が決まっているので、年表での見せ方も決められる)
 const BK = {
   deki: { n: "できごと", c: "#5B7DB1", w: 2, f: [{ k: "x", n: "なにが起きた", t: "text", ph: "起きたこと" }] },
   kodo: { n: "行動", c: "#4F8A6B", w: 2, f: [{ k: "what", n: "なにを", t: "pick", p: "act" }, { k: "amt", n: "どれだけ", t: "pick", p: "amt" }, { k: "x", n: "ひとこと(書きたいときだけ)", t: "text", ph: "書かなくていい" }] },
   kimo: { n: "気持ち", c: "#B0699A", w: 1, f: [{ k: "kind", n: "どんな", t: "pick", p: "feel" }, { k: "lv", n: "強さ", t: "scale" }] },
   kikk: { n: "きっかけ", c: "#C97F2E", w: 2, f: [{ k: "when", n: "いつ", t: "time" }, { k: "where", n: "どこで", t: "pick", p: "place" }, { k: "doing", n: "何をしていて", t: "pick", p: "act" }, { k: "why", n: "なぜ", t: "pick", p: "why" }] },
-  riyu: { n: "理由", c: "#B8553F", w: 2, f: [{ k: "why", n: "なぜ", t: "pick", p: "why" }] },
+  // 理由は種類に分けない。具体的な事情をそのまま文で残し、一度書いた事情は次から押すだけで使える
+  riyu: { n: "理由", c: "#B8553F", w: 2, f: [{ k: "jj", n: "具体的な事情(いくつでも)", t: "jijo" }, { k: "why", n: "ひとことで言うと(なくていい)", t: "pick", p: "why" }] },
   jikn: { n: "時間", c: "#6F7A87", w: 1, f: [{ k: "min", n: "何分", t: "num", o: [5, 10, 15, 30, 45, 60, 90, 120] }] },
   dare: { n: "だれと", c: "#A8841E", w: 1, f: [{ k: "who", n: "だれと", t: "multi", p: "who" }] },
   bash: { n: "場所", c: "#4E8E8A", w: 1, f: [{ k: "where", n: "どこ", t: "pick", p: "place" }] },
@@ -291,7 +304,7 @@ function bSum(b){ const v = b.v || {}, t = s => String(s || "").trim();
     case "kodo": return [v.what, v.amt].filter(Boolean).join("・") + (t(v.x) ? (v.what || v.amt ? "\n" : "") + t(v.x) : "");
     case "kimo": return v.kind || "";
     case "kikk": return [v.when, v.where && v.where + "で", v.doing && v.doing + "をしていて", v.why].filter(Boolean).join(" ");
-    case "riyu": return v.why || "";
+    case "riyu": return (v.jj || []).join("\n") + (v.why ? ((v.jj || []).length ? "\n→ " : "") + v.why : "");
     case "jikn": return v.min ? v.min + "分" : "";
     case "dare": return (v.who || []).join("・");
     case "bash": return v.where || "";
@@ -312,11 +325,15 @@ function poolOpts(p){ const base = (POOL[p] || []).concat(Object.values(D.opts).
 /* ───────── 1日のユニット(LINE のように下へ積む) ───────── */
 function mini(u){ const c = catOf(uCat(u)); return '<span class="qm" style="background:' + c.base + '">' + u.bl.slice(0, 8).map(b => '<i' + (bkOf(b.k).w === 2 ? ' class="w"' : "") + ' style="background:' + bkOf(b.k).c + '"></i>').join("") + "</span>"; }
 function viewList(){
-  const xs = unitList(), lim = U.lim, show = xs.slice(-lim); let h = "", day = "";
-  show.forEach(u => { if (u.day !== day) { day = u.day; h += '<div class="qd">' + ymdJ(day) + "</div>"; }
-    h += '<button class="ql" data-ha="uopen" data-hv="' + u.id + '"><span class="qt">' + hm(u.at) + "</span>" + mini(u) + '<span class="qn">' + esc(uName(u)) + "</span></button>"; });
-  return '<div class="qlist">' + (xs.length > lim ? '<button class="nsm" data-ha="more">もっと前を見る(あと ' + (xs.length - lim) + " 件)</button>" : "") +
-    (h || '<p class="note" style="text-align:center;margin:3rem 0">右下の＋から記す。<br>ブロックを積んで、1つの記録(ユニット)にする。</p>') + "</div>" +
+  const xs = unitList(), jd = U.xday; if (jd) { const i = xs.findIndex(u => u.day >= jd); if (i >= 0 && xs.length - i > U.lim) U.lim = xs.length - i; }
+  const lim = U.lim, show = xs.slice(-lim), by = {}; show.forEach(u => { (by[u.day] = by[u.day] || []).push(u); });
+  if (jd && !by[jd] && (!show.length || jd >= show[0].day || xs.length <= lim)) by[jd] = [];
+  if (!Object.keys(by).length) by[today()] = [];
+  const h = Object.keys(by).sort().map(d => '<div class="qd" id="d-' + d + '"><span>' + ymdJ(d) + '</span><button data-ha="unewd" data-hv="' + d + '" aria-label="この日に記す">＋ この日に記す</button></div>' +
+    (by[d].length ? by[d].map(u => '<button class="ql" data-ha="uopen" data-hv="' + u.id + '"><span class="qt">' + hm(u.at) + "</span>" + mini(u) + '<span class="qn">' + esc(uName(u)) + "</span></button>").join("") : '<p class="qnone">この日の記録はまだない</p>')).join("");
+  return '<div class="qjump"><label>日付へ<input type="date" data-hin="jump" max="' + today() + '" value="' + (jd || "") + '"></label></div>' +
+    '<div class="qlist">' + (xs.length > lim ? '<button class="nsm" data-ha="more">もっと前を見る(あと ' + (xs.length - lim) + " 件)</button>" : "") +
+    h + (xs.length ? "" : '<p class="note" style="text-align:center;margin:2rem 0">右下の＋から記す。<br>ブロックを積んで、1つの記録(ユニット)にする。</p>') + "</div>" +
     '<button class="qfab" data-ha="unew" aria-label="新しく記す">＋</button>';
 }
 
@@ -328,9 +345,9 @@ function viewUnit(u){
   const c = uCat(u), saved = !U.draft;
   const bs = saved ? bandList().filter(b => b.from <= u.day && bEnd(b) >= u.day).sort((a, b) => bDepth(a.id) - bDepth(b.id)) : [];
   return '<div class="qunit"><div class="qh"><button class="qback" data-ha="uback" aria-label="もどる">‹</button><b>' + esc(u.bl.length ? uName(u) : "新しい記録") + "</b></div>" +
-    '<div class="qst"><span>記録を始めた時刻</span><b>' + hm(u.at) + "</b>" + (u.day !== today() ? "<span>" + md(u.day) + "</span>" : "") +
+    '<div class="qst"><span>記録を始めた時刻</span><b>' + md(u.day) + " " + hm(u.at) + "</b>" +
     '<button data-ha="ut" data-hv="-5">−5分</button><button data-ha="ut" data-hv="5">＋5分</button><button data-ha="utx">' + (U.tedit ? "とじる" : "変える") + "</button></div>" +
-    (U.tedit ? '<div class="qte"><input class="fi" type="date" data-hin="ud" value="' + u.day + '" max="' + today() + '"><input class="fi" type="time" data-hin="utm" value="' + hm(u.at) + '"></div>' : "") +
+    (u.c ? '<div class="qwr">記した日時 ' + md(ymd(new Date(u.c))) + " " + hm(u.c) + (u.e2 ? "・最後に直した日時 " + md(ymd(new Date(u.e2))) + " " + hm(u.e2) : "") + "</div>" : "") + (U.tedit ? '<div class="qte"><input class="fi" type="date" data-hin="ud" value="' + u.day + '" max="' + today() + '"><input class="fi" type="time" data-hin="utm" value="' + hm(u.at) + '"></div>' : "") +
     '<div class="qcat">' + CAT.map(k => '<button class="' + (c === k.id ? "on" : "") + '" style="--c:' + k.c + '" data-ha="ucat" data-hv="' + k.id + '">' + k.n + "</button>").join("") + "</div>" +
     '<div class="qbase" style="background:' + catOf(c).base + '">' + (u.bl.length ? '<div class="qg">' + u.bl.map(blockHTML).join("") + "</div>" : '<p class="qempty">下のブロックを押すと、ここに積まれる</p>') + "</div>" +
     (bs.length ? '<div class="nwl">入れる帯(この日にかかっている帯)</div><div class="chips">' + bs.map(b => '<button class="chip' + (u.b === b.id ? " on" : "") + '" data-ha="ub" data-hv="' + (u.b === b.id ? "" : b.id) + '">' + esc(bPath(b.id).map(p => cut(p.n, 8)).join(" › ")) + "</button>").join("") + "</div>" : "") +
@@ -349,6 +366,7 @@ function ensureSaved(){ if (!U.draft) return D.units[U.unit]; const u = U.draft;
 function fieldHTML(f, val){
   if (f.t === "text") return '<textarea class="fi" id="sk-ft" rows="3" data-hin="ft" data-hv="' + f.k + '" placeholder="' + esc(f.ph || "書く") + '">' + esc(val || "") + "</textarea>";
   if (f.t === "time") return '<div class="chips"><button class="chip' + (val ? "" : " on") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="">始めた時刻と同じ</button><input class="fi qtime" type="time" data-hin="ftm" data-hv="' + f.k + '" value="' + esc(val || "") + '"></div>';
+  if (f.t === "jijo") return jijoHTML(f, [].concat(val || []));
   if (f.t === "scale") return '<div class="qsc">' + [1, 2, 3, 4, 5].map(n => '<button class="' + ((val || 0) >= n ? "on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + n + '">' + n + "</button>").join("") + "</div>";
   if (f.t === "num") return '<div class="chips">' + f.o.map(n => '<button class="chip' + (+val === n ? " on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + n + '">' + n + "</button>").join("") + '<input class="fi qtime" type="number" min="1" inputmode="numeric" data-hin="fnum" data-hv="' + f.k + '" value="' + (val && !f.o.includes(+val) ? val : "") + '" placeholder="ほか"></div>';
   const vs = [].concat(val || []), chip = o => '<button class="chip' + (vs.includes(o) ? " on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + esc(o) + '">' + esc(o) + "</button>";
@@ -360,6 +378,15 @@ function fieldHTML(f, val){
     '<div class="qsub">種類から選ぶ</div><div class="qgs">' + grpList(f.p).map(g => '<button class="' + (open === g[0] ? "on" : "") + '" style="--g:' + g[3] + '" data-ha="kg" data-hv="' + f.k + '" data-hx="' + g[0] + '">' + g[2] + " " + g[1] + "</button>").join("") + "</div>" +
     (og ? '<div class="qcr">' + og[1] + " ›</div><div class=\"chips\">" + grpItems(f.p, og[0]).map(chip).join("") + '<button class="chip add" data-ha="kopt" data-hv="' + f.k + '" data-hx="' + og[0] + '">＋ ' + og[1] + "に足す</button></div>" : "");
 }
+// 事情:いま続いているもの(ここ2週間に出たもの)を新しい順に出す。古いものは奥へ
+function jijoLast(){ const last = {}; Object.values(D.units).forEach(u => { if (!u || u.del || !u.bl) return; u.bl.forEach(b => { if (b.k === "riyu" && b.v && b.v.jj) b.v.jj.forEach(t => { if (!last[t] || last[t] < u.day) last[t] = u.day; }); }); });
+  Object.values(D.opts).forEach(o => { if (o && !o.del && o.p === "jijo" && !last[o.v]) last[o.v] = ymd(new Date(o.u || 0)); }); return last; }
+function jijoHTML(f, vs){ const last = jijoLast(), lim = addDays(today(), -14), all = Object.keys(last).filter(t => !vs.includes(t)).sort((a, b) => last[a] < last[b] ? 1 : last[a] > last[b] ? -1 : 0), cur = all.filter(t => last[t] >= lim), old = all.filter(t => last[t] < lim);
+  const item = (t, on) => '<button class="qjj' + (on ? " on" : "") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="' + esc(t) + '">' + (on ? "✓ " : "") + esc(t) + (on ? "" : "<small>" + mdS(last[t]) + "</small>") + "</button>";
+  return (vs.length ? '<div class="qjjs">' + vs.map(t => item(t, true)).join("") + "</div>" : "") +
+    '<div class="qjjn"><textarea class="fi" id="sk-jj" rows="2" placeholder="具体的に書く(例:評議会を早く開きたいのに、アプリ作りが終わっていない)"></textarea><button data-ha="jadd" data-hv="' + f.k + '">足す</button></div>' +
+    (cur.length ? '<div class="qsub">いま続いている事情(押すと入る)</div><div class="qjjs">' + cur.map(t => item(t, false)).join("") + "</div>" : "") +
+    (old.length ? (U.jjold ? '<div class="qsub">前の事情</div><div class="qjjs">' + old.map(t => item(t, false)).join("") + "</div>" : '<button class="chip add" style="margin-top:.4rem" data-ha="jjold">前の事情も出す(' + old.length + ")</button>") : ""); }
 const curBlock = () => { const u = curUnit(); return u && u.bl.find(x => x.id === (U.arg || {}).bid); };
 function sheetBlk(){ const b = curBlock(); if (!b) return ""; const bk = bkOf(b.k); b.v = b.v || {};
   return sheetWrap('<div class="qsh" style="--c:' + bk.c + '"><i></i><h3>' + bk.n + "</h3></div>" + bk.f.map(f => '<div class="nwl">' + f.n + "</div>" + fieldHTML(f, b.v[f.k])).join("") +
@@ -448,6 +475,8 @@ const VIEWS = [
     get: u => u.bl.filter(b => b.k === "kimo" && b.v && b.v.kind).map(b => [b.v.kind, b.v.lv || 3]) },
   { id: "why", n: "原因の流れ", kind: "flow", p: "why", p2: "act", from: "理由かきっかけ(なぜ)と行動", d: "左の「なぜ」から、右の「したこと」へ。太いほど多い。",
     get: u => { const ws = new Set(), as = new Set(); u.bl.forEach(b => { if (!b.v) return; if ((b.k === "riyu" || b.k === "kikk") && b.v.why) ws.add(b.v.why); if (b.k === "kodo" && b.v.what) as.add(b.v.what); }); const out = []; ws.forEach(w => as.forEach(a => out.push([w, a, 1]))); return out; } },
+  { id: "jijo", n: "事情の移り変わり", kind: "life", from: "理由(具体的な事情)", d: "書いた事情が、いつ現れて、いつまで続いたか。点の色は、そのとき一緒に記した気持ち。",
+    get: u => { const f = u.bl.find(b => b.k === "kimo" && b.v && b.v.kind), c = f ? gOf("feel", f.v.kind)[3] : null, out = []; u.bl.forEach(b => { if (b.k === "riyu" && b.v && b.v.jj) b.v.jj.forEach(t => out.push([t, c, f ? f.v.kind : ""])); }); return out; } },
   { id: "place", n: "居場所の川", kind: "river", p: "place", from: "場所かきっかけ(どこで)", d: "どこで過ごしていたか。",
     get: u => Array.from(new Set(u.bl.filter(b => b.v && (b.k === "bash" || b.k === "kikk") && b.v.where).map(b => b.v.where))).map(v => [v, 1]) },
   { id: "who", n: "人の川", kind: "river", p: "who", from: "だれと", d: "だれと過ごしていたか。",
@@ -509,6 +538,18 @@ function viewFlow(V, R, data){
   nodes = lab(A, x0, "end") + lab(B, x1, "start");
   return '<svg class="vsvg flow" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '">' + rib + nodes + '</svg><div class="vlg"><span>左:なぜ</span><span>右:したこと</span><span>細いものはさわると名前が出る</span></div>';
 }
+// 事情ごとに1行。最初に出た日から最後に出た日まで線を引き、出た日に点を打つ
+function viewLife(V, R, data){
+  const W = Math.min(window.innerWidth, 760) - 32, n = R.bins.length, padL = 8, padR = 8, X = i => padL + (n > 1 ? i / (n - 1) * (W - padL - padR) : (W - padL - padR) / 2), rows = {};
+  data.forEach(({ i, r: [t, c, kn] }) => { const o = rows[t] = rows[t] || { t, first: i, last: i, pts: {} }; o.first = Math.min(o.first, i); o.last = Math.max(o.last, i); (o.pts[i] = o.pts[i] || []).push([c, kn]); });
+  const rs = Object.values(rows).sort((a, b) => a.first - b.first || b.last - a.last), RH = 30, H = rs.length * RH + 6;
+  const body = rs.map((o, k) => { const y = k * RH + 21, cnt = Object.values(o.pts).reduce((s, a) => s + a.length, 0);
+    return '<g data-tip="' + esc(o.t + "(" + cnt + "回)") + '" data-ha="vsel" data-hv="' + esc(o.t + "(" + cnt + "回)") + '"><rect x="0" y="' + (y - 19) + '" width="' + W + '" height="' + RH + '" fill="transparent"/>' +
+      '<text x="' + Math.max(4, Math.min(X(o.first), W - 4 - Math.min(o.t.length, 27) * 11.5)).toFixed(1) + '" y="' + (y - 7) + '">' + esc(cut(o.t, 26)) + "</text>" +
+      '<line x1="' + X(o.first).toFixed(1) + '" x2="' + X(o.last).toFixed(1) + '" y1="' + y + '" y2="' + y + '" stroke="#CFC5B0" stroke-width="3" stroke-linecap="round"/>' +
+      Object.entries(o.pts).map(([i, a]) => { const c = a.find(p => p[0]); return '<circle cx="' + X(+i).toFixed(1) + '" cy="' + y + '" r="' + Math.min(7, 3.5 + a.length) + '" fill="' + (c ? c[0] : "#8A8276") + '"/>'; }).join("") + "</g>"; }).join("");
+  return '<div class="vscroll"><svg class="vsvg life" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '">' + body + "</svg></div>" + axis(R, W) +
+    '<div class="vlg">' + (GRP.feel || []).map(g => '<span><i style="background:' + g[3] + '"></i>' + g[2] + " " + g[1] + "</span>").join("") + '<span><i style="background:#8A8276"></i>気持ちなし</span></div>'; }
 function axis(R, W){ const n = R.bins.length, lab = i => R.wk ? mdS(R.bins[i]) + "〜" : mdS(R.bins[i]); const ids = n > 1 ? [0, Math.floor((n - 1) / 2), n - 1] : [0];
   return '<div class="vax" style="width:' + W + 'px">' + ids.map(i => '<span style="left:' + (n > 1 ? i / (n - 1) * 100 : 50) + '%">' + lab(i) + "</span>").join("") + "</div>"; }
 function viewKanten(){
@@ -517,7 +558,7 @@ function viewKanten(){
   const tabs = '<div class="vtabs">' + stats.slice().sort((a, b) => (b.ok ? 1 : 0) - (a.ok ? 1 : 0)).map(s => '<button class="' + (s === cur ? "on" : "") + (s.ok ? "" : " off") + '" data-ha="view" data-hv="' + s.V.id + '">' + s.V.n + "</button>").join("") + "</div>";
   const rng = '<div class="nzm vr">' + [[7, "1週"], [28, "4週"], [84, "12週"], [0, "全部"]].map(([k, n]) => '<button class="' + ((U.vr == null ? 28 : U.vr) === k ? "on" : "") + '" data-ha="vr" data-hv="' + k + '">' + n + "</button>").join("") + "</div>";
   const body = !cur.ok ? '<div class="vwait"><b>' + cur.V.n + "</b>は、" + cur.V.from + "のブロックがこの期間に " + VMIN + " つたまると現れる(いま " + cur.d.length + ")。</div>"
-    : cur.V.kind === "river" ? viewRiver(cur.V, R, cur.d) : cur.V.kind === "sky" ? viewSky(cur.V, R, cur.d) : viewFlow(cur.V, R, cur.d);
+    : cur.V.kind === "river" ? viewRiver(cur.V, R, cur.d) : cur.V.kind === "sky" ? viewSky(cur.V, R, cur.d) : cur.V.kind === "life" ? viewLife(cur.V, R, cur.d) : viewFlow(cur.V, R, cur.d);
   return tabs + '<div class="nbar">' + rng + "<span></span></div>" + '<div class="vbox">' + body + "</div>" + (U.vsel ? '<div class="vsel">' + esc(U.vsel) + "</div>" : "") +
     '<p class="note" style="margin:.6rem 2px 0">' + cur.V.d + "</p>";
 }
@@ -552,7 +593,8 @@ function render(){
   if (U.sheet && !$("#sheet").innerHTML) U.sheet = null;
   document.body.classList.toggle("lock", !!U.sheet);
   { const tl = $("#sk-tl"); if (tl) { if (!tls || tls.z !== tl.dataset.z) tl.scrollLeft = +tl.dataset.td >= 0 ? Math.max(0, +tl.dataset.td - tl.clientWidth * 0.78) : 0; else tl.scrollLeft = tls.l; } }
-  if (U.toY != null) { window.scrollTo(0, U.toY); U.toY = null; }
+  if (U.jumpGo) { U.jumpGo = false; const el = document.getElementById("d-" + U.xday); if (el) window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 60); U.toY = null; U.bottom = false; }
+  else if (U.toY != null) { window.scrollTo(0, U.toY); U.toY = null; }
   else if (U.bottom) { U.bottom = false; window.scrollTo(0, !u && tab === "r" ? document.documentElement.scrollHeight : 0); }
   else if (U.keep) { window.scrollTo(0, y + document.documentElement.scrollHeight - U.keep); U.keep = 0; }
   else if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
@@ -565,7 +607,9 @@ function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add
 
 /* ───────── 操作 ───────── */
 // ブロックの欄を変える(下書きならまず記録にする)
-function setField(fk, fn){ mut(() => { const u = ensureSaved(), b = u.bl.find(x => x.id === U.arg.bid); if (!b) return; b.v = b.v || {}; fn(b.v, fk); touch(u); }); }
+function setField(fk, fn){ mut(() => { const u = ensureSaved(), b = u.bl.find(x => x.id === U.arg.bid); if (!b) return; b.v = b.v || {}; fn(b.v, fk); edited(u); }); }
+// 過去の記録を直したら、直した日時を残す
+function edited(u){ touch(u); if (u.c && now() - u.c > 10 * 60000) u.e2 = now(); }
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-ha]"); if (!b || b.disabled) return; const a = b.dataset.ha, v = b.dataset.hv;
   switch (a) {
@@ -575,7 +619,13 @@ document.addEventListener("click", ev => {
     case "set": U.sheet = "set"; render(); return;
     case "sync": if (NET.conn) { NET.dirty = true; pull(); toast("同期している"); } return;
     // ユニット
-    case "unew": U.draft = { id: rid(), at: now(), day: today(), u: now(), bl: [] }; U.unit = null; U.tedit = false; U.listY = window.scrollY; U.toY = 0; try { history.pushState({ q: 1 }, ""); } catch (e) {} render(); return;
+    case "unew": U.draft = { id: rid(), at: now(), day: today(), u: now(), c: now(), bl: [] }; U.unit = null; U.tedit = false; U.listY = window.scrollY; U.toY = 0; try { history.pushState({ q: 1 }, ""); } catch (e) {} render(); return;
+    case "unewd": { const xs = unitList().filter(u => u.day === v), at = v === today() ? now() : xs.length ? xs[xs.length - 1].at + 5 * 60000 : new Date(v + "T12:00:00").getTime();
+      U.draft = { id: rid(), at, day: v, u: now(), c: now(), bl: [] }; U.unit = null; U.tedit = v !== today(); U.listY = window.scrollY; U.toY = 0; try { history.pushState({ q: 1 }, ""); } catch (e) {} render(); return; }
+    case "jjold": U.jjold = true; render(); return;
+    case "jadd": { const t = (($("#sk-jj") || {}).value || "").trim(); if (!t) { toast("事情を書いてから押す"); return; }
+      if (!Object.values(D.opts).some(o => o && !o.del && o.p === "jijo" && o.v === t)) { const id = rid(); D.opts[id] = { id, p: "jijo", v: t, u: now() }; }
+      setField(v, (o, k) => { const arr = [].concat(o[k] || []); if (!arr.includes(t)) arr.push(t); o[k] = arr; }); return; }
     case "uopen": case "edit": U.sheet = null; openUnit(v); return;
     case "uback": if (history.state && history.state.q) history.back(); else closeUnit(); return;
     case "ut": { const u = curUnit(); if (!u) return; if (U.draft) { setAt(u, u.at + (+v) * 60000); render(); } else mut(() => setAt(u, u.at + (+v) * 60000)); return; }
@@ -588,7 +638,7 @@ document.addEventListener("click", ev => {
       if (BK[v] && BK[v].f[0].t === "text") { const t = $("#sk-ft"); t && t.focus(); } return; }
     case "kopen": U.sheet = "blk"; U.arg = { bid: v }; U.grp = null; render(); return;
     case "kv": { const x = b.dataset.hx, f = (bkOf((curBlock() || {}).k).f.find(ff => ff.k === v) || {});
-      setField(v, (o, k) => { if (f.t === "multi") { const arr = [].concat(o[k] || []); o[k] = arr.includes(x) ? arr.filter(y => y !== x) : arr.concat(x); if (!o[k].length) delete o[k]; }
+      setField(v, (o, k) => { if (f.t === "multi" || f.t === "jijo") { const arr = [].concat(o[k] || []); o[k] = arr.includes(x) ? arr.filter(y => y !== x) : arr.concat(x); if (!o[k].length) delete o[k]; }
         else if (f.t === "scale" || f.t === "num") { if (+o[k] === +x) delete o[k]; else o[k] = +x; }
         else if (f.t === "time") delete o[k];
         else { if (o[k] === x) delete o[k]; else o[k] = x; } }); return; }
@@ -596,7 +646,7 @@ document.addEventListener("click", ev => {
     case "kopt": { const bl = curBlock(); if (!bl) return; const f = bkOf(bl.k).f.find(ff => ff.k === v); if (!f || !f.p) return; const g = b.dataset.hx || "etc", gn = (grpList(f.p).find(x => x[0] === g) || ETC)[1];
       const t = (prompt(gn + " に足す(新しい選択肢)") || "").trim(); if (!t) return;
       if (!poolOpts(f.p).includes(t)) { const id = rid(); D.opts[id] = { id, p: f.p, g, v: t, u: now() }; }
-      setField(v, (o, k) => { if (f.t === "multi") { const arr = [].concat(o[k] || []); if (!arr.includes(t)) arr.push(t); o[k] = arr; } else o[k] = t; }); return; }
+      setField(v, (o, k) => { if (f.t === "multi" || f.t === "jijo") { const arr = [].concat(o[k] || []); if (!arr.includes(t)) arr.push(t); o[k] = arr; } else o[k] = t; }); return; }
     case "kmv": mut(() => { const u = curUnit(), i = u.bl.findIndex(x => x.id === U.arg.bid), j = i + (+v); if (i < 0 || j < 0 || j >= u.bl.length) return; const t = u.bl[i]; u.bl[i] = u.bl[j]; u.bl[j] = t; touch(u); }); return;
     case "krm": U.sheet = null; mut(() => { const u = curUnit(); u.bl = u.bl.filter(x => x.id !== U.arg.bid); touch(u); }); return;
     // 観点
@@ -631,9 +681,10 @@ document.addEventListener("click", ev => { if (!U.draw || U.tab !== "n" || curUn
   const r = inn.getBoundingClientRect(), d = addDays(inn.dataset.from, Math.max(0, Math.floor((ev.clientX - r.left) / +inn.dataset.dw))), day = d > today() ? today() : d;
   if (!U.draw.from) { U.draw.from = day; render(); } else bandMake(U.draw.from, day); });
 document.addEventListener("input", ev => { const t = ev.target, k = t.dataset && t.dataset.hin; if (!k) return;
+  if (k === "jump") { if (/^\d{4}-\d\d-\d\d$/.test(t.value)) { U.xday = t.value > today() ? today() : t.value; U.jumpGo = true; render(); } return; }
   if (k === "bn") { quiet(() => { const x = D.bands[t.dataset.hv]; if (x && t.value.trim()) { x.n = t.value.trim(); touch(x); } }); return; }
   if (k === "bf" || k === "bt") { if (/^\d{4}-\d\d-\d\d$/.test(t.value) && t.value <= today()) quiet(() => { const x = D.bands[t.dataset.hv]; if (!x) return; if (k === "bf" && t.value <= bEnd(x)) x.from = t.value; if (k === "bt" && t.value >= x.from) x.to = t.value; touch(x); }); return; }
-  if (k === "ft") { const bl = curBlock(); if (!bl) return; const u = ensureSaved(); quiet(() => { bl.v = bl.v || {}; bl.v[t.dataset.hv] = t.value; touch(u); }); return; }
+  if (k === "ft") { const bl = curBlock(); if (!bl) return; const u = ensureSaved(); quiet(() => { bl.v = bl.v || {}; bl.v[t.dataset.hv] = t.value; edited(u); }); return; }
   if (k === "ftm" || k === "fnum") { const bl = curBlock(); if (!bl) return; const val = k === "fnum" ? (+t.value > 0 ? +t.value : null) : (/^\d\d:\d\d$/.test(t.value) ? t.value : null); const u = ensureSaved();
     quiet(() => { bl.v = bl.v || {}; if (val == null) delete bl.v[t.dataset.hv]; else bl.v[t.dataset.hv] = val; touch(u); }); return; }
   if (k === "ud" || k === "utm") { const u = curUnit(); if (!u) return; const day = k === "ud" ? t.value : u.day, tm = k === "utm" ? t.value : hm(u.at);
