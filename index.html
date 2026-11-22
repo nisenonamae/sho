@@ -1024,6 +1024,9 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .tgs button.kn{color:var(--p1)}
 #hy .tgs button.on.kn{background:var(--p1);border-color:var(--p1);color:var(--white)}
 #hy .tg.kn{background:var(--p1);border-color:var(--p1);color:var(--white)}
+#hy .tgs button.qn{color:#8A4C7A}
+#hy .tgs button.on.qn{background:#8A4C7A;border-color:#8A4C7A;color:var(--white)}
+#hy .tg.qn{background:#8A4C7A;border-color:#8A4C7A;color:var(--white)}
 #hy b.sym{font-family:system-ui,sans-serif;font-weight:900}
 #hy .say .tx .tg{margin:0 .4rem 0 0;vertical-align:.08em}
 #hy .knode{padding:.6rem .8rem .6rem calc(.8rem + var(--lv,0) * 1rem);border-top:1px solid var(--rule);background:linear-gradient(90deg,transparent calc(.35rem + var(--lv,0) * 1rem - 1rem),var(--rule) calc(.35rem + var(--lv,0) * 1rem - 1rem),var(--rule) calc(.35rem + var(--lv,0) * 1rem - 1rem + 3px),transparent 0)}
@@ -1100,7 +1103,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-22 r145";
+const APP_VERSION = "2026-11-22 r146";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5491,7 +5494,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.41";
+const APP_VERSION = "h5.42";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -5555,9 +5558,9 @@ const PRESETS = {
 };
 const PALETTE = ["#2F6FB0", "#9A5B2E", "#2E7D6B", "#C08A1E", "#5B6B7A", "#8A4C7A", "#3F7A55", "#B8432F", "#4A6FA5", "#6B6B2E"];
 const CLAUDE = { id: "C", name: "Claude(参考人)", s: "C", c: "#22808A" };
-const TAGS = [["問題", "mn"], ["原因", "gn"], ["案", "an"], ["反論", "hn"], ["加勢", "kn"]];
-// 発言の印は記号で:! まずい(問題)・∵ なぜなら(原因)・+ 足す案(案)・⇄ 逆から言う(反論)・⇉ 同じ向きに押す(加勢・補足)
-const TAGSYM = { "問題": "!", "原因": "∵", "案": "+", "反論": "⇄", "加勢": "⇉" };
+const TAGS = [["問題", "mn"], ["原因", "gn"], ["案", "an"], ["反論", "hn"], ["加勢", "kn"], ["疑問", "qn"]];
+// 発言の印は記号で:! まずい(問題)・∵ なぜなら(原因)・+ 足す案(案)・⇄ 逆から言う(反論)・⇉ 同じ向きに押す(加勢・補足)・? たずねる(疑問)
+const TAGSYM = { "問題": "!", "原因": "∵", "案": "+", "反論": "⇄", "加勢": "⇉", "疑問": "?" };
 const tagSym = g => TAGSYM[g] || g;
 const tagTitle = g => g === "加勢" ? "加勢・補足" : g;
 const tagCls = g => (TAGS.find(t => t[0] === g) || [0, ""])[1];
@@ -6039,7 +6042,7 @@ function summaryItems(s, g){
   ideasOf(s, g).forEach(x => { const e = findEntry(s, x.id); const m = e && e.m ? memberOf(e.m) : null; out.push({ grp: "idea", id: x.id, x: x.x, putTx: x.x, by: m ? m.name : "", sh: m ? m.s : "", col: m ? m.c : "#7A7266", put: true }); });
   (g.details || []).forEach(d => { const sm = d.e.filter(e => e.k === "sum").slice(-1)[0]; if (sm) out.push({ grp: "sum", id: sm.id, x: "細部 " + sm.x, putTx: sm.x, by: "細部の審議", col: "#3F6E8C", put: true });
     d.e.forEach(e => { if (e.k === "say" && e.g === "案") { const m = memberOf(e.m); out.push({ grp: "idea", id: e.id, x: e.x, putTx: e.x, by: m.name + "・細部", sh: m.s, col: m.c, put: true }); } }); });
-  g.debates.concat(g.details || []).forEach(d => d.e.forEach(e => { if (e.k === "say" && (e.g === "反論" || e.g === "問題" || e.g === "原因" || e.g === "加勢")) { const m = memberOf(e.m); out.push({ grp: "voice", id: e.id, x: e.x, putTx: e.x, by: m.name + "・" + e.g, sh: m.s, col: m.c, put: true }); } }));
+  g.debates.concat(g.details || []).forEach(d => d.e.forEach(e => { if (e.k === "say" && (e.g === "反論" || e.g === "問題" || e.g === "原因" || e.g === "加勢" || e.g === "疑問")) { const m = memberOf(e.m); out.push({ grp: "voice", id: e.id, x: e.x, putTx: e.x, by: m.name + "・" + e.g, sh: m.s, col: m.c, put: true }); } }));
   (s.consult.ans || []).forEach(e => { if (e.g !== "案") out.push({ grp: "voice", id: e.id, x: e.x, putTx: e.x, by: "Claude" + (e.g ? "・" + e.g : ""), sh: "C", col: "#22808A", put: true }); });
   s.kini.filter(k => !k.del).forEach(k => out.push({ grp: "kini", id: "kini:" + k.id, x: k.x, putTx: k.x, by: "気になったこと", col: "#B8860B", put: true }));
   return out;
@@ -6531,7 +6534,7 @@ function buildPrompt(s){
   });
   L.push("答え方:");
   L.push("- 1行に1つの発言にしてください(5〜8行)。");
-  L.push("- 行のはじめに【案】【反論】【加勢】【問題】【原因】のどれかを付けてください(【加勢】はほかの発言を同じ向きに押す・補う発言)。");
+  L.push("- 行のはじめに【案】【反論】【加勢】【疑問】【問題】【原因】のどれかを付けてください(【加勢】はほかの発言を同じ向きに押す・補う発言、【疑問】は問いかけ)。");
   L.push("- 前置きや、最後のまとめの文はいりません。");
   return L.join("\n");
 }
@@ -6578,7 +6581,7 @@ function buildAsk(s, d){
   });
   L.push(""); L.push("■ 聞きたいこと"); L.push(a.q.trim() || "(この審議の穴と、見落としている案)");
   L.push(""); L.push("答え方:");
-  if (a.mode === "lines") { L.push("- 1行に1つの発言にしてください(3〜8行)。"); L.push("- 行のはじめに【案】【反論】【加勢】【問題】【原因】のどれかを付けてください(【加勢】はほかの発言を同じ向きに押す・補う発言。当てはまらなければ付けなくてよい)。"); }
+  if (a.mode === "lines") { L.push("- 1行に1つの発言にしてください(3〜8行)。"); L.push("- 行のはじめに【案】【反論】【加勢】【疑問】【問題】【原因】のどれかを付けてください(【加勢】はほかの発言を同じ向きに押す・補う発言、【疑問】は問いかけ。当てはまらなければ付けなくてよい)。"); }
   else L.push("- 短くまとめて答えてください。");
   L.push("- 前置きや、最後のまとめの文はいりません。");
   return L.join("\n");
@@ -6586,9 +6589,9 @@ function buildAsk(s, d){
 function parseAnswer(txt){
   return String(txt || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
     l = l.replace(/^([-*・●]|\d+[.)．、])\s*/, "");
-    let g = null; const m = l.match(/^[【\[〔(（]\s*(案|反論|加勢|補足|問題|原因)\s*[】\]〕)）]\s*[:：]?\s*/);
+    let g = null; const m = l.match(/^[【\[〔(（]\s*(案|反論|加勢|補足|疑問|問題|原因)\s*[】\]〕)）]\s*[:：]?\s*/);
     if (m) { g = m[1]; l = l.slice(m[0].length); }
-    const m2 = !g && l.match(/^(案|反論|加勢|補足|問題|原因)\s*[:：]\s*/); if (m2) { g = m2[1]; l = l.slice(m2[0].length); } if (g === "補足") g = "加勢";
+    const m2 = !g && l.match(/^(案|反論|加勢|補足|疑問|問題|原因)\s*[:：]\s*/); if (m2) { g = m2[1]; l = l.slice(m2[0].length); } if (g === "補足") g = "加勢";
     return l ? { id: rid(), k: "say", m: "C", x: l, g, at: now() } : null;
   }).filter(Boolean);
 }
