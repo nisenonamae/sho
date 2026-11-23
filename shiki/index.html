@@ -318,6 +318,16 @@ img[data-ph]:not([src]){visibility:hidden}
 .post .kei{flex:none;align-self:flex-start;margin-top:.2rem}
 .post .kei.none{width:2.3rem;box-shadow:none;background:none}
 .post .px.pxn{color:var(--sub)}
+
+/* 記すの種類分け */
+.dcat{display:flex;gap:.3rem;margin:.1rem 0 .5rem;overflow-x:auto;scrollbar-width:none}
+.dcat button{flex:none;border:1.5px solid var(--rule);background:var(--white);border-radius:999px;padding:.2rem .75rem;font-size:.8rem;font-weight:800;font-family:inherit;color:var(--ink);cursor:pointer}
+.dcat button small{margin-left:.3rem;font-weight:400;color:var(--sub);font-size:.68rem}
+.dcat button.on{background:var(--c);border-color:var(--c);color:#fff}.dcat button.on small{color:rgba(255,255,255,.8)}
+.qbcat{flex:none;align-self:center;border:0;border-radius:8px;background:var(--c);color:#fff;font-size:.72rem;font-weight:800;padding:.35rem .45rem;font-family:inherit;cursor:pointer;writing-mode:horizontal-tb}
+.qbcat:disabled{opacity:1;cursor:default}
+.post .pt{display:flex;flex-direction:column;gap:.25rem}
+.pcm{display:inline-block;width:1.1rem;height:1.1rem;border-radius:4px;color:#fff;font-style:normal;font-size:.62rem;font-weight:800;text-align:center;line-height:1.1rem}
 </style>
 </head>
 <body>
@@ -325,7 +335,7 @@ img[data-ph]:not([src]){visibility:hidden}
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.54";
+const VER = "s2.60";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -403,7 +413,7 @@ if (!["n", "v"].includes(U.tab)) U.tab = "r";
 const NET = { conn: null, sha: null, state: "", dirty: false, timer: null, busy: false };
 const touch = o => { if (o) o.u = now(); return o; };
 function saveLocal(){ lsSet(K_DATA, D); }
-function saveUI(){ lsSet(K_UI, { tab: U.tab, z: U.z, nh: U.nh, view: U.view, vr: U.vr }); }
+function saveUI(){ lsSet(K_UI, { tab: U.tab, z: U.z, nh: U.nh, view: U.view, vr: U.vr, dcat: U.dcat, pcat: U.pcat }); }
 function mut(fn){ fn(); saveLocal(); saveUI(); queuePush(); render(); }
 function quiet(fn){ fn(); saveLocal(); queuePush(); }
 // 省アプリの中の「報道」で記したものを、いちどだけ引きつぐ
@@ -420,7 +430,7 @@ const hasBody = x => (x.bl && x.bl.length) || (x.x && x.x.trim()) || (x.ph && x.
 const unitList = () => Object.values(D.units).filter(x => x && !x.del && hasBody(x)).map(x => { if (!x.bl) x.bl = []; return x; }).sort((a, b) => a.at - b.at);
 const uCat = u => (u.cats && u.cats.length ? u.cats[0] : u.cat) || (u.bl.some(b => b.k === "deki" || b.k === "kodo") ? "o" : u.bl.some(b => b.k === "kimo") ? "s" : "o");
 // 客観・主観・時代・歴史は、1つの記録に複数つけられる(u.cats)。u.cat は前の版のために先頭を入れておく
-const uCats = u => u.cats && u.cats.length ? CAT.map(c => c.id).filter(id => u.cats.includes(id)) : [uCat(u)];
+const uCats = u => [uCat(u)]; // 1つの記録は1つの種類(客観で1つ、主観で1つ)
 const catBase = u => { const cs = uCats(u).map(id => catOf(id).base); return cs.length > 1 ? "linear-gradient(135deg," + cs.map((c, i) => c + " " + Math.round(i / cs.length * 100) + "%," + c + " " + Math.round((i + 1) / cs.length * 100) + "%").join(",") + ")" : cs[0]; };
 function bSum(b){ const v = b.v || {}, t = s => String(s || "").trim();
   switch (b.k) {
@@ -481,7 +491,7 @@ function viewUnit(u){
     (u.c ? '<div class="qwr">記した日時 ' + md(ymd(new Date(u.c))) + " " + hm(u.c) + (u.e2 ? "・最後に直した日時 " + md(ymd(new Date(u.e2))) + " " + hm(u.e2) : "") + "</div>" : "") + (U.tedit ? '<div class="qte"><input class="fi" type="date" data-hin="ud" value="' + u.day + '" max="' + today() + '"><input class="fi" type="time" data-hin="utm" value="' + hm(u.at) + '"></div>' : "") +
     '<div class="qxl">総合<small>ブロック全体をまとめた文言(書かなくていい)</small></div><textarea class="fi qx" id="sk-ux" data-hin="ux" rows="2" placeholder="この記録をひとことで">' + esc(u.x || "") + "</textarea>" +
     '<div class="qphs">' + (u.ph || []).map(p => '<span><button data-ha="phv" data-hv="' + p.id + '">' + phImg(p.id) + '</button><button class="x" data-ha="phrm" data-hv="' + p.id + '" aria-label="外す">✕</button></span>').join("") + '<button class="add" data-ha="phadd" data-hv="unit">📷 写真</button></div>' +
-    '<div class="qcat">' + CAT.map(k => '<button class="' + (uCats(u).includes(k.id) ? "on" : "") + '" style="--c:' + k.c + '" data-ha="ucat" data-hv="' + k.id + '">' + k.n + "</button>").join("") + '</div>' +
+    '<div class="qcat">' + CAT.map(k => '<button class="' + (uCat(u) === k.id ? "on" : "") + '" style="--c:' + k.c + '" data-ha="ucat" data-hv="' + k.id + '">' + k.n + "</button>").join("") + '</div>' +
     '<div class="qbase" style="background:' + catBase(u) + '">' + (u.bl.length ? '<div class="qtlh"><span>はじめ</span><span>上から時間順・≡ で動かす・重ねると横に並ぶ</span></div><div class="qg">' + rowsHTML(u.bl) + "</div>" : '<p class="qempty">下のブロックを押すと、ここに積まれる</p>') +
       (U.undo && U.undo.uid === u.id && Date.now() - U.undo.t < 8000 ? '<div class="qundo">「' + esc(bkOf(U.undo.b.k).n) + '」を消した<button data-ha="kundo">元に戻す</button></div>' : "") + "</div>" +
     (bs.length ? '<div class="nwl">入れる帯(この日にかかっている帯)</div><div class="chips">' + bs.map(b => '<button class="chip' + (u.b === b.id ? " on" : "") + '" data-ha="ub" data-hv="' + (u.b === b.id ? "" : b.id) + '">' + esc(bPath(b.id).map(p => cut(p.n, 8)).join(" › ")) + "</button>").join("") + "</div>" : "") +
@@ -545,21 +555,26 @@ function keiHTML(u){ const rows = blRows(u.bl), max = 6, rs = rows.slice(0, max)
   return '<span class="kei" style="background:' + catBase(u) + '">' + rs.map(r => "<span>" + r.bs.map(b => '<i style="background:' + bkOf(b.k).c + '"></i>').join("") + "</span>").join("") + (rows.length > max ? "<em>+" + (rows.length - max) + "</em>" : "") + "</span>"; }
 // 1件 = 時刻 | 景観(ブロックの積み方の小さな絵) | 総合の字と写真。ブロックの札は出さない(押すと積み木の画面で全部見える)
 function postHTML(u){ const pt = postText(u);
-  return '<div class="post" data-ha="uopen" data-hv="' + u.id + '"><span class="pt">' + hm(u.at) + "</span>" + (u.bl.length ? keiHTML(u) : '<span class="kei none"></span>') +
+  return '<div class="post" data-ha="uopen" data-hv="' + u.id + '"><span class="pt">' + hm(u.at) + (!U.dcat || U.dcat === "all" ? '<i class="pcm" style="background:' + catOf(uCat(u)).c + '">' + catOf(uCat(u)).n.slice(0, 1) + "</i>" : "") + "</span>" + (u.bl.length ? keiHTML(u) : '<span class="kei none"></span>') +
     '<div class="pc">' + (pt.t ? '<div class="px">' + esc(pt.t) + "</div>" : '<div class="px pxn">' + esc(uName(u)) + "</div>") + phGrid(u.ph) + "</div></div>"; }
+// 記すは種類ごとに分けて見る(全部も見られる)。下の欄から記すと、いま見ている種類の記録になる
+const postCat = () => U.dcat && U.dcat !== "all" ? U.dcat : (U.pcat || "o");
+function dcatHTML(all){ const cnt = {}; all.forEach(u => { cnt[uCat(u)] = (cnt[uCat(u)] || 0) + 1; }); const cur = U.dcat || "all";
+  return '<div class="dcat">' + [["all", "全部", "#22201C"]].concat(CAT.map(c => [c.id, c.n, c.c])).map(([id, n, c]) => '<button class="' + (cur === id ? "on" : "") + '" style="--c:' + c + '" data-ha="dcat" data-hv="' + id + '">' + n + (id === "all" ? "" : cnt[id] ? "<small>" + cnt[id] + "</small>" : "") + "</button>").join("") + "</div>"; }
 const curDay = () => U.day && U.day <= today() ? U.day : today();
 // 下の欄から記すときの時刻:今日なら書きはじめた時刻、過去の日ならその日の最後の記録の5分後(なければ12時)
 function qAt(){ const d = curDay(); if (d === today()) return U.qat || now(); const xs = unitList().filter(u => u.day === d); return xs.length ? xs[xs.length - 1].at + 5 * 60000 : new Date(d + "T12:00:00").getTime(); }
 function viewDay(){
-  const d = curDay(), xs = unitList().filter(u => u.day === d), td = d === today();
+  const d = curDay(), all = unitList().filter(u => u.day === d), xs = U.dcat && U.dcat !== "all" ? all.filter(u => uCat(u) === U.dcat) : all, td = d === today(), pc = catOf(postCat());
   const nav = '<div class="dnav"><button data-ha="dmv" data-hv="-1" aria-label="前の日">‹</button><button class="dl" data-ha="cal">' + ymdJ(d) + '</button><button data-ha="dmv" data-hv="1" aria-label="次の日"' + (td ? " disabled" : "") + '>›</button>' +
     (td ? "" : '<button class="dtd" data-ha="dtoday">今日へ</button>') + '<button class="dcal" data-ha="cal" aria-label="カレンダー">📅</button></div>';
   const qph = U.qph || [];
+  const pcl = '<button class="qbcat" style="--c:' + pc.c + '"' + (U.dcat && U.dcat !== "all" ? " disabled" : ' data-ha="pcat"') + ">" + pc.n + "</button>";
   const bar = '<div class="qbar"><div>' + (U.qat && td ? '<div class="qbst">書きはじめた時刻 ' + hm(U.qat) + "</div>" : td ? "" : '<div class="qbst">' + md(d) + " に書き足す</div>") +
     (qph.length ? '<div class="qbph">' + qph.map(p => '<span>' + phImg(p.id) + '<button data-ha="qphrm" data-hv="' + p.id + '" aria-label="外す">✕</button></span>').join("") + "</div>" : "") +
     '<div class="qbr"><button class="qbi" data-ha="phadd" data-hv="bar" aria-label="写真">📷</button><button class="qbi" data-ha="qblk" aria-label="ブロックを組む">▦</button>' +
-    '<textarea id="sk-q" data-hin="q" rows="1" placeholder="' + (td ? "いまのことを書く" : "この日のことを書く") + '">' + esc(U.q || "") + '</textarea><button class="qbs" data-ha="qsend">記す</button></div></div></div>';
-  return nav + '<div class="tl">' + (xs.length ? xs.map(postHTML).join("") : '<p class="qnone" style="text-align:center;margin:3rem 0">この日の記録はまだない。<br>下から書く。▦ でブロックを組める。</p>') + "</div>" + bar;
+    '' + pcl + '<textarea id="sk-q" data-hin="q" rows="1" placeholder="' + pc.n + (td ? "のいまを書く" : "のこの日を書く") + '">' + esc(U.q || "") + '</textarea><button class="qbs" data-ha="qsend">記す</button></div></div></div>';
+  return nav + dcatHTML(all) + '<div class="tl">' + (xs.length ? xs.map(postHTML).join("") : '<p class="qnone" style="text-align:center;margin:3rem 0">この日の記録はまだない。<br>下から書く。▦ でブロックを組める。</p>') + "</div>" + bar;
 }
 /* ───────── カレンダー(写真のある日は写真が出る) ───────── */
 function viewCal(){
@@ -890,8 +905,8 @@ document.addEventListener("click", ev => {
     case "qphrm": U.qph = (U.qph || []).filter(p => p.id !== v); lsSet("shiki-qph", U.qph); render(); return;
     case "phrm": { const u = curUnit(); if (!u) return; if (U.draft) { u.ph = (u.ph || []).filter(p => p.id !== v); render(); } else mut(() => { u.ph = (u.ph || []).filter(p => p.id !== v); edited(u); }); return; }
     case "qsend": { const x = ((($("#sk-q") || {}).value) || "").trim(), ph = U.qph || []; if (!x && !ph.length) { toast("字か写真を入れてから押す"); const q = $("#sk-q"); q && q.focus(); return; }
-      const at = qAt(); U.bottom = true; mut(() => { const id = rid(); D.units[id] = { id, at, day: ymd(new Date(at)), u: now(), c: now(), x, ph, bl: [] }; clearQ(); }); toast("記した"); phFlush(); return; }
-    case "qblk": { const x = ((($("#sk-q") || {}).value) || "").trim(), at = qAt(); U.draft = { id: rid(), at, day: ymd(new Date(at)), u: now(), c: now(), x, ph: U.qph || [], bl: [] }; clearQ();
+      const at = qAt(); U.bottom = true; mut(() => { const id = rid(); D.units[id] = { id, at, day: ymd(new Date(at)), u: now(), c: now(), x, ph, bl: [], cat: postCat() }; clearQ(); }); toast(catOf(postCat()).n + "に記した"); phFlush(); return; }
+    case "qblk": { const x = ((($("#sk-q") || {}).value) || "").trim(), at = qAt(); U.draft = { id: rid(), at, day: ymd(new Date(at)), u: now(), c: now(), x, ph: U.qph || [], bl: [], cat: postCat() }; clearQ();
       U.unit = null; U.tedit = false; U.listY = window.scrollY; U.toY = 0; try { history.pushState({ q: 1 }, ""); } catch (e) {} render(); return; }
     case "set": U.sheet = "set"; render(); return;
     case "sync": if (NET.conn) { NET.dirty = true; pull(); toast("同期している"); } return;
@@ -907,8 +922,9 @@ document.addEventListener("click", ev => {
     case "uback": if (history.state && history.state.q) history.back(); else closeUnit(); return;
     case "ut": { const u = curUnit(); if (!u) return; if (U.draft) { setAt(u, u.at + (+v) * 60000); render(); } else mut(() => setAt(u, u.at + (+v) * 60000)); return; }
     case "utx": U.tedit = !U.tedit; render(); return;
-    case "ucat": { const u = curUnit(); if (!u) return; const cur = uCats(u), nx = cur.includes(v) ? cur.filter(x => x !== v) : cur.concat(v); if (!nx.length) return;
-      const f = () => { u.cats = CAT.map(c => c.id).filter(id => nx.includes(id)); u.cat = u.cats[0]; }; if (U.draft) { f(); render(); } else mut(() => { f(); touch(u); }); return; }
+    case "ucat": { const u = curUnit(); if (!u) return; const f = () => { u.cat = v; delete u.cats; }; if (U.draft) { f(); render(); } else mut(() => { f(); touch(u); }); return; }
+    case "dcat": U.dcat = v; if (v !== "all") U.pcat = v; U.bottom = true; saveUI(); render(); return;
+    case "pcat": { const ids = CAT.map(c => c.id), i = ids.indexOf(U.pcat || "o"); U.pcat = ids[(i + 1) % ids.length]; saveUI(); render(); const q = $("#sk-q"); if (q) q.focus({ preventScroll: true }); return; }
     case "ub": mut(() => { const u = curUnit(); u.b = v || null; touch(u); }); return;
     case "udel": { if (!confirm("この記録を消しますか。")) return; const u = curUnit(); quiet(() => touch(Object.assign(u, { del: true }))); if (history.state && history.state.q) history.back(); else closeUnit(); toast("消した"); return; }
     // ブロック
