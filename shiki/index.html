@@ -268,6 +268,15 @@ img[data-ph]:not([src]){visibility:hidden}
 .qrow.multi .qdel{width:1.5rem}
 
 .qcatn{font-size:.66rem;color:var(--sub);align-self:center;margin-left:.2rem}
+
+/* ✕ と ≡ はブロックの中の右端に重ねる(右上が消す、右下がつかむ) */
+.qcell .qb{padding-right:2.1rem}
+.qcell .qdel{position:absolute;top:.3rem;right:.3rem;width:1.55rem;height:1.55rem;border-radius:50%;background:rgba(255,255,255,.28);color:#fff;font-size:.72rem;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
+.qcell .qb.p ~ .qdel{background:rgba(0,0,0,.07);color:var(--sub)}
+.qcell .qdrag{position:absolute;bottom:.3rem;right:.3rem;width:1.55rem;height:1.55rem;border-radius:6px;color:rgba(255,255,255,.85);background:none;font-size:1rem;z-index:2}
+.qcell .qb.p ~ .qdrag{color:var(--sub)}
+.qrow.multi .qdel{width:1.55rem}
+.qrow:not(.multi){padding-left:0}
 </style>
 </head>
 <body>
@@ -275,7 +284,7 @@ img[data-ph]:not([src]){visibility:hidden}
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.41";
+const VER = "s2.42";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -418,9 +427,9 @@ const curUnit = () => U.draft || (U.unit && D.units[U.unit] && !D.units[U.unit].
 const rowKey = b => b.r || b.id;
 function blRows(bl){ const rows = []; bl.forEach(b => { const k = rowKey(b), last = rows[rows.length - 1]; if (last && last.k === k) last.bs.push(b); else rows.push({ k, bs: [b] }); }); return rows; }
 function blockHTML(b){ const bk = bkOf(b.k), s = bSum(b), lv = b.k === "kimo" && b.v && b.v.lv ? '<i class="qdots">' + "●".repeat(b.v.lv) + "○".repeat(5 - b.v.lv) + "</i>" : "";
-  return '<div class="qcell" data-bid="' + b.id + '"><span class="qdrag" data-drag="' + b.id + '" aria-label="動かす" title="つかんで動かす">≡</span>' +
+  return '<div class="qcell" data-bid="' + b.id + '">' +
     '<button class="qb' + (bk.paper ? " p" : "") + '" style="--c:' + bk.c + '" data-ha="kopen" data-hv="' + b.id + '"><small>' + bk.n + "</small><span>" + (s ? esc(s) : lv ? "" : "<em>押して入れる</em>") + lv + "</span></button>" +
-    '<button class="qdel" data-ha="kdel" data-hv="' + b.id + '" aria-label="消す">✕</button></div>'; }
+    '<button class="qdel" data-ha="kdel" data-hv="' + b.id + '" aria-label="消す">✕</button><span class="qdrag" data-drag="' + b.id + '" aria-label="動かす" title="つかんで動かす">≡</span></div>'; }
 const rowsHTML = bl => blRows(bl).map(r => '<div class="qrow' + (r.bs.length > 1 ? " multi" : "") + '" data-rk="' + r.k + '">' + (r.bs.length > 1 ? '<span class="qsim">同時</span>' : "") + r.bs.map(blockHTML).join("") + "</div>").join("");
 function viewUnit(u){
   const c = uCat(u), saved = !U.draft;
@@ -431,7 +440,7 @@ function viewUnit(u){
     (u.c ? '<div class="qwr">記した日時 ' + md(ymd(new Date(u.c))) + " " + hm(u.c) + (u.e2 ? "・最後に直した日時 " + md(ymd(new Date(u.e2))) + " " + hm(u.e2) : "") + "</div>" : "") + (U.tedit ? '<div class="qte"><input class="fi" type="date" data-hin="ud" value="' + u.day + '" max="' + today() + '"><input class="fi" type="time" data-hin="utm" value="' + hm(u.at) + '"></div>' : "") +
     '<div class="qxl">総合<small>ブロック全体をまとめた文言(書かなくていい)</small></div><textarea class="fi qx" id="sk-ux" data-hin="ux" rows="2" placeholder="この記録をひとことで">' + esc(u.x || "") + "</textarea>" +
     '<div class="qphs">' + (u.ph || []).map(p => '<span><button data-ha="phv" data-hv="' + p.id + '">' + phImg(p.id) + '</button><button class="x" data-ha="phrm" data-hv="' + p.id + '" aria-label="外す">✕</button></span>').join("") + '<button class="add" data-ha="phadd" data-hv="unit">📷 写真</button></div>' +
-    '<div class="qcat">' + CAT.map(k => '<button class="' + (uCats(u).includes(k.id) ? "on" : "") + '" style="--c:' + k.c + '" data-ha="ucat" data-hv="' + k.id + '">' + k.n + "</button>").join("") + '<span class="qcatn">いくつでも</span></div>' +
+    '<div class="qcat">' + CAT.map(k => '<button class="' + (uCats(u).includes(k.id) ? "on" : "") + '" style="--c:' + k.c + '" data-ha="ucat" data-hv="' + k.id + '">' + k.n + "</button>").join("") + '</div>' +
     '<div class="qbase" style="background:' + catBase(u) + '">' + (u.bl.length ? '<div class="qtlh"><span>はじめ</span><span>上から時間順・≡ で動かす・重ねると同時</span></div><div class="qg">' + rowsHTML(u.bl) + "</div>" : '<p class="qempty">下のブロックを押すと、ここに積まれる</p>') +
       (U.undo && U.undo.uid === u.id && Date.now() - U.undo.t < 8000 ? '<div class="qundo">「' + esc(bkOf(U.undo.b.k).n) + '」を消した<button data-ha="kundo">元に戻す</button></div>' : "") + "</div>" +
     (bs.length ? '<div class="nwl">入れる帯(この日にかかっている帯)</div><div class="chips">' + bs.map(b => '<button class="chip' + (u.b === b.id ? " on" : "") + '" data-ha="ub" data-hv="' + (u.b === b.id ? "" : b.id) + '">' + esc(bPath(b.id).map(p => cut(p.n, 8)).join(" › ")) + "</button>").join("") + "</div>" : "") +
