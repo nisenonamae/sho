@@ -246,9 +246,16 @@ img[data-ph]:not([src]){visibility:hidden}
 .cd.sel{outline:2.5px solid var(--ink);outline-offset:1px}
 .cdots{position:absolute;left:.3rem;bottom:.3rem;display:flex;gap:2px}.cdots s{width:.34rem;height:.34rem;border-radius:50%;display:block}
 
-.qrow{display:flex;align-items:stretch;gap:.35rem;position:relative;transition:transform .15s}
-.qrow.drag{transition:none;z-index:5;filter:drop-shadow(0 6px 10px rgba(0,0,0,.22))}
-.qrow .qb{flex:1}
+.qrow{display:flex;flex-wrap:wrap;align-items:stretch;gap:.35rem;position:relative;border-radius:12px}
+.qrow.multi{background:rgba(255,255,255,.45);padding:1.05rem .3rem .3rem;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.08)}
+.qsim{position:absolute;left:.55rem;top:.2rem;font-size:.6rem;font-weight:800;color:var(--sub)}
+.qcell{flex:1 1 9rem;display:flex;align-items:stretch;gap:.3rem;min-width:0;position:relative}
+.qcell.drag{z-index:6;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25));pointer-events:none}
+.qcell .qb{flex:1;min-width:0}
+.qrow.joinT{box-shadow:inset 0 0 0 2.5px #22201C;background:rgba(255,255,255,.6)}
+.qrow.insB{box-shadow:0 -4px 0 -1px #22201C}
+.qrow.insA{box-shadow:0 4px 0 -1px #22201C}
+.ptags .tgg{display:inline-flex;flex-wrap:wrap;gap:.25rem;padding:.12rem .2rem;border-radius:8px;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.12)}
 .qdrag{flex:none;width:1.25rem;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.4);font-size:1.05rem;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;position:relative;z-index:1;background:inherit}
 .qdel{flex:none;width:1.9rem;border:0;border-radius:9px;background:rgba(255,255,255,.65);color:var(--sub);font-size:.85rem;cursor:pointer}
 .qdel:active{background:#F3D6D0;color:#B8553F}
@@ -256,6 +263,11 @@ img[data-ph]:not([src]){visibility:hidden}
 .qundo{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.5rem;padding:.4rem .6rem;border-radius:9px;background:#22201C;color:#fff;font-size:.8rem}
 .qundo button{border:0;background:none;color:#FFD27A;font-weight:800;font-family:inherit;cursor:pointer}
 .qxl{font-size:.78rem;font-weight:800;margin:.7rem 0 .2rem}.qxl small{font-weight:400;color:var(--sub);margin-left:.4rem}
+
+.qtlh span{white-space:nowrap}.qtlh{gap:.5rem}
+.qrow.multi .qdel{width:1.5rem}
+
+.qcatn{font-size:.66rem;color:var(--sub);align-self:center;margin-left:.2rem}
 </style>
 </head>
 <body>
@@ -263,7 +275,7 @@ img[data-ph]:not([src]){visibility:hidden}
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.40";
+const VER = "s2.41";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -356,7 +368,10 @@ if (migrate()) saveLocal();
 
 const hasBody = x => (x.bl && x.bl.length) || (x.x && x.x.trim()) || (x.ph && x.ph.length);
 const unitList = () => Object.values(D.units).filter(x => x && !x.del && hasBody(x)).map(x => { if (!x.bl) x.bl = []; return x; }).sort((a, b) => a.at - b.at);
-const uCat = u => u.cat || (u.bl.some(b => b.k === "deki" || b.k === "kodo") ? "o" : u.bl.some(b => b.k === "kimo") ? "s" : "o");
+const uCat = u => (u.cats && u.cats.length ? u.cats[0] : u.cat) || (u.bl.some(b => b.k === "deki" || b.k === "kodo") ? "o" : u.bl.some(b => b.k === "kimo") ? "s" : "o");
+// 客観・主観・時代・歴史は、1つの記録に複数つけられる(u.cats)。u.cat は前の版のために先頭を入れておく
+const uCats = u => u.cats && u.cats.length ? CAT.map(c => c.id).filter(id => u.cats.includes(id)) : [uCat(u)];
+const catBase = u => { const cs = uCats(u).map(id => catOf(id).base); return cs.length > 1 ? "linear-gradient(135deg," + cs.map((c, i) => c + " " + Math.round(i / cs.length * 100) + "%," + c + " " + Math.round((i + 1) / cs.length * 100) + "%").join(",") + ")" : cs[0]; };
 function bSum(b){ const v = b.v || {}, t = s => String(s || "").trim();
   switch (b.k) {
     case "deki": case "hito": return t(v.x);
@@ -374,7 +389,7 @@ function uEmo(u){ const f = u.bl.find(b => b.k === "kimo" && b.v && FEEL_E[b.v.k
   const d = EMO_DEF[uCat(u) === "s" ? "h" : uCat(u) === "o" ? "a" : "w"]; return d[hsh(u.id) % d.length]; }
 function uFull(u){ return [u.x && u.x.trim() ? u.x.trim().replace(/\n/g, " ") : uName(u)].concat(u.bl.map(b => bSum(b).replace(/\n/g, " ")).filter(s => s && s !== uName(u))).join(" / "); }
 // 年表に載せる形
-function chronEntries(){ return unitList().map(u => { const c = catOf(uCat(u)); return { id: u.id, day: u.day, at: u.at, t: c.id === "s" ? "h" : "a", c: c.c, kn: c.n, x: uFull(u), e: u.e || uEmo(u), b: u.b, top: u.top }; }); }
+function chronEntries(){ return unitList().flatMap(u => uCats(u).map(id => { const c = catOf(id); return { id: u.id, day: u.day, at: u.at, t: c.id === "s" ? "h" : "a", c: c.c, kn: c.n, x: uFull(u), e: u.e || uEmo(u), b: u.b, top: u.top }; })); }
 // 選択肢:よく使うものから並ぶ
 function poolOpts(p){ const base = (POOL[p] || []).concat(Object.values(D.opts).filter(o => o && !o.del && o.p === p).map(o => o.v)), uniq = Array.from(new Set(base)), cnt = {};
   const fs = []; Object.entries(BK).forEach(([k, bk]) => bk.f.forEach(f => { if (f.p === p) fs.push([k, f.k]); }));
@@ -399,10 +414,14 @@ function viewList(){
 /* ───────── ユニットの中身 = 積み木 ───────── */
 const curUnit = () => U.draft || (U.unit && D.units[U.unit] && !D.units[U.unit].del ? D.units[U.unit] : null);
 /* 積んだブロックは上から順に時系列。左の ≡ をつかんで動かす。✕ で押さずに消せる */
+// 同じ列(同時)のブロックは b.r が同じ。並びは u.bl の順で、続いている同じ r が1つの列
+const rowKey = b => b.r || b.id;
+function blRows(bl){ const rows = []; bl.forEach(b => { const k = rowKey(b), last = rows[rows.length - 1]; if (last && last.k === k) last.bs.push(b); else rows.push({ k, bs: [b] }); }); return rows; }
 function blockHTML(b){ const bk = bkOf(b.k), s = bSum(b), lv = b.k === "kimo" && b.v && b.v.lv ? '<i class="qdots">' + "●".repeat(b.v.lv) + "○".repeat(5 - b.v.lv) + "</i>" : "";
-  return '<div class="qrow" data-bid="' + b.id + '"><span class="qdrag" data-drag="' + b.id + '" aria-label="動かす" title="つかんで動かす">≡</span>' +
+  return '<div class="qcell" data-bid="' + b.id + '"><span class="qdrag" data-drag="' + b.id + '" aria-label="動かす" title="つかんで動かす">≡</span>' +
     '<button class="qb' + (bk.paper ? " p" : "") + '" style="--c:' + bk.c + '" data-ha="kopen" data-hv="' + b.id + '"><small>' + bk.n + "</small><span>" + (s ? esc(s) : lv ? "" : "<em>押して入れる</em>") + lv + "</span></button>" +
     '<button class="qdel" data-ha="kdel" data-hv="' + b.id + '" aria-label="消す">✕</button></div>'; }
+const rowsHTML = bl => blRows(bl).map(r => '<div class="qrow' + (r.bs.length > 1 ? " multi" : "") + '" data-rk="' + r.k + '">' + (r.bs.length > 1 ? '<span class="qsim">同時</span>' : "") + r.bs.map(blockHTML).join("") + "</div>").join("");
 function viewUnit(u){
   const c = uCat(u), saved = !U.draft;
   const bs = saved ? bandList().filter(b => b.from <= u.day && bEnd(b) >= u.day).sort((a, b) => bDepth(a.id) - bDepth(b.id)) : [];
@@ -412,8 +431,8 @@ function viewUnit(u){
     (u.c ? '<div class="qwr">記した日時 ' + md(ymd(new Date(u.c))) + " " + hm(u.c) + (u.e2 ? "・最後に直した日時 " + md(ymd(new Date(u.e2))) + " " + hm(u.e2) : "") + "</div>" : "") + (U.tedit ? '<div class="qte"><input class="fi" type="date" data-hin="ud" value="' + u.day + '" max="' + today() + '"><input class="fi" type="time" data-hin="utm" value="' + hm(u.at) + '"></div>' : "") +
     '<div class="qxl">総合<small>ブロック全体をまとめた文言(書かなくていい)</small></div><textarea class="fi qx" id="sk-ux" data-hin="ux" rows="2" placeholder="この記録をひとことで">' + esc(u.x || "") + "</textarea>" +
     '<div class="qphs">' + (u.ph || []).map(p => '<span><button data-ha="phv" data-hv="' + p.id + '">' + phImg(p.id) + '</button><button class="x" data-ha="phrm" data-hv="' + p.id + '" aria-label="外す">✕</button></span>').join("") + '<button class="add" data-ha="phadd" data-hv="unit">📷 写真</button></div>' +
-    '<div class="qcat">' + CAT.map(k => '<button class="' + (c === k.id ? "on" : "") + '" style="--c:' + k.c + '" data-ha="ucat" data-hv="' + k.id + '">' + k.n + "</button>").join("") + "</div>" +
-    '<div class="qbase" style="background:' + catOf(c).base + '">' + (u.bl.length ? '<div class="qtlh"><span>はじめ</span><span>上から順に時間が進む・≡ で動かす</span></div><div class="qg">' + u.bl.map(blockHTML).join("") + "</div>" : '<p class="qempty">下のブロックを押すと、ここに積まれる</p>') +
+    '<div class="qcat">' + CAT.map(k => '<button class="' + (uCats(u).includes(k.id) ? "on" : "") + '" style="--c:' + k.c + '" data-ha="ucat" data-hv="' + k.id + '">' + k.n + "</button>").join("") + '<span class="qcatn">いくつでも</span></div>' +
+    '<div class="qbase" style="background:' + catBase(u) + '">' + (u.bl.length ? '<div class="qtlh"><span>はじめ</span><span>上から時間順・≡ で動かす・重ねると同時</span></div><div class="qg">' + rowsHTML(u.bl) + "</div>" : '<p class="qempty">下のブロックを押すと、ここに積まれる</p>') +
       (U.undo && U.undo.uid === u.id && Date.now() - U.undo.t < 8000 ? '<div class="qundo">「' + esc(bkOf(U.undo.b.k).n) + '」を消した<button data-ha="kundo">元に戻す</button></div>' : "") + "</div>" +
     (bs.length ? '<div class="nwl">入れる帯(この日にかかっている帯)</div><div class="chips">' + bs.map(b => '<button class="chip' + (u.b === b.id ? " on" : "") + '" data-ha="ub" data-hv="' + (u.b === b.id ? "" : b.id) + '">' + esc(bPath(b.id).map(p => cut(p.n, 8)).join(" › ")) + "</button>").join("") + "</div>" : "") +
     (saved ? '<div class="links" style="margin-top:1.2rem"><button data-ha="udel">この記録を消す</button><span></span></div>' : "") + "</div>" +
@@ -469,7 +488,7 @@ function phImg(id, cls){ return '<img class="' + (cls || "") + '" data-ph="' + i
 function phGrid(ph){ if (!ph || !ph.length) return ""; return '<div class="pims' + (ph.length === 1 ? " one" : "") + '">' + ph.map(p => '<button data-ha="phv" data-hv="' + p.id + '">' + phImg(p.id) + "</button>").join("") + "</div>"; }
 function postHTML(u){ const pt = postText(u), bl = u.bl.filter(b => b.id !== pt.skip);
   return '<div class="post" data-ha="uopen" data-hv="' + u.id + '"><span class="pt">' + hm(u.at) + '</span><div class="pc">' + (pt.t ? '<div class="px">' + esc(pt.t) + "</div>" : "") + phGrid(u.ph) +
-    (bl.length ? '<div class="ptags">' + bl.map(tagHTML).join("") + "</div>" : "") + "</div></div>"; }
+    (bl.length ? '<div class="ptags">' + blRows(bl).map(r => r.bs.length > 1 ? '<span class="tgg">' + r.bs.map(tagHTML).join("") + "</span>" : tagHTML(r.bs[0])).join("") + "</div>" : "") + "</div></div>"; }
 const curDay = () => U.day && U.day <= today() ? U.day : today();
 // 下の欄から記すときの時刻:今日なら書きはじめた時刻、過去の日ならその日の最後の記録の5分後(なければ12時)
 function qAt(){ const d = curDay(); if (d === today()) return U.qat || now(); const xs = unitList().filter(u => u.day === d); return xs.length ? xs[xs.length - 1].at + 5 * 60000 : new Date(d + "T12:00:00").getTime(); }
@@ -751,7 +770,8 @@ document.addEventListener("click", ev => {
     case "uback": if (history.state && history.state.q) history.back(); else closeUnit(); return;
     case "ut": { const u = curUnit(); if (!u) return; if (U.draft) { setAt(u, u.at + (+v) * 60000); render(); } else mut(() => setAt(u, u.at + (+v) * 60000)); return; }
     case "utx": U.tedit = !U.tedit; render(); return;
-    case "ucat": { const u = curUnit(); if (!u) return; if (U.draft) { u.cat = v; render(); } else mut(() => { u.cat = v; touch(u); }); return; }
+    case "ucat": { const u = curUnit(); if (!u) return; const cur = uCats(u), nx = cur.includes(v) ? cur.filter(x => x !== v) : cur.concat(v); if (!nx.length) return;
+      const f = () => { u.cats = CAT.map(c => c.id).filter(id => nx.includes(id)); u.cat = u.cats[0]; }; if (U.draft) { f(); render(); } else mut(() => { f(); touch(u); }); return; }
     case "ub": mut(() => { const u = curUnit(); u.b = v || null; touch(u); }); return;
     case "udel": { if (!confirm("この記録を消しますか。")) return; const u = curUnit(); quiet(() => touch(Object.assign(u, { del: true }))); if (history.state && history.state.q) history.back(); else closeUnit(); toast("消した"); return; }
     // ブロック
@@ -820,19 +840,29 @@ document.addEventListener("input", ev => { const t = ev.target, k = t.dataset &&
 // 入力欄を離れたら、名前などを描き直す
 document.addEventListener("change", ev => { const k = ev.target.dataset && ev.target.dataset.hin; if (k === "ud" || k === "utm" || k === "fnum" || k === "ftm") render(); });
 
-/* ───────── ブロックを ≡ でつかんで動かす(指でもマウスでも) ───────── */
+/* ───────── ブロックを ≡ でつかんで動かす。列のあいだに落とすと順番が変わり、ほかの列の上に落とすと同時(同じ列)になる ───────── */
 let DRG = null;
-document.addEventListener("pointerdown", ev => { const h = ev.target.closest && ev.target.closest("[data-drag]"); if (!h) return; const row = h.closest(".qrow"), box = row && row.parentElement; if (!row) return;
-  ev.preventDefault(); const rows = [...box.children], r0 = row.getBoundingClientRect();
-  DRG = { id: h.dataset.drag, row, box, rows, from: rows.indexOf(row), to: rows.indexOf(row), y0: ev.clientY, h: r0.height + 6, mids: rows.map(r => { const b = r.getBoundingClientRect(); return b.top + b.height / 2; }) };
-  row.classList.add("drag"); try { h.setPointerCapture(ev.pointerId); } catch (e) {} });
-document.addEventListener("pointermove", ev => { if (!DRG) return; ev.preventDefault(); const dy = ev.clientY - DRG.y0, y = DRG.mids[DRG.from] + dy;
-  let to = 0; DRG.mids.forEach((m, i) => { if (i !== DRG.from && y > m) to = i >= DRG.from ? i : i + 1; }); if (y > DRG.mids[DRG.mids.length - 1]) to = DRG.mids.length - 1; to = Math.max(0, Math.min(DRG.rows.length - 1, to)); DRG.to = to;
-  DRG.row.style.transform = "translateY(" + dy + "px)";
-  DRG.rows.forEach((r, i) => { if (r === DRG.row) return; let sh = 0; if (DRG.from < to && i > DRG.from && i <= to) sh = -DRG.h; if (DRG.from > to && i >= to && i < DRG.from) sh = DRG.h; r.style.transform = sh ? "translateY(" + sh + "px)" : ""; });
+document.addEventListener("pointerdown", ev => { const h = ev.target.closest && ev.target.closest("[data-drag]"); if (!h) return; const cell = h.closest(".qcell"), box = cell && cell.closest(".qg"); if (!cell) return;
+  ev.preventDefault(); DRG = { id: h.dataset.drag, cell, box, x0: ev.clientX, y0: ev.clientY, sy0: window.scrollY, drop: null };
+  cell.classList.add("drag"); try { h.setPointerCapture(ev.pointerId); } catch (e) {} });
+function dragMark(d, drop){ d.box.querySelectorAll(".qrow").forEach(r => r.classList.remove("joinT", "insB", "insA")); if (!drop) return; const r = d.box.querySelector('.qrow[data-rk="' + drop.k + '"]'); if (r) r.classList.add(drop.m === "join" ? "joinT" : drop.m === "before" ? "insB" : "insA"); }
+document.addEventListener("pointermove", ev => { if (!DRG) return; ev.preventDefault(); const d = DRG;
+  d.cell.style.transform = "translate(" + (ev.clientX - d.x0) + "px," + (ev.clientY - d.y0 + window.scrollY - d.sy0) + "px)";
+  const u = curUnit(), me = u && u.bl.find(b => b.id === d.id), myRow = me && rowKey(me), rows = [...d.box.querySelectorAll(".qrow")], y = ev.clientY; let drop = null;
+  for (const r of rows) { const b = r.getBoundingClientRect(); if (y < b.top || y > b.bottom) continue; const z = (y - b.top) / b.height, k = r.dataset.rk, alone = k === myRow && r.querySelectorAll(".qcell").length === 1;
+    drop = z > .28 && z < .72 && !alone ? { k, m: "join" } : { k, m: z <= .5 ? "before" : "after" }; break; }
+  if (!drop && rows.length) { const f = rows[0].getBoundingClientRect(), l = rows[rows.length - 1].getBoundingClientRect(); if (y < f.top) drop = { k: rows[0].dataset.rk, m: "before" }; else if (y > l.bottom) drop = { k: rows[rows.length - 1].dataset.rk, m: "after" }; }
+  d.drop = drop; dragMark(d, drop);
   if (ev.clientY < 70) window.scrollBy(0, -12); else if (ev.clientY > window.innerHeight - 90) window.scrollBy(0, 12); }, { passive: false });
-function dragEnd(){ if (!DRG) return; const d = DRG; DRG = null; d.rows.forEach(r => { r.style.transform = ""; }); d.row.classList.remove("drag");
-  if (d.to === d.from) return; mut(() => { const u = curUnit(); if (!u) return; const i = u.bl.findIndex(x => x.id === d.id); if (i < 0) return; const [b] = u.bl.splice(i, 1); u.bl.splice(d.to, 0, b); if (!U.draft) edited(u); }); }
+function dragEnd(){ if (!DRG) return; const d = DRG; DRG = null; d.cell.style.transform = ""; d.cell.classList.remove("drag"); dragMark(d, null); const drop = d.drop; if (!drop) return;
+  const u = curUnit(); if (!u) return; const i = u.bl.findIndex(x => x.id === d.id); if (i < 0) return;
+  const b = u.bl[i], rest = u.bl.filter(x => x !== b), idx = rest.map(rowKey), first = idx.indexOf(drop.k), last = idx.lastIndexOf(drop.k);
+  if (drop.m === "join" && rowKey(b) === drop.k) return;
+  if (first < 0) { if (drop.k !== rowKey(b)) return; }
+  mut(() => { let at;
+    if (drop.m === "join") { b.r = drop.k; at = last + 1; }
+    else { const keep = rowKey(b) === drop.k && first < 0; if (!keep) b.r = "r" + rid(); at = first < 0 ? i : drop.m === "before" ? first : last + 1; }
+    rest.splice(Math.max(0, Math.min(rest.length, at)), 0, b); u.bl = rest; if (!U.draft) edited(u); }); }
 document.addEventListener("pointerup", dragEnd); document.addEventListener("pointercancel", dragEnd);
 
 
