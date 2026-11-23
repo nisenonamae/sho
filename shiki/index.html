@@ -337,6 +337,7 @@ img[data-ph]:not([src]){visibility:hidden}
 .pcard .px{font-size:.86rem;line-height:1.6;overflow-wrap:anywhere;min-width:0}
 .pgrid.n3 .pcb,.pgrid.n4 .pcb{flex-direction:column;gap:.25rem}
 .pgrid.n3 .px,.pgrid.n4 .px{font-size:.78rem}
+.pcard{padding-top:.45rem}
 </style>
 </head>
 <body>
@@ -344,7 +345,7 @@ img[data-ph]:not([src]){visibility:hidden}
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.63";
+const VER = "s2.64";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -573,7 +574,7 @@ function dcatHTML(all){ const cnt = {}; all.forEach(u => { cnt[uCat(u)] = (cnt[u
   return '<div class="dcat">' + [["all", "全部", "#22201C"]].concat(CAT.map(c => [c.id, c.n, c.c])).map(([id, n, c]) => '<button class="' + (cur === id ? "on" : "") + '" style="--c:' + c + '" data-ha="dcat" data-hv="' + id + '">' + n + (id === "all" ? "" : cnt[id] ? "<small>" + cnt[id] + "</small>" : "") + "</button>").join("") + "</div>"; }
 // 全部:時刻で区切って並べ、同じ時刻の記録は横に並べる(種類の色で見分ける)
 function cardHTML(u, solo){ const pt = postText(u), c = catOf(uCat(u)), n = (u.ph || []).length;
-  return '<div class="pcard" style="--c:' + c.c + '" data-ha="uopen" data-hv="' + u.id + '"><small>' + c.n + (!solo && n ? " 📷" + n : "") + '</small><div class="pcb">' + (u.bl.length ? keiHTML(u) : "") +
+  return '<div class="pcard" style="--c:' + c.c + '" data-ha="uopen" data-hv="' + u.id + '">' + (!solo && n ? '<small>📷' + n + "</small>" : "") + '<div class="pcb">' + (u.bl.length ? keiHTML(u) : "") +
     '<div class="px' + (pt.t ? "" : " pxn") + '">' + esc(pt.t || uName(u)) + "</div></div>" + (solo ? phGrid(u.ph) : "") + "</div>"; }
 function allHTML(xs){ const by = []; xs.forEach(u => { const k = hm(u.at), l = by[by.length - 1]; if (l && l.k === k) l.us.push(u); else by.push({ k, us: [u] }); });
   const ord = CAT.map(c => c.id); by.forEach(r => r.us.sort((a, b) => ord.indexOf(uCat(a)) - ord.indexOf(uCat(b)) || a.at - b.at));
