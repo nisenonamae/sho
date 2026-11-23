@@ -1152,7 +1152,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-23 r154";
+const APP_VERSION = "2026-11-23 r155";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5543,7 +5543,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.64";
+const APP_VERSION = "h5.65";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6505,7 +6505,7 @@ function partDebate(s, p, i, n, nx){
     (goalOf(rr).text ? '<div class="meta">目的:' + esc(goalOf(rr).text) + "</div>" : "") +
     '<p class="note" style="margin:.5rem 0 0">手順・いつ・どれくらい・崩れたときの代わりを決める。決まったことは勢力図のフローになる。</p></div></div>' : "";
   const near = s.limit ? left < 180000 : d.e.filter(e => e.k === "say" || e.k === "shingi").length >= 4;
-  const closeCard = near ? '<div class="card" style="margin-top:.6rem"><div class="ch"><b>この審議を閉じる前に</b><span>' + (s.limit ? "時間が近づくと出る" : "発言がたまると出る") + '</span></div><div class="cb"><div class="empty">' + (hasSum ? "まとめは書けている。残った問いがあれば、新しい審議か議題箱へ。" : "下の入力を「まとめ」にして、2〜3行でまとめる。") + '</div><div class="chips" style="margin-top:.5rem"><button class="chip on" data-ha="sheet" data-hs="issue">新しい論点で審議を足す</button><button class="chip" data-ha="sheet" data-hs="issue" data-hv="box">議題箱へ</button>' + (s.limit ? '<button class="chip" data-ha="extend">5分のばす</button>' : "") + "</div></div></div>" : "";
+  const closeCard = near ? '<div class="card" style="margin-top:.6rem"><div class="ch"><b>この審議を閉じる前に</b><span>' + (s.limit ? "時間が近づくと出る" : "発言がたまると出る") + '</span></div><div class="cb"><div class="empty">' + (hasSum ? "まとめは書けている。残った問いがあれば、新しい審議か議題箱へ。" : "議長の書き方の「整理」で、ここまでを2〜3行でまとめる。整理は議決に出る。") + '</div><div class="chips" style="margin-top:.5rem">' + (hasSum ? "" : '<button class="chip on" data-ha="sumgo">まとめを書く(議長・整理)</button>') + '<button class="chip' + (hasSum ? " on" : "") + '" data-ha="sheet" data-hs="issue">新しい論点で審議を足す</button><button class="chip" data-ha="sheet" data-hs="issue" data-hv="box">議題箱へ</button>' + (s.limit ? '<button class="chip" data-ha="extend">5分のばす</button>' : "") + "</div></div></div>" : "";
   // 入力
   const seat = U.seat === "C" ? "C" : U.seat === "sh" || !seatOK(U.seat) ? "sh" : U.seat;
   const seatsHTML = '<div class="seats"><button class="seat sh' + (seat === "sh" || seat === "C" ? " on" : "") + '" style="--c:#22201C" data-ha="seat" data-hv="sh"><span class="av">議</span>議長' + (d.ask && d.ask.wait ? '<i class="dot" style="background:' + CLAUDE.c + '"></i>' : "") + '</button>' +
@@ -6702,7 +6702,7 @@ function partResolve(s, p, i, n, nx){
       return '<div class="grp"><div class="gh" style="color:' + col + '"><i style="background:' + col + '"></i>' + name + "</div>" + its.map(x =>
         '<div class="ln">' + (x.sh ? '<span class="tgx" style="background:' + x.col + '">' + esc(x.sh) + "</span>" : "") + "<em>" + esc(x.x) + (x.by && x.grp === "voice" ? '<small class="byx">' + esc(x.by) + "</small>" : "") + "</em>" +
         (x.put ? (used[x.id] ? '<span class="put done">入れた</span>' : '<button class="put" data-ha="mput" data-hk="' + g.key + '" data-hv="' + esc(x.id) + '">入れる</button>') : "") + "</div>").join("") + "</div>"; }).join("")
-      : '<div class="cb"><div class="empty">まとめはまだない。審議で「まとめ」や「案」を書くとここに出る。</div></div>') + "</div>");
+      : '<div class="cb"><div class="empty">まとめはまだない。審議で議長の「整理」(まとめ)や「案」を書くとここに出る。</div></div>') + "</div>");
   const cnt = mapCount(m2);
   const mapCard = '<div class="card"><div class="ch"><b>勢力図</b><span>決めたことは囲みの中に流れで。考えはまわりに</span></div>' +
     (kids.length ? '<p class="note" style="margin:0;padding:.5rem .8rem 0">中の審議で決めたことは、分かれ道として下書きを置いた。押すと直せる。' + '<button class="lnk" data-ha="mapdraft" data-hk="' + esc(g.key) + '">下書きを置き直す</button></p>' : "") +
@@ -7216,6 +7216,7 @@ function onClick(ev){
       const nx = nextPart(s); mut(() => { cp.done = true; if (nx) goPart(s, nx.id); }); if (!nx) toast("最後のパーツ。閉会は構成から足せる。"); return;
     }
     case "goto": U.sheet = null; mut(() => goPart(s, v)); return;
+    case "sumgo": U.seat = "sh"; U.smode = "sum"; saveUI(); render(); { const c = $("#hy-comp"); if (c) c.focus({ preventScroll: true }); } return;
     case "pdel": { const i = s.parts.findIndex(p => p.id === v), p = s.parts[i]; if (!p || p.id === s.cur || p.t === "close") return;
       const d = p.d && s.debates[p.d], n = d ? d.e.filter(e => e.k !== "pause").length : 0, nm = p.t === "debate" ? "審議" + (d ? circ(dn(s, d)) : "") : p.t === "goal" ? "目的の審議" : T[p.t].n;
       if (!confirm(nm + "を消しますか。" + (n ? "中の発言 " + n + " 件も消えます。" : "") + (subEnd(s, i) > i + 1 ? "中に入れ子の審議があれば、ひとつ外に出します。" : ""))) return;
