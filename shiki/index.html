@@ -278,6 +278,20 @@ img[data-ph]:not([src]){visibility:hidden}
 .qrow.multi .qdel{width:1.55rem}
 .qrow:not(.multi){padding-left:0}
 .qrow.multi{padding:.3rem}
+
+/* ブロックの中身は1行。長いものは … で省く(押すと全部見える) */
+.qb .q1{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.qb{min-height:3.4rem}
+/* 選択肢を直す */
+.qsub .oedit{float:right;border:0;background:none;color:var(--sub);font-size:.72rem;font-family:inherit;cursor:pointer;text-decoration:underline}
+.ogrp{border-left:4px solid var(--g);padding:.15rem 0 .5rem .6rem;margin:.55rem 0}
+.ogh{display:flex;align-items:center;gap:.35rem;border:0;background:none;font-family:inherit;font-size:.86rem;font-weight:800;color:var(--ink);padding:.15rem 0 .35rem;cursor:pointer}
+.ogh i{width:.6rem;height:.6rem;border-radius:50%;background:var(--g)}.ogh small{color:var(--sub);font-weight:400;font-size:.7rem}
+.oed{margin:.45rem 0 .2rem;padding:.55rem;border-radius:10px;background:rgba(0,0,0,.04)}
+.orow{display:flex;gap:.35rem;align-items:center;margin-top:.4rem}.orow span{flex:1}
+.ogs{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.45rem}.ogs button{border:1.5px solid var(--rule);background:var(--white);border-radius:8px;padding:.15rem .5rem;font-size:.75rem;font-family:inherit;cursor:pointer}.ogs button.on{border-color:var(--g);background:var(--g);color:#fff}
+.ocol{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.45rem}.ocol button{width:1.6rem;height:1.6rem;border-radius:50%;border:2px solid transparent;background:var(--g);cursor:pointer}.ocol button.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px #fff}
+.oadd{display:inline-flex;gap:.3rem;align-items:center}.oadd .fi{width:8rem;padding:.25rem .5rem}
 </style>
 </head>
 <body>
@@ -285,7 +299,7 @@ img[data-ph]:not([src]){visibility:hidden}
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.43";
+const VER = "s2.50";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -321,7 +335,7 @@ const CAT = [{ id: "o", n: "客観", c: "#2F4F8A", base: "#E1E7F0" }, { id: "s",
 const catOf = id => CAT.find(c => c.id === id) || CAT[0];
 // 選択肢は2段。上の段=種類(Claude が決める。ほぼ増えない)、下の段=中身(自分で無限に足せる)
 // 観点はふだん種類で描き、中身は細い層として同じ絵に入る(押すと種類の中だけに分かれる)
-const GRP = {
+const GRP0 = {
   act: [["study", "勉強", "📚", "#3F6FB0", ["青チャート", "英単語", "Anki", "鉄緑の授業"]], ["make", "つくる", "🛠", "#C97F2E", ["アプリづくり", "動画づくり"]], ["move", "体を動かす", "🏃", "#4F8A6B", ["散歩", "筋トレ"]],
     ["rest", "休む", "🛌", "#8A7FB8", ["寝た", "ぼーっと"]], ["life", "生活", "🍚", "#A8841E", ["ごはん", "お風呂", "家事"]], ["screen", "スマホ・画面", "📱", "#B8553F", ["スマホ", "動画", "ゲーム"]], ["ppl", "人と", "👥", "#4E8E8A", ["話した", "出かけた"]]],
   place: [["home", "家", "🏠", "#A8841E", ["自分の部屋", "リビング"]], ["school", "学校・塾", "🏫", "#3F6FB0", ["鉄緑"]], ["out", "外", "🌳", "#4F8A6B", ["本屋", "公園", "カフェ"]], ["trans", "移動中", "🚃", "#6F7A87", ["電車", "歩き"]]],
@@ -332,13 +346,13 @@ const GRP = {
 };
 const ETC = ["etc", "ほか", "・", "#9C917C", []];
 const POOL = { amt: ["ちょっと", "ふつう", "たっぷり"] };
-Object.entries(GRP).forEach(([p, gs]) => { POOL[p] = [].concat(...gs.map(g => g[4])); });
+Object.entries(GRP0).forEach(([p, gs]) => { POOL[p] = [].concat(...gs.map(g => g[4])); });
 const FIXED = { amt: true };
-const grpList = p => (GRP[p] || []).concat(Object.values(D.opts).some(o => o && !o.del && o.p === p && (!o.g || o.g === "etc")) || usedEtc(p) ? [ETC] : []);
+const grpList = p => { if (!GRP0[p]) return []; const eg = effGroups(p); return eg.gs.concat(eg.etc.length ? [["etc", "ほか", "・", "#9C917C", eg.etc]] : []); };
 // その中身がどの種類か(自分で足したものは足したときの種類。わからないものは「ほか」)
-function gOf(p, v){ for (const g of GRP[p] || []) if (g[4].includes(v)) return g; const o = Object.values(D.opts).find(o => o && !o.del && o.p === p && o.v === v); return (o && (GRP[p] || []).find(g => g[0] === o.g)) || ETC; }
+function gOf(p, v){ return grpList(p).find(g => g[4].includes(v)) || ETC; }
 function usedEtc(p){ return false; }
-function grpItems(p, gid){ const g = (GRP[p] || []).find(x => x[0] === gid); return Array.from(new Set((g ? g[4] : []).concat(Object.values(D.opts).filter(o => o && !o.del && o.p === p && (o.g || "etc") === gid).map(o => o.v)))); }
+function grpItems(p, gid){ const g = grpList(p).find(x => x[0] === gid); return g ? g[4] : []; }
 const FEEL_E = { "うれしい": "😊", "たのしい": "😆", "ほっとした": "😌", "落ち着いた": "🍵", "やる気": "🔥", "不安": "😟", "イライラ": "😤", "逃げたい": "🫠", "焦り": "😣", "つかれた": "😮‍💨", "さみしい": "🥲" };
 // ブロック(作るのは Claude。中身の形が決まっているので、年表での見せ方も決められる)
 const BK = {
@@ -401,7 +415,7 @@ function uFull(u){ return [u.x && u.x.trim() ? u.x.trim().replace(/\n/g, " ") : 
 // 年表に載せる形
 function chronEntries(){ return unitList().flatMap(u => uCats(u).map(id => { const c = catOf(id); return { id: u.id, day: u.day, at: u.at, t: c.id === "s" ? "h" : "a", c: c.c, kn: c.n, x: uFull(u), e: u.e || uEmo(u), b: u.b, top: u.top }; })); }
 // 選択肢:よく使うものから並ぶ
-function poolOpts(p){ const base = (POOL[p] || []).concat(Object.values(D.opts).filter(o => o && !o.del && o.p === p).map(o => o.v)), uniq = Array.from(new Set(base)), cnt = {};
+function poolOpts(p){ const base = GRP0[p] ? grpList(p).flatMap(g => g[4]) : (POOL[p] || []).concat(Object.values(D.opts).filter(o => o && !o.del && !o.t && o.b == null && o.p === p).map(o => o.v)), uniq = Array.from(new Set(base)), cnt = {};
   const fs = []; Object.entries(BK).forEach(([k, bk]) => bk.f.forEach(f => { if (f.p === p) fs.push([k, f.k]); }));
   Object.values(D.units).forEach(u => { if (!u || u.del || !u.bl) return; u.bl.forEach(b => fs.forEach(([k, fk]) => { if (b.k !== k || !b.v) return; [].concat(b.v[fk] || []).forEach(v => { cnt[v] = (cnt[v] || 0) + 1; }); })); });
   return FIXED[p] ? uniq : uniq.map((v, i) => [v, i]).sort((a, b) => (cnt[b[0]] || 0) - (cnt[a[0]] || 0) || a[1] - b[1]).map(a => a[0]); }
@@ -429,7 +443,7 @@ const rowKey = b => b.r || b.id;
 function blRows(bl){ const rows = []; bl.forEach(b => { const k = rowKey(b), last = rows[rows.length - 1]; if (last && last.k === k) last.bs.push(b); else rows.push({ k, bs: [b] }); }); return rows; }
 function blockHTML(b){ const bk = bkOf(b.k), s = bSum(b), lv = b.k === "kimo" && b.v && b.v.lv ? '<i class="qdots">' + "●".repeat(b.v.lv) + "○".repeat(5 - b.v.lv) + "</i>" : "";
   return '<div class="qcell" data-bid="' + b.id + '">' +
-    '<button class="qb' + (bk.paper ? " p" : "") + '" style="--c:' + bk.c + '" data-ha="kopen" data-hv="' + b.id + '"><small>' + bk.n + "</small><span>" + (s ? esc(s) : lv ? "" : "<em>押して入れる</em>") + lv + "</span></button>" +
+    '<button class="qb' + (bk.paper ? " p" : "") + '" style="--c:' + bk.c + '" data-ha="kopen" data-hv="' + b.id + '"><small>' + bk.n + "</small><span class=\"q1\">" + (s ? esc(s.replace(/\n→ /g, " → ").replace(/\n/g, "・")) : lv ? "" : "<em>押して入れる</em>") + lv + "</span></button>" +
     '<button class="qdel" data-ha="kdel" data-hv="' + b.id + '" aria-label="消す">✕</button><span class="qdrag" data-drag="' + b.id + '" aria-label="動かす" title="つかんで動かす">≡</span></div>'; }
 const rowsHTML = bl => blRows(bl).map(r => '<div class="qrow' + (r.bs.length > 1 ? " multi" : "") + '" data-rk="' + r.k + '">' + r.bs.map(blockHTML).join("") + "</div>").join("");
 function viewUnit(u){
@@ -469,7 +483,7 @@ function fieldHTML(f, val){
   const top = poolOpts(f.p).slice(0, 6); vs.forEach(v => { if (!top.includes(v)) top.push(v); });
   const open = U.grp && U.grp.k === f.k ? U.grp.g : null, og = open && grpList(f.p).find(g => g[0] === open);
   return '<div class="qsub">よく使う</div><div class="chips">' + top.map(chip).join("") + "</div>" +
-    '<div class="qsub">種類から選ぶ</div><div class="qgs">' + grpList(f.p).map(g => '<button class="' + (open === g[0] ? "on" : "") + '" style="--g:' + g[3] + '" data-ha="kg" data-hv="' + f.k + '" data-hx="' + g[0] + '">' + g[2] + " " + g[1] + "</button>").join("") + "</div>" +
+    '<div class="qsub">種類から選ぶ<button class="oedit" data-ha="oopen" data-hv="' + f.p + '">✎ 選択肢を直す</button></div><div class="qgs">' + grpList(f.p).map(g => '<button class="' + (open === g[0] ? "on" : "") + '" style="--g:' + g[3] + '" data-ha="kg" data-hv="' + f.k + '" data-hx="' + g[0] + '">' + g[2] + " " + g[1] + "</button>").join("") + "</div>" +
     (og ? '<div class="qcr">' + og[1] + " ›</div><div class=\"chips\">" + grpItems(f.p, og[0]).map(chip).join("") + '<button class="chip add" data-ha="kopt" data-hv="' + f.k + '" data-hx="' + og[0] + '">＋ ' + og[1] + "に足す</button></div>" : "");
 }
 // 事情:いま続いているもの(ここ2週間に出たもの)を新しい順に出す。古いものは奥へ
@@ -526,6 +540,76 @@ function viewCal(){
     '<div class="cal">' + ["月", "火", "水", "木", "金", "土", "日"].map(w => "<span>" + w + "</span>").join("") + cells + "</div>" + '<p class="note" style="margin:.5rem 2px">右下の数 = その日の記録の数。点 = その日の気持ちの色。写真のある日は写真が出る。</p>';
 }
 function sheetPhv(){ const id = (U.arg || {}).ph; return id ? '<div class="phv" data-ha="close">' + phImg(id) + "</div>" : ""; }
+
+
+/* ───────── 選択肢(種類と中身)を自由に直す・足す。直した名前は今までの記録にも反映する ───────── */
+// 直したものは D.opts に入れる(同期は今までどおり)。種類 = { t:"g", gid }、もとからある中身を直したもの = { b:"もとの名前" }
+const OPOOLS = [["act", "行動"], ["place", "場所"], ["why", "理由(ひとことで)"], ["feel", "気持ち"], ["who", "だれと"]];
+const OCOLORS = ["#E2B23C", "#C97F2E", "#C9584A", "#B0699A", "#8A7FB8", "#6F86B0", "#3F6FB0", "#4E8E8A", "#4F8A6B", "#6FAF8E", "#A8841E", "#9C917C", "#6F7A87"];
+const oList = p => Object.values(D.opts).filter(o => o && o.p === p);
+function effGroups(p){
+  const base = GRP0[p] || [], ov = oList(p), gov = {}, iov = {};
+  ov.forEach(o => { if (o.t === "g") gov[o.gid] = o; else if (o.b != null) iov[o.b] = o; });
+  const gs = base.map((g, i) => { const o = gov[g[0]] || {}; return { id: g[0], n: o.n || g[1], e: o.e != null ? o.e : g[2], c: o.c || g[3], ord: o.ord != null ? o.ord : i, del: !!o.del, xs: [] }; });
+  Object.values(gov).forEach(o => { if (!base.some(g => g[0] === o.gid)) gs.push({ id: o.gid, n: o.n || "新しい種類", e: o.e || "・", c: o.c || "#9C917C", ord: o.ord != null ? o.ord : 100 + (o.u || 0) / 1e13, del: !!o.del, xs: [] }); });
+  const by = {}, etc = [], seen = new Set(); gs.forEach(g => { by[g.id] = g; });
+  const put = (gid, v) => { if (!v || seen.has(v)) return; seen.add(v); const g = by[gid]; if (g && !g.del) g.xs.push(v); else etc.push(v); };
+  base.forEach(g => g[4].forEach(v => { const o = iov[v]; if (!o) put(g[0], v); else if (!o.del) put(o.g || g[0], o.v || v); }));
+  ov.forEach(o => { if (!o.t && o.b == null && !o.del) put(o.g || "etc", o.v); });
+  const out = gs.filter(g => !g.del).sort((a, b) => a.ord - b.ord).map(g => [g.id, g.n, g.e, g.c, g.xs]);
+  return { gs: out, etc };
+}
+const GRP = new Proxy({}, { get: (t, p) => typeof p === "string" && GRP0[p] ? effGroups(p).gs : undefined });
+// どの記録の、どの欄がこの選択肢を使っているか
+function poolFields(p){ const out = []; Object.entries(BK).forEach(([k, bk]) => bk.f.forEach(f => { if (f.p === p) out.push([k, f.k]); })); return out; }
+function renameInRecords(p, from, to){ if (from === to) return 0; const fs = poolFields(p); let n = 0;
+  Object.values(D.units).forEach(u => { if (!u || !u.bl) return; let ch = false; u.bl.forEach(b => { if (!b.v) return; fs.forEach(([k, fk]) => { if (b.k !== k) return; const v = b.v[fk];
+    if (v === from) { b.v[fk] = to; ch = true; } else if (Array.isArray(v) && v.includes(from)) { b.v[fk] = Array.from(new Set(v.map(x => x === from ? to : x))); ch = true; } }); }); if (ch) { touch(u); n++; } });
+  return n; }
+// 中身を探す(自分で足したもの/もとからあるものを直したもの/もとからあるもの)
+function oFind(p, v){ const ov = oList(p); let o = ov.find(o => !o.t && !o.del && o.v === v && (o.b == null || o.b != null)); if (o) return { o };
+  for (const g of GRP0[p] || []) if (g[4].includes(v)) return { b: v, g: g[0] }; return null; }
+function oTouch(p, v){ // 直すための入れ物を返す
+  const f = oFind(p, v); if (!f) return null; if (f.o) return f.o;
+  const id = "b" + p + hsh(f.b); D.opts[id] = D.opts[id] || { id, p, b: f.b, v: f.b, g: f.g }; return D.opts[id]; }
+function gTouch(p, gid){ const id = "g" + p + "_" + gid, base = (GRP0[p] || []).find(g => g[0] === gid);
+  D.opts[id] = D.opts[id] || Object.assign({ id, t: "g", p, gid }, base ? {} : { n: "新しい種類", e: "・", c: "#9C917C" }); return D.opts[id]; }
+function sheetOpts(){ const p = (U.arg || {}).pool || "feel", nm = (OPOOLS.find(x => x[0] === p) || [, p])[1], eg = effGroups(p), oe = U.oe || {};
+  const gsAll = eg.gs.concat(eg.etc.length ? [["etc", "ほか", "・", "#9C917C", eg.etc]] : []);
+  const itemEd = (g, v) => '<div class="oed"><input class="fi" id="sk-oname" value="' + esc(v) + '"><div class="ogs">' + eg.gs.map(x => '<button class="' + (x[0] === g[0] ? "on" : "") + '" style="--g:' + x[3] + '" data-ha="omv" data-hv="' + x[0] + '">' + x[2] + " " + esc(x[1]) + "</button>").join("") + "</div>" +
+    '<div class="orow"><button class="chip" data-ha="odel">消す</button><span></span><button class="chip" data-ha="oclose">やめる</button><button class="chip on" data-ha="osave">直す</button></div><p class="note" style="margin:.3rem 0 0">名前を直すと、今までの記録の中の名前も直る。消しても、今までの記録はそのまま残る。</p></div>';
+  const grpEd = g => '<div class="oed"><div class="orow"><input class="fi" id="sk-oge" value="' + esc(g[2]) + '" style="width:3.2rem;text-align:center"><input class="fi" id="sk-ogn" value="' + esc(g[1]) + '" style="flex:1"></div>' +
+    '<div class="ocol">' + OCOLORS.map(c => '<button class="' + (c === g[3] ? "on" : "") + '" style="--g:' + c + '" data-ha="ogc" data-hv="' + c + '"></button>').join("") + "</div>" +
+    '<div class="orow"><button class="chip" data-ha="ogmv" data-hv="-1">↑</button><button class="chip" data-ha="ogmv" data-hv="1">↓</button><button class="chip" data-ha="ogdel">この種類を消す</button><span></span><button class="chip" data-ha="oclose">やめる</button><button class="chip on" data-ha="ogsave">直す</button></div><p class="note" style="margin:.3rem 0 0">種類を消すと、中身は「ほか」に移る。</p></div>';
+  return sheetWrap('<h3>' + esc(nm) + "の選択肢</h3>" + '<p class="d" style="margin:0 0 .6rem">種類の名前を押すと種類を、中身を押すと中身を直せる。</p>' +
+    gsAll.map(g => '<div class="ogrp" style="--g:' + g[3] + '">' + (g[0] === "etc" ? '<div class="ogh"><i></i>' + g[2] + " " + g[1] + "</div>" : '<button class="ogh" data-ha="oge" data-hv="' + g[0] + '"><i></i>' + g[2] + " " + esc(g[1]) + '<small>✎</small></button>') +
+      (oe.k === "g" && oe.id === g[0] ? grpEd(g) : "") +
+      '<div class="chips">' + g[4].map(v => '<button class="chip' + (oe.k === "i" && oe.v === v ? " on" : "") + '" data-ha="oie" data-hv="' + esc(v) + '">' + esc(v) + "</button>").join("") +
+      (g[0] === "etc" ? "" : (oe.k === "a" && oe.g === g[0] ? '<span class="oadd"><input class="fi" id="sk-oadd" placeholder="足す名前"><button class="chip on" data-ha="oaddok">足す</button></span>' : '<button class="chip add" data-ha="oadd" data-hv="' + g[0] + '">＋ 足す</button>')) + "</div>" +
+      (oe.k === "i" && g[4].includes(oe.v) ? itemEd(g, oe.v) : "") + "</div>").join("") +
+    '<button class="chip add" style="margin-top:.6rem" data-ha="ogadd">＋ 種類を足す</button>' +
+    '<button class="bigbtn" data-ha="oback">' + (U.optBack ? "もどる" : "とじる") + "</button>");
+}
+function optAct(a, v){ const p = (U.arg || {}).pool, oe = U.oe || {};
+  if (a === "oie") { U.oe = oe.k === "i" && oe.v === v ? null : { k: "i", v }; render(); const el = $("#sk-oname"); if (el) el.focus(); return true; }
+  if (a === "oge") { U.oe = oe.k === "g" && oe.id === v ? null : { k: "g", id: v }; render(); return true; }
+  if (a === "oadd") { U.oe = { k: "a", g: v }; render(); const el = $("#sk-oadd"); if (el) el.focus(); return true; }
+  if (a === "oclose") { U.oe = null; render(); return true; }
+  if (a === "oaddok") { const t = (($("#sk-oadd") || {}).value || "").trim(); if (!t) return true; if (effGroups(p).gs.some(g => g[4].includes(t)) || effGroups(p).etc.includes(t)) { toast("もうある"); return true; }
+    mut(() => { const id = rid(); D.opts[id] = { id, p, g: oe.g, v: t, u: now() }; U.oe = { k: "a", g: oe.g }; }); const el = $("#sk-oadd"); if (el) el.focus(); return true; }
+  if (a === "osave") { const t = (($("#sk-oname") || {}).value || "").trim(); if (!t || t === oe.v) { U.oe = null; render(); return true; }
+    if (effGroups(p).gs.some(g => g[4].includes(t)) || effGroups(p).etc.includes(t)) { toast("その名前はもうある"); return true; }
+    let n = 0; mut(() => { const o = oTouch(p, oe.v); if (!o) return; o.v = t; o.u = now(); n = renameInRecords(p, oe.v, t); U.oe = null; }); toast(n ? "直した(記録 " + n + " 件も)" : "直した"); return true; }
+  if (a === "omv") { mut(() => { const o = oTouch(p, oe.v); if (o) { o.g = v; o.u = now(); } }); return true; }
+  if (a === "odel") { mut(() => { const o = oTouch(p, oe.v); if (o) { o.del = true; o.u = now(); } U.oe = null; }); toast("消した(記録はそのまま)"); return true; }
+  if (a === "ogc") { mut(() => { const o = gTouch(p, oe.id); o.c = v; o.u = now(); }); return true; }
+  if (a === "ogsave") { const n = (($("#sk-ogn") || {}).value || "").trim(), e = (($("#sk-oge") || {}).value || "").trim(); mut(() => { const o = gTouch(p, oe.id); if (n) o.n = n; o.e = e || "・"; o.u = now(); U.oe = null; }); return true; }
+  if (a === "ogmv") { mut(() => { const gs = effGroups(p).gs, i = gs.findIndex(g => g[0] === oe.id), j = i + (+v); if (i < 0 || j < 0 || j >= gs.length) return; gs.forEach((g, k) => { const o = gTouch(p, g[0]); o.ord = k === i ? j : k === j ? i : k; o.u = now(); }); }); return true; }
+  if (a === "ogdel") { if (!confirm("この種類を消しますか。中身は「ほか」に移ります。")) return true; mut(() => { const o = gTouch(p, oe.id); o.del = true; o.u = now(); U.oe = null; }); return true; }
+  if (a === "ogadd") { mut(() => { const gid = "u" + rid(), o = gTouch(p, gid); o.n = "新しい種類"; o.e = "・"; o.c = OCOLORS[effGroups(p).gs.length % OCOLORS.length]; o.ord = 1000 + effGroups(p).gs.length; o.u = now(); U.oe = { k: "g", id: gid }; }); return true; }
+  if (a === "oback") { U.oe = null; U.sheet = U.optBack || null; U.optBack = null; if (U.sheet === "blk") U.arg = U.optArg; render(); return true; }
+  if (a === "oopen") { U.optBack = U.sheet === "blk" ? "blk" : null; U.optArg = U.arg; U.arg = { pool: v }; U.oe = null; U.sheet = "opts"; render(); return true; }
+  return false; }
 
 const kindOf = x => NKIND.some(k => k.id === x.t) ? x.t : "a";
 function emoGuess(x){ const t = String(x.x || ""), hit = EMO_KW.find(([w]) => t.includes(w)); if (hit) return hit[1]; const d = EMO_DEF[kindOf(x)]; return d[hsh(x.id) % d.length]; }
@@ -627,7 +711,7 @@ function curve(pts){ let s = "M" + sp(pts[0][0], pts[0][1]); for (let i = 1; i <
 // 中身を種類の順に並べ、それぞれに色を付ける
 function layers(p, totals, drill){ const gs = grpList(p).concat(GRP[p] && GRP[p].some(g => g[0] === "etc") ? [] : []), byG = {};
   Object.keys(totals).forEach(v => { const g = gOf(p, v); if (drill && g[0] !== drill) return; (byG[g[0]] = byG[g[0]] || { g, xs: [] }).xs.push(v); });
-  const order = (GRP[p] || []).map(g => g[0]).concat(["etc"]), out = [];
+  const order = grpList(p).map(g => g[0]).concat(["etc"]), out = [];
   order.forEach(gid => { const o = byG[gid]; if (!o) return; o.xs.sort((a, b) => totals[b] - totals[a]); o.xs.forEach((v, j) => out.push({ v, g: o.g, c: shade(o.g[3], drill ? j * 0.5 / Math.max(1, o.xs.length - 1) : j * 0.13) })); });
   return out; }
 function viewRiver(V, R, data){
@@ -705,6 +789,7 @@ function sheetSet(){ const c = NET.conn, n = unitList().length;
     '<p class="setp">' + (c ? "省アプリのつながりを借りて、" + esc(c.owner) + "/" + esc(c.repo) + " に保存している。ほかの端末にも自動で出る。" : "まだどこにもつながっていない。省アプリでつなぐと、ここも自動でつながる。") + "</p>" +
     (c ? '<button class="chip" data-ha="sync">いま同期する</button>' : "") +
     '<div class="nwl">記録</div><p class="setp">ユニット ' + n + " 件・自分で足した選択肢 " + Object.values(D.opts).filter(o => o && !o.del).length + " 件</p>" +
+    '<div class="nwl">選択肢</div><div class="chips">' + OPOOLS.map(([p, n]) => '<button class="chip" data-ha="oopen" data-hv="' + p + '">' + n + "</button>").join("") + "</div>" +
     '<div class="nwl">版</div><p class="setp">史記 ' + VER + "</p>" + '<button class="bigbtn" data-ha="close">とじる</button>'); }
 function sheetList(){
   const a = U.arg || {}, all = chronEntries(), tops = nTops(all), xs = all.filter(x => x.day >= a.from && x.day <= a.to && pinBand(x) === (a.b || null) && (U.nh || kindOf(x) !== "h")), days = Array.from(new Set(xs.map(x => x.day)));
@@ -722,7 +807,7 @@ function render(){
   const tab = ["n", "v"].includes(U.tab) ? U.tab : "r", u = curUnit(); if (!u) { U.unit = null; U.draft = null; }
   app.innerHTML = u ? viewUnit(u) : '<header class="hd"><h1>史記</h1><nav class="tabs">' + [["r", "記す"], ["v", "観点"], ["n", "年表"]].map(([k, n]) => '<button class="' + (tab === k ? "on" : "") + '" data-ha="tab" data-hv="' + k + '">' + n + "</button>").join("") + '</nav><button class="gear' + (NET.state === "err" ? " err" : "") + '" data-ha="set" aria-label="設定">⚙</button></header>' +
     (tab === "n" ? viewChron(chronEntries()) : tab === "v" ? viewKanten() : U.cal ? viewCal() : viewDay());
-  $("#sheet").innerHTML = U.sheet === "phv" ? sheetPhv() : U.sheet === "set" ? sheetSet() : U.sheet === "blk" ? sheetBlk() : U.sheet === "list" ? sheetList() : U.sheet === "band" ? sheetBand() : "";
+  $("#sheet").innerHTML = U.sheet === "phv" ? sheetPhv() : U.sheet === "set" ? sheetSet() : U.sheet === "blk" ? sheetBlk() : U.sheet === "list" ? sheetList() : U.sheet === "band" ? sheetBand() : U.sheet === "opts" ? sheetOpts() : "";
   if (U.sheet && !$("#sheet").innerHTML) U.sheet = null;
   document.body.classList.toggle("lock", !!U.sheet);
   { const tl = $("#sk-tl"); if (tl) { if (!tls || tls.z !== tl.dataset.z) tl.scrollLeft = +tl.dataset.td >= 0 ? Math.max(0, +tl.dataset.td - tl.clientWidth * 0.78) : 0; else tl.scrollLeft = tls.l; } }
@@ -748,10 +833,11 @@ function setField(fk, fn){ mut(() => { const u = ensureSaved(), b = u.bl.find(x 
 function edited(u){ touch(u); if (u.c && now() - u.c > 10 * 60000) u.e2 = now(); }
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-ha]"); if (!b || b.disabled) return; const a = b.dataset.ha, v = b.dataset.hv;
+  if (a[0] === "o" && optAct(a, v)) return;
   switch (a) {
     case "tab": U.tab = v; U.bottom = true; U.lim = 120; U.draw = null; saveUI(); render(); return;
     case "more": U.lim += 200; U.keep = document.documentElement.scrollHeight; render(); return;
-    case "close": U.sheet = null; render(); return;
+    case "close": if (U.sheet === "opts") { optAct("oback"); return; } U.sheet = null; render(); return;
     // 記す(タイムライン)
     case "dmv": { const d = addDays(curDay(), +v); U.day = d > today() ? today() : d; U.qat = null; U.bottom = true; render(); return; }
     case "dtoday": U.day = null; U.qat = null; U.bottom = true; render(); return;
