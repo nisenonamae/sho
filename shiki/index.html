@@ -308,13 +308,16 @@ img[data-ph]:not([src]){visibility:hidden}
 .chip.add[style*="--c"]{color:var(--c);border-color:var(--c)}
 
 /* タイムライン:札は1行だけ(右は薄く消える)。全体の形は左の景観で見る */
-.post .pt{display:flex;flex-direction:column;align-items:flex-start;gap:.35rem}
+
 .kei{display:flex;flex-direction:column;gap:2px;padding:3px;border-radius:5px;width:2.3rem;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
 .kei span{display:flex;gap:2px;height:4px}.kei i{flex:1;border-radius:1.5px;min-width:3px}
 .kei em{font-style:normal;font-size:.55rem;color:var(--sub);line-height:1;text-align:center}
 .ptags{flex-wrap:nowrap;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
 .ptags .tg{flex:none;max-width:12rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptags .tgg{flex:none;flex-wrap:nowrap}
+.post .kei{flex:none;align-self:flex-start;margin-top:.2rem}
+.post .kei.none{width:2.3rem;box-shadow:none;background:none}
+.post .px.pxn{color:var(--sub)}
 </style>
 </head>
 <body>
@@ -322,7 +325,7 @@ img[data-ph]:not([src]){visibility:hidden}
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.53";
+const VER = "s2.54";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -540,9 +543,10 @@ function phGrid(ph){ if (!ph || !ph.length) return ""; return '<div class="pims'
 // 景観:ブロックの積み方をそのまま小さな絵にしたもの(色の帯=ブロック、横に並ぶ=同時)。行が多くても大きさは変わらない
 function keiHTML(u){ const rows = blRows(u.bl), max = 6, rs = rows.slice(0, max);
   return '<span class="kei" style="background:' + catBase(u) + '">' + rs.map(r => "<span>" + r.bs.map(b => '<i style="background:' + bkOf(b.k).c + '"></i>').join("") + "</span>").join("") + (rows.length > max ? "<em>+" + (rows.length - max) + "</em>" : "") + "</span>"; }
-function postHTML(u){ const pt = postText(u), bl = u.bl.filter(b => b.id !== pt.skip);
-  return '<div class="post" data-ha="uopen" data-hv="' + u.id + '"><span class="pt">' + hm(u.at) + (u.bl.length ? keiHTML(u) : "") + '</span><div class="pc">' + (pt.t ? '<div class="px">' + esc(pt.t) + "</div>" : "") + phGrid(u.ph) +
-    (bl.length ? '<div class="ptags">' + blRows(bl).map(r => r.bs.length > 1 ? '<span class="tgg">' + r.bs.map(tagHTML).join("") + "</span>" : tagHTML(r.bs[0])).join("") + "</div>" : "") + "</div></div>"; }
+// 1件 = 時刻 | 景観(ブロックの積み方の小さな絵) | 総合の字と写真。ブロックの札は出さない(押すと積み木の画面で全部見える)
+function postHTML(u){ const pt = postText(u);
+  return '<div class="post" data-ha="uopen" data-hv="' + u.id + '"><span class="pt">' + hm(u.at) + "</span>" + (u.bl.length ? keiHTML(u) : '<span class="kei none"></span>') +
+    '<div class="pc">' + (pt.t ? '<div class="px">' + esc(pt.t) + "</div>" : '<div class="px pxn">' + esc(uName(u)) + "</div>") + phGrid(u.ph) + "</div></div>"; }
 const curDay = () => U.day && U.day <= today() ? U.day : today();
 // 下の欄から記すときの時刻:今日なら書きはじめた時刻、過去の日ならその日の最後の記録の5分後(なければ12時)
 function qAt(){ const d = curDay(); if (d === today()) return U.qat || now(); const xs = unitList().filter(u => u.day === d); return xs.length ? xs[xs.length - 1].at + 5 * 60000 : new Date(d + "T12:00:00").getTime(); }
