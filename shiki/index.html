@@ -326,7 +326,6 @@ img[data-ph]:not([src]){visibility:hidden}
 .dcat button.on{background:var(--c);border-color:var(--c);color:#fff}.dcat button.on small{color:rgba(255,255,255,.8)}
 .qbcat{flex:none;align-self:center;border:0;border-radius:8px;background:var(--c);color:#fff;font-size:.72rem;font-weight:800;padding:.35rem .45rem;font-family:inherit;cursor:pointer;writing-mode:horizontal-tb}
 .qbcat:disabled{opacity:1;cursor:default}
-.post .pt{display:flex;flex-direction:column;gap:.25rem}
 .pcm{display:inline-block;width:1.1rem;height:1.1rem;border-radius:4px;color:#fff;font-style:normal;font-size:.62rem;font-weight:800;text-align:center;line-height:1.1rem}
 </style>
 </head>
@@ -335,7 +334,7 @@ img[data-ph]:not([src]){visibility:hidden}
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.60";
+const VER = "s2.61";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -555,21 +554,22 @@ function keiHTML(u){ const rows = blRows(u.bl), max = 6, rs = rows.slice(0, max)
   return '<span class="kei" style="background:' + catBase(u) + '">' + rs.map(r => "<span>" + r.bs.map(b => '<i style="background:' + bkOf(b.k).c + '"></i>').join("") + "</span>").join("") + (rows.length > max ? "<em>+" + (rows.length - max) + "</em>" : "") + "</span>"; }
 // 1件 = 時刻 | 景観(ブロックの積み方の小さな絵) | 総合の字と写真。ブロックの札は出さない(押すと積み木の画面で全部見える)
 function postHTML(u){ const pt = postText(u);
-  return '<div class="post" data-ha="uopen" data-hv="' + u.id + '"><span class="pt">' + hm(u.at) + (!U.dcat || U.dcat === "all" ? '<i class="pcm" style="background:' + catOf(uCat(u)).c + '">' + catOf(uCat(u)).n.slice(0, 1) + "</i>" : "") + "</span>" + (u.bl.length ? keiHTML(u) : '<span class="kei none"></span>') +
+  return '<div class="post" data-ha="uopen" data-hv="' + u.id + '"><span class="pt">' + hm(u.at) + "" + "</span>" + (u.bl.length ? keiHTML(u) : '<span class="kei none"></span>') +
     '<div class="pc">' + (pt.t ? '<div class="px">' + esc(pt.t) + "</div>" : '<div class="px pxn">' + esc(uName(u)) + "</div>") + phGrid(u.ph) + "</div></div>"; }
 // 記すは種類ごとに分けて見る(全部も見られる)。下の欄から記すと、いま見ている種類の記録になる
-const postCat = () => U.dcat && U.dcat !== "all" ? U.dcat : (U.pcat || "o");
-function dcatHTML(all){ const cnt = {}; all.forEach(u => { cnt[uCat(u)] = (cnt[uCat(u)] || 0) + 1; }); const cur = U.dcat || "all";
-  return '<div class="dcat">' + [["all", "全部", "#22201C"]].concat(CAT.map(c => [c.id, c.n, c.c])).map(([id, n, c]) => '<button class="' + (cur === id ? "on" : "") + '" style="--c:' + c + '" data-ha="dcat" data-hv="' + id + '">' + n + (id === "all" ? "" : cnt[id] ? "<small>" + cnt[id] + "</small>" : "") + "</button>").join("") + "</div>"; }
+const dCat = () => CAT.some(c => c.id === U.dcat) ? U.dcat : "o";
+const postCat = dCat;
+function dcatHTML(all){ const cnt = {}; all.forEach(u => { cnt[uCat(u)] = (cnt[uCat(u)] || 0) + 1; }); const cur = dCat();
+  return '<div class="dcat">' + CAT.map(c => [c.id, c.n, c.c]).map(([id, n, c]) => '<button class="' + (cur === id ? "on" : "") + '" style="--c:' + c + '" data-ha="dcat" data-hv="' + id + '">' + n + (id === "all" ? "" : cnt[id] ? "<small>" + cnt[id] + "</small>" : "") + "</button>").join("") + "</div>"; }
 const curDay = () => U.day && U.day <= today() ? U.day : today();
 // 下の欄から記すときの時刻:今日なら書きはじめた時刻、過去の日ならその日の最後の記録の5分後(なければ12時)
 function qAt(){ const d = curDay(); if (d === today()) return U.qat || now(); const xs = unitList().filter(u => u.day === d); return xs.length ? xs[xs.length - 1].at + 5 * 60000 : new Date(d + "T12:00:00").getTime(); }
 function viewDay(){
-  const d = curDay(), all = unitList().filter(u => u.day === d), xs = U.dcat && U.dcat !== "all" ? all.filter(u => uCat(u) === U.dcat) : all, td = d === today(), pc = catOf(postCat());
+  const d = curDay(), all = unitList().filter(u => u.day === d), xs = all.filter(u => uCat(u) === dCat()), td = d === today(), pc = catOf(postCat());
   const nav = '<div class="dnav"><button data-ha="dmv" data-hv="-1" aria-label="前の日">‹</button><button class="dl" data-ha="cal">' + ymdJ(d) + '</button><button data-ha="dmv" data-hv="1" aria-label="次の日"' + (td ? " disabled" : "") + '>›</button>' +
     (td ? "" : '<button class="dtd" data-ha="dtoday">今日へ</button>') + '<button class="dcal" data-ha="cal" aria-label="カレンダー">📅</button></div>';
   const qph = U.qph || [];
-  const pcl = '<button class="qbcat" style="--c:' + pc.c + '"' + (U.dcat && U.dcat !== "all" ? " disabled" : ' data-ha="pcat"') + ">" + pc.n + "</button>";
+  const pcl = '<button class="qbcat" style="--c:' + pc.c + '"' + " disabled" + ">" + pc.n + "</button>";
   const bar = '<div class="qbar"><div>' + (U.qat && td ? '<div class="qbst">書きはじめた時刻 ' + hm(U.qat) + "</div>" : td ? "" : '<div class="qbst">' + md(d) + " に書き足す</div>") +
     (qph.length ? '<div class="qbph">' + qph.map(p => '<span>' + phImg(p.id) + '<button data-ha="qphrm" data-hv="' + p.id + '" aria-label="外す">✕</button></span>').join("") + "</div>" : "") +
     '<div class="qbr"><button class="qbi" data-ha="phadd" data-hv="bar" aria-label="写真">📷</button><button class="qbi" data-ha="qblk" aria-label="ブロックを組む">▦</button>' +
