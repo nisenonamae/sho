@@ -292,6 +292,16 @@ img[data-ph]:not([src]){visibility:hidden}
 .ogs{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.45rem}.ogs button{border:1.5px solid var(--rule);background:var(--white);border-radius:8px;padding:.15rem .5rem;font-size:.75rem;font-family:inherit;cursor:pointer}.ogs button.on{border-color:var(--g);background:var(--g);color:#fff}
 .ocol{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.45rem}.ocol button{width:1.6rem;height:1.6rem;border-radius:50%;border:2px solid transparent;background:var(--g);cursor:pointer}.ocol button.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px #fff}
 .oadd{display:inline-flex;gap:.3rem;align-items:center}.oadd .fi{width:8rem;padding:.25rem .5rem}
+.otabs{display:flex;flex-wrap:wrap;gap:.35rem;margin:.2rem 0 .7rem}
+.otabs button{border:1.5px solid var(--rule);background:var(--white);border-radius:999px;padding:.25rem .7rem;font-size:.8rem;font-weight:700;font-family:inherit;cursor:pointer;color:var(--ink)}
+.otabs button small{margin-left:.3rem;font-weight:400;color:var(--sub);font-size:.68rem}
+.otabs button.on{background:var(--g);border-color:var(--g);color:#fff}.otabs button.on small{color:rgba(255,255,255,.8)}
+.otabs button.add{border-style:dashed;color:var(--sub);font-weight:700}
+.opane{border-top:4px solid var(--g);border-radius:12px;background:rgba(0,0,0,.025);padding:.6rem .7rem .7rem}
+.oph{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}.oph b{font-size:.95rem}.oph small{color:var(--sub);font-size:.72rem}
+.oph .link{border:0;background:none;color:var(--sub);font-size:.76rem;font-family:inherit;text-decoration:underline;cursor:pointer}
+.oadd2{display:flex;gap:.35rem;margin-bottom:.55rem}.oadd2 .fi{flex:1;padding:.35rem .6rem}
+.osub{font-size:.7rem;color:var(--sub);margin-top:.45rem}
 </style>
 </head>
 <body>
@@ -299,7 +309,7 @@ img[data-ph]:not([src]){visibility:hidden}
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.50";
+const VER = "s2.51";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -574,29 +584,36 @@ function oTouch(p, v){ // 直すための入れ物を返す
   const id = "b" + p + hsh(f.b); D.opts[id] = D.opts[id] || { id, p, b: f.b, v: f.b, g: f.g }; return D.opts[id]; }
 function gTouch(p, gid){ const id = "g" + p + "_" + gid, base = (GRP0[p] || []).find(g => g[0] === gid);
   D.opts[id] = D.opts[id] || Object.assign({ id, t: "g", p, gid }, base ? {} : { n: "新しい種類", e: "・", c: "#9C917C" }); return D.opts[id]; }
+// 上に種類を1列に並べ(＋ 種類を足す もそこ)、選んだ種類の中身だけを下に出す。多くなってもスクロールは短いまま
 function sheetOpts(){ const p = (U.arg || {}).pool || "feel", nm = (OPOOLS.find(x => x[0] === p) || [, p])[1], eg = effGroups(p), oe = U.oe || {};
   const gsAll = eg.gs.concat(eg.etc.length ? [["etc", "ほか", "・", "#9C917C", eg.etc]] : []);
-  const itemEd = (g, v) => '<div class="oed"><input class="fi" id="sk-oname" value="' + esc(v) + '"><div class="ogs">' + eg.gs.map(x => '<button class="' + (x[0] === g[0] ? "on" : "") + '" style="--g:' + x[3] + '" data-ha="omv" data-hv="' + x[0] + '">' + x[2] + " " + esc(x[1]) + "</button>").join("") + "</div>" +
-    '<div class="orow"><button class="chip" data-ha="odel">消す</button><span></span><button class="chip" data-ha="oclose">やめる</button><button class="chip on" data-ha="osave">直す</button></div><p class="note" style="margin:.3rem 0 0">名前を直すと、今までの記録の中の名前も直る。消しても、今までの記録はそのまま残る。</p></div>';
-  const grpEd = g => '<div class="oed"><div class="orow"><input class="fi" id="sk-oge" value="' + esc(g[2]) + '" style="width:3.2rem;text-align:center"><input class="fi" id="sk-ogn" value="' + esc(g[1]) + '" style="flex:1"></div>' +
+  if (!gsAll.some(g => g[0] === U.ogSel)) U.ogSel = (gsAll[0] || [])[0];
+  const g = gsAll.find(x => x[0] === U.ogSel);
+  const tabs = '<div class="otabs">' + gsAll.map(x => '<button class="' + (x[0] === U.ogSel ? "on" : "") + '" style="--g:' + x[3] + '" data-ha="ogsel" data-hv="' + x[0] + '">' + x[2] + " " + esc(x[1]) + "<small>" + x[4].length + "</small></button>").join("") +
+    '<button class="add" data-ha="ogadd">＋ 種類を足す</button></div>';
+  if (!g) return sheetWrap("<h3>" + esc(nm) + "の選択肢</h3>" + tabs + '<button class="bigbtn" data-ha="oback">' + (U.optBack ? "もどる" : "とじる") + "</button>");
+  const grpEd = '<div class="oed"><div class="orow"><input class="fi" id="sk-oge" value="' + esc(g[2]) + '" style="width:3.2rem;text-align:center"><input class="fi" id="sk-ogn" value="' + esc(g[1]) + '" style="flex:1"></div>' +
     '<div class="ocol">' + OCOLORS.map(c => '<button class="' + (c === g[3] ? "on" : "") + '" style="--g:' + c + '" data-ha="ogc" data-hv="' + c + '"></button>').join("") + "</div>" +
-    '<div class="orow"><button class="chip" data-ha="ogmv" data-hv="-1">↑</button><button class="chip" data-ha="ogmv" data-hv="1">↓</button><button class="chip" data-ha="ogdel">この種類を消す</button><span></span><button class="chip" data-ha="oclose">やめる</button><button class="chip on" data-ha="ogsave">直す</button></div><p class="note" style="margin:.3rem 0 0">種類を消すと、中身は「ほか」に移る。</p></div>';
-  return sheetWrap('<h3>' + esc(nm) + "の選択肢</h3>" + '<p class="d" style="margin:0 0 .6rem">種類の名前を押すと種類を、中身を押すと中身を直せる。</p>' +
-    gsAll.map(g => '<div class="ogrp" style="--g:' + g[3] + '">' + (g[0] === "etc" ? '<div class="ogh"><i></i>' + g[2] + " " + g[1] + "</div>" : '<button class="ogh" data-ha="oge" data-hv="' + g[0] + '"><i></i>' + g[2] + " " + esc(g[1]) + '<small>✎</small></button>') +
-      (oe.k === "g" && oe.id === g[0] ? grpEd(g) : "") +
-      '<div class="chips">' + g[4].map(v => '<button class="chip' + (oe.k === "i" && oe.v === v ? " on" : "") + '" data-ha="oie" data-hv="' + esc(v) + '">' + esc(v) + "</button>").join("") +
-      (g[0] === "etc" ? "" : (oe.k === "a" && oe.g === g[0] ? '<span class="oadd"><input class="fi" id="sk-oadd" placeholder="足す名前"><button class="chip on" data-ha="oaddok">足す</button></span>' : '<button class="chip add" data-ha="oadd" data-hv="' + g[0] + '">＋ 足す</button>')) + "</div>" +
-      (oe.k === "i" && g[4].includes(oe.v) ? itemEd(g, oe.v) : "") + "</div>").join("") +
-    '<button class="chip add" style="margin-top:.6rem" data-ha="ogadd">＋ 種類を足す</button>' +
+    '<div class="orow"><button class="chip" data-ha="ogmv" data-hv="-1">← 前へ</button><button class="chip" data-ha="ogmv" data-hv="1">後へ →</button><span></span><button class="chip" data-ha="oclose">やめる</button><button class="chip on" data-ha="ogsave">直す</button></div>' +
+    '<div class="orow"><button class="chip" data-ha="ogdel">この種類を消す</button><span class="note" style="margin:0">中身は「ほか」に移る</span></div></div>';
+  const itemEd = v => '<div class="oed"><input class="fi" id="sk-oname" value="' + esc(v) + '"><div class="osub">移す先の種類</div><div class="ogs">' + eg.gs.map(x => '<button class="' + (x[0] === g[0] ? "on" : "") + '" style="--g:' + x[3] + '" data-ha="omv" data-hv="' + x[0] + '">' + x[2] + " " + esc(x[1]) + "</button>").join("") + "</div>" +
+    '<div class="orow"><button class="chip" data-ha="odel">消す</button><span></span><button class="chip" data-ha="oclose">やめる</button><button class="chip on" data-ha="osave">直す</button></div><p class="note" style="margin:.3rem 0 0">名前を直すと、今までの記録の中の名前も直る。消しても、今までの記録はそのまま残る。</p></div>';
+  return sheetWrap("<h3>" + esc(nm) + "の選択肢</h3>" + tabs +
+    '<div class="opane" style="--g:' + g[3] + '"><div class="oph"><b>' + g[2] + " " + esc(g[1]) + "</b>" + (g[0] === "etc" ? '<small>種類に入っていないもの</small>' : '<button class="link" data-ha="oge" data-hv="' + g[0] + '">' + (oe.k === "g" ? "とじる" : "✎ 名前・色・順番") + "</button>") + "</div>" +
+      (oe.k === "g" && g[0] !== "etc" ? grpEd : "") +
+      (g[0] === "etc" ? "" : '<div class="oadd2"><input class="fi" id="sk-oadd" placeholder="' + esc(g[1]) + 'に足す名前"><button class="chip on" data-ha="oaddok">足す</button></div>') +
+      '<div class="chips">' + g[4].map(v => '<button class="chip' + (oe.k === "i" && oe.v === v ? " on" : "") + '" data-ha="oie" data-hv="' + esc(v) + '">' + esc(v) + "</button>").join("") + (g[4].length ? "" : '<span class="note">まだない</span>') + "</div>" +
+      (oe.k === "i" && g[4].includes(oe.v) ? itemEd(oe.v) : "") + "</div>" +
     '<button class="bigbtn" data-ha="oback">' + (U.optBack ? "もどる" : "とじる") + "</button>");
 }
 function optAct(a, v){ const p = (U.arg || {}).pool, oe = U.oe || {};
+  if (a === "ogsel") { U.ogSel = v; U.oe = null; render(); return true; }
   if (a === "oie") { U.oe = oe.k === "i" && oe.v === v ? null : { k: "i", v }; render(); const el = $("#sk-oname"); if (el) el.focus(); return true; }
-  if (a === "oge") { U.oe = oe.k === "g" && oe.id === v ? null : { k: "g", id: v }; render(); return true; }
+  if (a === "oge") { U.oe = oe.k === "g" ? null : { k: "g", id: v }; render(); return true; }
   if (a === "oadd") { U.oe = { k: "a", g: v }; render(); const el = $("#sk-oadd"); if (el) el.focus(); return true; }
   if (a === "oclose") { U.oe = null; render(); return true; }
   if (a === "oaddok") { const t = (($("#sk-oadd") || {}).value || "").trim(); if (!t) return true; if (effGroups(p).gs.some(g => g[4].includes(t)) || effGroups(p).etc.includes(t)) { toast("もうある"); return true; }
-    mut(() => { const id = rid(); D.opts[id] = { id, p, g: oe.g, v: t, u: now() }; U.oe = { k: "a", g: oe.g }; }); const el = $("#sk-oadd"); if (el) el.focus(); return true; }
+    mut(() => { const id = rid(); D.opts[id] = { id, p, g: U.ogSel, v: t, u: now() }; U.oe = null; }); toast("足した"); const el = $("#sk-oadd"); if (el) el.focus(); return true; }
   if (a === "osave") { const t = (($("#sk-oname") || {}).value || "").trim(); if (!t || t === oe.v) { U.oe = null; render(); return true; }
     if (effGroups(p).gs.some(g => g[4].includes(t)) || effGroups(p).etc.includes(t)) { toast("その名前はもうある"); return true; }
     let n = 0; mut(() => { const o = oTouch(p, oe.v); if (!o) return; o.v = t; o.u = now(); n = renameInRecords(p, oe.v, t); U.oe = null; }); toast(n ? "直した(記録 " + n + " 件も)" : "直した"); return true; }
@@ -606,9 +623,9 @@ function optAct(a, v){ const p = (U.arg || {}).pool, oe = U.oe || {};
   if (a === "ogsave") { const n = (($("#sk-ogn") || {}).value || "").trim(), e = (($("#sk-oge") || {}).value || "").trim(); mut(() => { const o = gTouch(p, oe.id); if (n) o.n = n; o.e = e || "・"; o.u = now(); U.oe = null; }); return true; }
   if (a === "ogmv") { mut(() => { const gs = effGroups(p).gs, i = gs.findIndex(g => g[0] === oe.id), j = i + (+v); if (i < 0 || j < 0 || j >= gs.length) return; gs.forEach((g, k) => { const o = gTouch(p, g[0]); o.ord = k === i ? j : k === j ? i : k; o.u = now(); }); }); return true; }
   if (a === "ogdel") { if (!confirm("この種類を消しますか。中身は「ほか」に移ります。")) return true; mut(() => { const o = gTouch(p, oe.id); o.del = true; o.u = now(); U.oe = null; }); return true; }
-  if (a === "ogadd") { mut(() => { const gid = "u" + rid(), o = gTouch(p, gid); o.n = "新しい種類"; o.e = "・"; o.c = OCOLORS[effGroups(p).gs.length % OCOLORS.length]; o.ord = 1000 + effGroups(p).gs.length; o.u = now(); U.oe = { k: "g", id: gid }; }); return true; }
+  if (a === "ogadd") { mut(() => { const gid = "u" + rid(), o = gTouch(p, gid); o.n = "新しい種類"; o.e = "・"; o.c = OCOLORS[effGroups(p).gs.length % OCOLORS.length]; o.ord = 1000 + effGroups(p).gs.length; o.u = now(); U.ogSel = gid; U.oe = { k: "g", id: gid }; }); const el = $("#sk-ogn"); if (el) { el.focus(); el.select(); } return true; }
   if (a === "oback") { U.oe = null; U.sheet = U.optBack || null; U.optBack = null; if (U.sheet === "blk") U.arg = U.optArg; render(); return true; }
-  if (a === "oopen") { U.optBack = U.sheet === "blk" ? "blk" : null; U.optArg = U.arg; U.arg = { pool: v }; U.oe = null; U.sheet = "opts"; render(); return true; }
+  if (a === "oopen") { U.optBack = U.sheet === "blk" ? "blk" : null; U.optArg = U.arg; U.arg = { pool: v }; U.oe = null; U.ogSel = null; U.sheet = "opts"; render(); return true; }
   return false; }
 
 const kindOf = x => NKIND.some(k => k.id === x.t) ? x.t : "a";
