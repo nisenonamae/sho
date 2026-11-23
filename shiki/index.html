@@ -302,6 +302,10 @@ img[data-ph]:not([src]){visibility:hidden}
 .oph .link{border:0;background:none;color:var(--sub);font-size:.76rem;font-family:inherit;text-decoration:underline;cursor:pointer}
 .oadd2{display:flex;gap:.35rem;margin-bottom:.55rem}.oadd2 .fi{flex:1;padding:.35rem .6rem}
 .osub{font-size:.7rem;color:var(--sub);margin-top:.45rem}
+.qnest{border-left:5px solid var(--c);background:color-mix(in srgb,var(--c) 10%,#fff);border-radius:10px;padding:.4rem .5rem .5rem;margin:.35rem 0 .5rem}
+.qnh{display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem}.qnh small{font-weight:800;color:var(--c);font-size:.72rem}
+.qnh button{border:0;background:none;color:var(--sub);font-size:.8rem;cursor:pointer}
+.chip.add[style*="--c"]{color:var(--c);border-color:var(--c)}
 </style>
 </head>
 <body>
@@ -309,7 +313,7 @@ img[data-ph]:not([src]){visibility:hidden}
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.51";
+const VER = "s2.52";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -369,7 +373,7 @@ const BK = {
   deki: { n: "できごと", c: "#5B7DB1", w: 2, f: [{ k: "x", n: "なにが起きた", t: "text", ph: "起きたこと" }] },
   kodo: { n: "行動", c: "#4F8A6B", w: 2, f: [{ k: "what", n: "なにを", t: "pick", p: "act" }, { k: "amt", n: "どれだけ", t: "pick", p: "amt" }, { k: "x", n: "ひとこと(書きたいときだけ)", t: "text", ph: "書かなくていい" }] },
   kimo: { n: "気持ち", c: "#B0699A", w: 1, f: [{ k: "kind", n: "どんな", t: "pick", p: "feel" }, { k: "lv", n: "強さ", t: "scale" }] },
-  kikk: { n: "きっかけ", c: "#C97F2E", w: 2, f: [{ k: "when", n: "いつ", t: "time" }, { k: "where", n: "どこで", t: "pick", p: "place" }, { k: "doing", n: "何をしていて", t: "pick", p: "act" }, { k: "why", n: "なぜ", t: "pick", p: "why" }] },
+  kikk: { n: "きっかけ", c: "#C97F2E", w: 2, f: [{ k: "when", n: "いつ", t: "time" }, { k: "where", n: "どこで", t: "pick", p: "place" }, { k: "doing", n: "何をしていて", t: "pick", p: "act" }, { k: "why", n: "なぜ", t: "pick", p: "why" }, { k: "sub", n: "なぜ — 起きたできごとから", t: "sub", kinds: ["deki"] }] },
   // 理由は種類に分けない。具体的な事情をそのまま文で残し、一度書いた事情は次から押すだけで使える
   riyu: { n: "理由", c: "#B8553F", w: 2, f: [{ k: "jj", n: "具体的な事情(いくつでも)", t: "jijo" }, { k: "why", n: "ひとことで言うと(なくていい)", t: "pick", p: "why" }] },
   jikn: { n: "時間", c: "#6F7A87", w: 1, f: [{ k: "min", n: "何分", t: "num", o: [5, 10, 15, 30, 45, 60, 90, 120] }] },
@@ -411,7 +415,7 @@ function bSum(b){ const v = b.v || {}, t = s => String(s || "").trim();
     case "deki": case "hito": return t(v.x);
     case "kodo": return [v.what, v.amt].filter(Boolean).join("・") + (t(v.x) ? (v.what || v.amt ? "\n" : "") + t(v.x) : "");
     case "kimo": return v.kind || "";
-    case "kikk": return [v.when, v.where && v.where + "で", v.doing && v.doing + "をしていて", v.why].filter(Boolean).join(" ");
+    case "kikk": return [v.when, v.where && v.where + "で", v.doing && v.doing + "をしていて", v.why].concat((v.sub || []).map(x => t(x.v && x.v.x) && "← " + t(x.v.x))).filter(Boolean).join(" ");
     case "riyu": return (v.jj || []).join("\n") + (v.why ? ((v.jj || []).length ? "\n→ " : "") + v.why : "");
     case "jikn": return v.min ? v.min + "分" : "";
     case "dare": return (v.who || []).join("・");
@@ -481,7 +485,11 @@ function setAt(u, at){ u.at = at; u.day = ymd(new Date(at)); touch(u); }
 function ensureSaved(){ if (!U.draft) return D.units[U.unit]; const u = U.draft; D.units[u.id] = u; U.unit = u.id; U.draft = null; return u; }
 
 /* ───────── ブロックの中身 ───────── */
+// ブロックの中に入れるブロック(いまは、きっかけの「なぜ」に入れるできごと)
+function subHTML(f, list){ return (list || []).map(x => { const bk = bkOf(x.k); return '<div class="qnest" style="--c:' + bk.c + '"><div class="qnh"><small>' + bk.n + '</small><button data-ha="ksubrm" data-hv="' + x.id + '" aria-label="外す">✕</button></div><textarea class="fi" rows="2" data-hin="fsub" data-hv="' + x.id + '" placeholder="なにが起きた">' + esc((x.v && x.v.x) || "") + "</textarea></div>"; }).join("") +
+  '<div class="chips">' + f.kinds.map(k => '<button class="chip add" style="--c:' + bkOf(k).c + '" data-ha="ksubadd" data-hv="' + k + '">＋ ' + bkOf(k).n + "を中に入れる</button>").join("") + "</div>"; }
 function fieldHTML(f, val){
+  if (f.t === "sub") return subHTML(f, val);
   if (f.t === "text") return '<textarea class="fi" id="sk-ft" rows="3" data-hin="ft" data-hv="' + f.k + '" placeholder="' + esc(f.ph || "書く") + '">' + esc(val || "") + "</textarea>";
   if (f.t === "time") return '<div class="chips"><button class="chip' + (val ? "" : " on") + '" data-ha="kv" data-hv="' + f.k + '" data-hx="">始めた時刻と同じ</button><input class="fi qtime" type="time" data-hin="ftm" data-hv="' + f.k + '" value="' + esc(val || "") + '"></div>';
   if (f.t === "jijo") return jijoHTML(f, [].concat(val || []));
@@ -902,6 +910,8 @@ document.addEventListener("click", ev => {
       if (!poolOpts(f.p).includes(t)) { const id = rid(); D.opts[id] = { id, p: f.p, g, v: t, u: now() }; }
       setField(v, (o, k) => { if (f.t === "multi" || f.t === "jijo") { const arr = [].concat(o[k] || []); if (!arr.includes(t)) arr.push(t); o[k] = arr; } else o[k] = t; }); return; }
     case "kmv": mut(() => { const u = curUnit(), i = u.bl.findIndex(x => x.id === U.arg.bid), j = i + (+v); if (i < 0 || j < 0 || j >= u.bl.length) return; const t = u.bl[i]; u.bl[i] = u.bl[j]; u.bl[j] = t; touch(u); }); return;
+    case "ksubadd": { const nid = rid(); setField("sub", vv => { vv.sub = (vv.sub || []).concat({ id: nid, k: v, v: { x: "" } }); }); const el = document.querySelector('[data-hin=fsub][data-hv="' + nid + '"]'); if (el) el.focus({ preventScroll: true }); return; }
+    case "ksubrm": setField("sub", vv => { vv.sub = (vv.sub || []).filter(x => x.id !== v); }); return;
     case "kdel": { const u = curUnit(); if (!u) return; const i = u.bl.findIndex(x => x.id === v); if (i < 0) return; U.undo = { uid: u.id, b: u.bl[i], i, t: Date.now() };
       mut(() => { u.bl.splice(i, 1); if (!U.draft) edited(u); }); clearTimeout(U.undoT); U.undoT = setTimeout(() => { U.undo = null; render(); }, 8000); return; }
     case "kundo": { const u = curUnit(), x = U.undo; if (!u || !x || x.uid !== u.id) return; U.undo = null; mut(() => { u.bl.splice(Math.min(x.i, u.bl.length), 0, x.b); if (!U.draft) edited(u); }); return; }
@@ -943,6 +953,7 @@ document.addEventListener("input", ev => { const t = ev.target, k = t.dataset &&
   if (k === "jump") { if (/^\d{4}-\d\d-\d\d$/.test(t.value)) { U.xday = t.value > today() ? today() : t.value; U.jumpGo = true; render(); } return; }
   if (k === "bn") { quiet(() => { const x = D.bands[t.dataset.hv]; if (x && t.value.trim()) { x.n = t.value.trim(); touch(x); } }); return; }
   if (k === "bf" || k === "bt") { if (/^\d{4}-\d\d-\d\d$/.test(t.value) && t.value <= today()) quiet(() => { const x = D.bands[t.dataset.hv]; if (!x) return; if (k === "bf" && t.value <= bEnd(x)) x.from = t.value; if (k === "bt" && t.value >= x.from) x.to = t.value; touch(x); }); return; }
+  if (k === "fsub") { const bl = curBlock(); if (!bl) return; const u = ensureSaved(), x = ((bl.v || {}).sub || []).find(y => y.id === t.dataset.hv); if (!x) return; quiet(() => { x.v = x.v || {}; x.v.x = t.value; edited(u); }); return; }
   if (k === "ft") { const bl = curBlock(); if (!bl) return; const u = ensureSaved(); quiet(() => { bl.v = bl.v || {}; bl.v[t.dataset.hv] = t.value; edited(u); }); return; }
   if (k === "ftm" || k === "fnum") { const bl = curBlock(); if (!bl) return; const val = k === "fnum" ? (+t.value > 0 ? +t.value : null) : (/^\d\d:\d\d$/.test(t.value) ? t.value : null); const u = ensureSaved();
     quiet(() => { bl.v = bl.v || {}; if (val == null) delete bl.v[t.dataset.hv]; else bl.v[t.dataset.hv] = val; touch(u); }); return; }
