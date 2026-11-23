@@ -148,7 +148,8 @@ button,input,textarea{font:inherit;color:inherit}:focus-visible{outline:2px soli
 .qte{display:flex;gap:.4rem;margin-top:.45rem}.qte .fi{padding:.35rem .5rem;font-size:.9rem}
 .qcat{display:flex;gap:.3rem;margin:.65rem 0 .7rem}.qcat button{border:1.5px solid var(--rule);background:var(--white);border-radius:8px;padding:.18rem .75rem;font-size:.8rem;font-weight:800;color:var(--sub);font-family:inherit;cursor:pointer}.qcat button.on{background:var(--c);border-color:var(--c);color:#fff}
 .qbase{border-radius:14px;padding:.6rem}
-.qg{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}
+.qg{display:flex;flex-direction:column;gap:.45rem;position:relative;padding-left:.15rem}
+.qg::before{content:"";position:absolute;left:.72rem;top:.4rem;bottom:.4rem;width:2px;background:rgba(0,0,0,.12);border-radius:2px}
 .qb{border:0;border-radius:9px;background:var(--c);color:#fff;text-align:left;padding:.45rem .65rem .55rem;min-height:3.7rem;box-shadow:0 3px 0 rgba(0,0,0,.18);font-family:inherit;cursor:pointer;display:flex;flex-direction:column;min-width:0}
 .qb.w{grid-column:span 2}
 .qb small{font-size:.66rem;font-weight:700;opacity:.88}
@@ -244,6 +245,17 @@ img[data-ph]:not([src]){visibility:hidden}
 .cd.out{opacity:.35}.cd:disabled{opacity:.25;cursor:default}
 .cd.sel{outline:2.5px solid var(--ink);outline-offset:1px}
 .cdots{position:absolute;left:.3rem;bottom:.3rem;display:flex;gap:2px}.cdots s{width:.34rem;height:.34rem;border-radius:50%;display:block}
+
+.qrow{display:flex;align-items:stretch;gap:.35rem;position:relative;transition:transform .15s}
+.qrow.drag{transition:none;z-index:5;filter:drop-shadow(0 6px 10px rgba(0,0,0,.22))}
+.qrow .qb{flex:1}
+.qdrag{flex:none;width:1.25rem;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.4);font-size:1.05rem;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;position:relative;z-index:1;background:inherit}
+.qdel{flex:none;width:1.9rem;border:0;border-radius:9px;background:rgba(255,255,255,.65);color:var(--sub);font-size:.85rem;cursor:pointer}
+.qdel:active{background:#F3D6D0;color:#B8553F}
+.qtlh{display:flex;justify-content:space-between;font-size:.66rem;color:var(--sub);margin:0 .1rem .35rem 1.6rem}
+.qundo{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.5rem;padding:.4rem .6rem;border-radius:9px;background:#22201C;color:#fff;font-size:.8rem}
+.qundo button{border:0;background:none;color:#FFD27A;font-weight:800;font-family:inherit;cursor:pointer}
+.qxl{font-size:.78rem;font-weight:800;margin:.7rem 0 .2rem}.qxl small{font-weight:400;color:var(--sub);margin-left:.4rem}
 </style>
 </head>
 <body>
@@ -251,7 +263,7 @@ img[data-ph]:not([src]){visibility:hidden}
 <script>
 "use strict";
 /* 史記 — ブロックを積み木のように組んだ記録(ユニット)を毎日積み、観点と年表で眺める */
-const VER = "s2.30";
+const VER = "s2.40";
 const DATA_PATH = "roadmap/apps/shiki/data.json", OLD_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "shiki-data", K_UI = "shiki-ui";
 const $ = (q, r) => (r || document).querySelector(q);
@@ -386,8 +398,11 @@ function viewList(){
 
 /* ───────── ユニットの中身 = 積み木 ───────── */
 const curUnit = () => U.draft || (U.unit && D.units[U.unit] && !D.units[U.unit].del ? D.units[U.unit] : null);
+/* 積んだブロックは上から順に時系列。左の ≡ をつかんで動かす。✕ で押さずに消せる */
 function blockHTML(b){ const bk = bkOf(b.k), s = bSum(b), lv = b.k === "kimo" && b.v && b.v.lv ? '<i class="qdots">' + "●".repeat(b.v.lv) + "○".repeat(5 - b.v.lv) + "</i>" : "";
-  return '<button class="qb' + (bk.w === 2 ? " w" : "") + (bk.paper ? " p" : "") + '" style="--c:' + bk.c + '" data-ha="kopen" data-hv="' + b.id + '"><small>' + bk.n + "</small><span>" + (s ? esc(s) : lv ? "" : "<em>押して入れる</em>") + lv + "</span></button>"; }
+  return '<div class="qrow" data-bid="' + b.id + '"><span class="qdrag" data-drag="' + b.id + '" aria-label="動かす" title="つかんで動かす">≡</span>' +
+    '<button class="qb' + (bk.paper ? " p" : "") + '" style="--c:' + bk.c + '" data-ha="kopen" data-hv="' + b.id + '"><small>' + bk.n + "</small><span>" + (s ? esc(s) : lv ? "" : "<em>押して入れる</em>") + lv + "</span></button>" +
+    '<button class="qdel" data-ha="kdel" data-hv="' + b.id + '" aria-label="消す">✕</button></div>'; }
 function viewUnit(u){
   const c = uCat(u), saved = !U.draft;
   const bs = saved ? bandList().filter(b => b.from <= u.day && bEnd(b) >= u.day).sort((a, b) => bDepth(a.id) - bDepth(b.id)) : [];
@@ -395,10 +410,11 @@ function viewUnit(u){
     '<div class="qst"><span>記録を始めた時刻</span><b>' + md(u.day) + " " + hm(u.at) + "</b>" +
     '<button data-ha="ut" data-hv="-5">−5分</button><button data-ha="ut" data-hv="5">＋5分</button><button data-ha="utx">' + (U.tedit ? "とじる" : "変える") + "</button></div>" +
     (u.c ? '<div class="qwr">記した日時 ' + md(ymd(new Date(u.c))) + " " + hm(u.c) + (u.e2 ? "・最後に直した日時 " + md(ymd(new Date(u.e2))) + " " + hm(u.e2) : "") + "</div>" : "") + (U.tedit ? '<div class="qte"><input class="fi" type="date" data-hin="ud" value="' + u.day + '" max="' + today() + '"><input class="fi" type="time" data-hin="utm" value="' + hm(u.at) + '"></div>' : "") +
-    '<textarea class="fi qx" id="sk-ux" data-hin="ux" rows="2" placeholder="字(書かなくていい)">' + esc(u.x || "") + "</textarea>" +
+    '<div class="qxl">総合<small>ブロック全体をまとめた文言(書かなくていい)</small></div><textarea class="fi qx" id="sk-ux" data-hin="ux" rows="2" placeholder="この記録をひとことで">' + esc(u.x || "") + "</textarea>" +
     '<div class="qphs">' + (u.ph || []).map(p => '<span><button data-ha="phv" data-hv="' + p.id + '">' + phImg(p.id) + '</button><button class="x" data-ha="phrm" data-hv="' + p.id + '" aria-label="外す">✕</button></span>').join("") + '<button class="add" data-ha="phadd" data-hv="unit">📷 写真</button></div>' +
     '<div class="qcat">' + CAT.map(k => '<button class="' + (c === k.id ? "on" : "") + '" style="--c:' + k.c + '" data-ha="ucat" data-hv="' + k.id + '">' + k.n + "</button>").join("") + "</div>" +
-    '<div class="qbase" style="background:' + catOf(c).base + '">' + (u.bl.length ? '<div class="qg">' + u.bl.map(blockHTML).join("") + "</div>" : '<p class="qempty">下のブロックを押すと、ここに積まれる</p>') + "</div>" +
+    '<div class="qbase" style="background:' + catOf(c).base + '">' + (u.bl.length ? '<div class="qtlh"><span>はじめ</span><span>上から順に時間が進む・≡ で動かす</span></div><div class="qg">' + u.bl.map(blockHTML).join("") + "</div>" : '<p class="qempty">下のブロックを押すと、ここに積まれる</p>') +
+      (U.undo && U.undo.uid === u.id && Date.now() - U.undo.t < 8000 ? '<div class="qundo">「' + esc(bkOf(U.undo.b.k).n) + '」を消した<button data-ha="kundo">元に戻す</button></div>' : "") + "</div>" +
     (bs.length ? '<div class="nwl">入れる帯(この日にかかっている帯)</div><div class="chips">' + bs.map(b => '<button class="chip' + (u.b === b.id ? " on" : "") + '" data-ha="ub" data-hv="' + (u.b === b.id ? "" : b.id) + '">' + esc(bPath(b.id).map(p => cut(p.n, 8)).join(" › ")) + "</button>").join("") + "</div>" : "") +
     (saved ? '<div class="links" style="margin-top:1.2rem"><button data-ha="udel">この記録を消す</button><span></span></div>' : "") + "</div>" +
     '<div class="qpal"><div><div class="qph">ブロックを足す(押すと下に積まれる)</div>' + BK_ORDER.map(k => '<button style="--c:' + BK[k].c + '" data-ha="kadd" data-hv="' + k + '">' + BK[k].n + "</button>").join("") + "</div></div>";
@@ -753,6 +769,9 @@ document.addEventListener("click", ev => {
       if (!poolOpts(f.p).includes(t)) { const id = rid(); D.opts[id] = { id, p: f.p, g, v: t, u: now() }; }
       setField(v, (o, k) => { if (f.t === "multi" || f.t === "jijo") { const arr = [].concat(o[k] || []); if (!arr.includes(t)) arr.push(t); o[k] = arr; } else o[k] = t; }); return; }
     case "kmv": mut(() => { const u = curUnit(), i = u.bl.findIndex(x => x.id === U.arg.bid), j = i + (+v); if (i < 0 || j < 0 || j >= u.bl.length) return; const t = u.bl[i]; u.bl[i] = u.bl[j]; u.bl[j] = t; touch(u); }); return;
+    case "kdel": { const u = curUnit(); if (!u) return; const i = u.bl.findIndex(x => x.id === v); if (i < 0) return; U.undo = { uid: u.id, b: u.bl[i], i, t: Date.now() };
+      mut(() => { u.bl.splice(i, 1); if (!U.draft) edited(u); }); clearTimeout(U.undoT); U.undoT = setTimeout(() => { U.undo = null; render(); }, 8000); return; }
+    case "kundo": { const u = curUnit(), x = U.undo; if (!u || !x || x.uid !== u.id) return; U.undo = null; mut(() => { u.bl.splice(Math.min(x.i, u.bl.length), 0, x.b); if (!U.draft) edited(u); }); return; }
     case "krm": U.sheet = null; mut(() => { const u = curUnit(); u.bl = u.bl.filter(x => x.id !== U.arg.bid); touch(u); }); return;
     // 観点
     case "view": U.view = v; U.vg = null; U.vsel = null; saveUI(); render(); return;
@@ -800,6 +819,21 @@ document.addEventListener("input", ev => { const t = ev.target, k = t.dataset &&
 });
 // 入力欄を離れたら、名前などを描き直す
 document.addEventListener("change", ev => { const k = ev.target.dataset && ev.target.dataset.hin; if (k === "ud" || k === "utm" || k === "fnum" || k === "ftm") render(); });
+
+/* ───────── ブロックを ≡ でつかんで動かす(指でもマウスでも) ───────── */
+let DRG = null;
+document.addEventListener("pointerdown", ev => { const h = ev.target.closest && ev.target.closest("[data-drag]"); if (!h) return; const row = h.closest(".qrow"), box = row && row.parentElement; if (!row) return;
+  ev.preventDefault(); const rows = [...box.children], r0 = row.getBoundingClientRect();
+  DRG = { id: h.dataset.drag, row, box, rows, from: rows.indexOf(row), to: rows.indexOf(row), y0: ev.clientY, h: r0.height + 6, mids: rows.map(r => { const b = r.getBoundingClientRect(); return b.top + b.height / 2; }) };
+  row.classList.add("drag"); try { h.setPointerCapture(ev.pointerId); } catch (e) {} });
+document.addEventListener("pointermove", ev => { if (!DRG) return; ev.preventDefault(); const dy = ev.clientY - DRG.y0, y = DRG.mids[DRG.from] + dy;
+  let to = 0; DRG.mids.forEach((m, i) => { if (i !== DRG.from && y > m) to = i >= DRG.from ? i : i + 1; }); if (y > DRG.mids[DRG.mids.length - 1]) to = DRG.mids.length - 1; to = Math.max(0, Math.min(DRG.rows.length - 1, to)); DRG.to = to;
+  DRG.row.style.transform = "translateY(" + dy + "px)";
+  DRG.rows.forEach((r, i) => { if (r === DRG.row) return; let sh = 0; if (DRG.from < to && i > DRG.from && i <= to) sh = -DRG.h; if (DRG.from > to && i >= to && i < DRG.from) sh = DRG.h; r.style.transform = sh ? "translateY(" + sh + "px)" : ""; });
+  if (ev.clientY < 70) window.scrollBy(0, -12); else if (ev.clientY > window.innerHeight - 90) window.scrollBy(0, 12); }, { passive: false });
+function dragEnd(){ if (!DRG) return; const d = DRG; DRG = null; d.rows.forEach(r => { r.style.transform = ""; }); d.row.classList.remove("drag");
+  if (d.to === d.from) return; mut(() => { const u = curUnit(); if (!u) return; const i = u.bl.findIndex(x => x.id === d.id); if (i < 0) return; const [b] = u.bl.splice(i, 1); u.bl.splice(d.to, 0, b); if (!U.draft) edited(u); }); }
+document.addEventListener("pointerup", dragEnd); document.addEventListener("pointercancel", dragEnd);
 
 
 /* ───────── 同期(省アプリのトークンを借りる。新しいトークンは作らない) ───────── */
