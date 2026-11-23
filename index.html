@@ -961,6 +961,8 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 #hy .tgs button.thk{font-size:1rem}
 #hy .tgs button.thk.on{background:#5A554C;border-color:#5A554C}
 #hy .inp.think{border-style:dashed}
+#hy .pr .pdel{flex:none;border:0;background:none;color:var(--sub);font-size:.85rem;padding:.3rem .35rem;margin-left:.1rem;cursor:pointer}
+#hy .pr .pdel:active{color:#C0392B}
 #hy .askq{margin:.6rem 0 .2rem;padding:.4rem .7rem;border:1.5px dashed var(--c);border-radius:10px;font-size:.84rem;line-height:1.6;white-space:pre-wrap;color:var(--ink)}
 #hy .askq .nh{display:block;font-size:.68rem;font-weight:800;color:var(--c);margin-bottom:.1rem}
 #hy .gmode{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;margin-bottom:.2rem}
@@ -1150,7 +1152,7 @@ body.hy-full .hy-legacy{display:none}
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-11-23 r152";
+const APP_VERSION = "2026-11-23 r153";
 const KEY_CONN = "sho-conn", KEY_CACHE = "sho-cache";
 const P = { gov: "roadmap/gov/structure.json", reviews: "roadmap/gov/reviews", stats: "docs/data/stats.json",
             defs: "roadmap/tasks/defs.json", overlay: "roadmap/tasks/overlay.json", log: "roadmap/tasks/log", applog: "roadmap/tasks/applog" };
@@ -5541,7 +5543,7 @@ SE.init([
 /* ───────── 最高評議会(政府 › 最高評議会 の中身) ───────── */
 (() => {
 "use strict";
-const APP_VERSION = "h5.62";
+const APP_VERSION = "h5.63";
 const DEF_CRITS = [{ id: "c1", name: "目的にきく", w: 3 }, { id: "c2", name: "続けられる", w: 2 }, { id: "c3", name: "負担の軽さ", w: 1 }, { id: "c4", name: "受験に効く", w: 2 }, { id: "c5", name: "長い目で得", w: 2 }];
 const DATA_PATH = "roadmap/apps/hyogikai/data.json";
 const K_DATA = "hyogikai-data", K_CONN = "hyogikai-conn", K_ALIVE = "hyogikai-alive", K_UI = "hyogikai-ui";
@@ -6924,7 +6926,7 @@ function viewSheet(){
 function sheetParts(s){
   if (!s) return "";
   const cp = curPart(s);
-  return sheetWrap('<h3>今日の構成</h3><p class="d">会の途中でも、並べかえ・足す・はずすができる。審議は → で上の審議の中へ、← で外へ(入れ子)。入れ子はまとめて動く。</p>' +
+  return sheetWrap('<h3>今日の構成</h3><p class="d">会の途中でも、並べかえ・足す・はずす・消す(✕)ができる。スイッチは今日だけはずす、✕ はパーツごと消す。審議は → で上の審議の中へ、← で外へ(入れ子)。入れ子はまとめて動く。</p>' +
     '<div class="lbl">テンプレートに切りかえる</div><div class="presets">' + tpls().map(t => '<button class="' + (s.kind === t.id ? "on" : "") + '" data-ha="preset" data-hv="' + t.id + '">' + esc(t.n) + "</button>").join("") + "</div>" +
     '<div class="card">' + s.parts.map((p, i) => {
       const d = p.d && s.debates[p.d], here = p === cp;
@@ -6933,7 +6935,7 @@ function sheetParts(s){
       const nestBtns = isTalk(p) ? '<span class="nest">' + (lvOf(p) ? '<button data-ha="pout" data-hv="' + p.id + '" aria-label="外へ">←</button>' : "") + (i && isTalk(s.parts[i - 1]) || (i && lvOf(s.parts[i - 1]) > lvOf(p)) ? '<button data-ha="pin" data-hv="' + p.id + '" aria-label="上の審議の中へ">→</button>' : "") + "</span>" : "";
       return '<div class="pr' + (here ? " here" : "") + (p.on ? "" : " off") + (lvOf(p) ? " nested" : "") + '" style="--lv:' + lvOf(p) + '"><span class="mv"><button data-ha="pmove" data-hv="' + p.id + '" data-hd="-1"' + (i ? "" : " disabled") + ' aria-label="上へ">▲</button><button data-ha="pmove" data-hv="' + p.id + '" data-hd="1"' + (i < s.parts.length - 1 ? "" : " disabled") + ' aria-label="下へ">▼</button></span><span class="cl" style="--c:' + T[p.t].c + '"></span><span class="m"><b>' + title + "</b>" + (sub ? "<span>" + sub + "</span>" : "") + "</span>" +
         (p.done && !here ? '<button class="donechip" data-ha="goto" data-hv="' + p.id + '">✓ 済・戻る</button>' : (!here && p.on ? '<button class="jump" data-ha="goto" data-hv="' + p.id + '">ここへ</button>' : "")) +
-        nestBtns + (here ? "" : '<button class="sw' + (p.on ? " on" : "") + '" data-ha="ptoggle" data-hv="' + p.id + '" aria-label="入切"></button>') + "</div>";
+        nestBtns + (here ? "" : '<button class="sw' + (p.on ? " on" : "") + '" data-ha="ptoggle" data-hv="' + p.id + '" aria-label="入切"></button><button class="pdel" data-ha="pdel" data-hv="' + p.id + '" aria-label="消す" title="このパーツを消す">✕</button>') + "</div>";
     }).join("") +
     '<button class="addbtn" data-ha="sheet" data-hs="issue">+ 審議を足す(新しい論点)</button><button class="addbtn" data-ha="sheet" data-hs="addpart">+ ほかのパーツ</button></div>' +
     '<button class="addbtn" style="border:1.5px dashed var(--rule);border-radius:12px;margin-top:.6rem;background:none" data-ha="tplsave">この並びをテンプレートとして残す</button>' +
@@ -7214,6 +7216,11 @@ function onClick(ev){
       const nx = nextPart(s); mut(() => { cp.done = true; if (nx) goPart(s, nx.id); }); if (!nx) toast("最後のパーツ。閉会は構成から足せる。"); return;
     }
     case "goto": U.sheet = null; mut(() => goPart(s, v)); return;
+    case "pdel": { const i = s.parts.findIndex(p => p.id === v), p = s.parts[i]; if (!p || p.id === s.cur) return;
+      const d = p.d && s.debates[p.d], n = d ? d.e.filter(e => e.k !== "pause").length : 0, nm = p.t === "debate" ? "審議" + (d ? circ(dn(s, d)) : "") : p.t === "goal" ? "目的の審議" : T[p.t].n;
+      if (!confirm(nm + "を消しますか。" + (n ? "中の発言 " + n + " 件も消えます。" : "") + (subEnd(s, i) > i + 1 ? "中に入れ子の審議があれば、ひとつ外に出します。" : ""))) return;
+      mut(() => { const end = subEnd(s, i); for (let j = i + 1; j < end; j++) s.parts[j].lv = Math.max(0, lvOf(s.parts[j]) - 1); s.parts.splice(i, 1); if (d) delete s.debates[p.d]; touch(s); });
+      toast(nm + "を消した"); return; }
     case "ptoggle": mut(() => { const p = partOf(s, v); p.on = !p.on; }); return;
     case "pmove": mut(() => { const i = s.parts.findIndex(p => p.id === v), p = s.parts[i], end = subEnd(s, i), blk = s.parts.slice(i, end), L = lvOf(p);
       if (+b.dataset.hd < 0) { let k = i - 1; while (k >= 0 && lvOf(s.parts[k]) > L) k--; if (k < 0 || lvOf(s.parts[k]) < L) return; s.parts.splice(i, blk.length); s.parts.splice(k, 0, ...blk); }
